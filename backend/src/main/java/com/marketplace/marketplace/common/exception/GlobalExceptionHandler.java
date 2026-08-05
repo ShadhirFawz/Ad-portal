@@ -14,35 +14,35 @@ import java.util.List;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<?> handleNotFound(ResourceNotFoundException ex) {
+        @ExceptionHandler(ResourceNotFoundException.class)
+        public ResponseEntity<?> handleNotFound(ResourceNotFoundException ex) {
 
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new ErrorResponse(ex.getMessage(), null));
-    }
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                .body(new ErrorResponse(ex.getMessage(), null));
+        }
 
-    @ExceptionHandler(BadRequestException.class)
-    public ResponseEntity<?> handleBadRequest(BadRequestException ex) {
+        @ExceptionHandler(BadRequestException.class)
+        public ResponseEntity<?> handleBadRequest(BadRequestException ex) {
 
-        return ResponseEntity.badRequest()
-                .body(new ErrorResponse(ex.getMessage(), null));
-    }
+                return ResponseEntity.badRequest()
+                                .body(new ErrorResponse(ex.getMessage(), null));
+        }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<?> handleValidation(MethodArgumentNotValidException ex) {
+        @ExceptionHandler(MethodArgumentNotValidException.class)
+        public ResponseEntity<?> handleValidation(MethodArgumentNotValidException ex) {
 
-        BindingResult result = ex.getBindingResult();
+                BindingResult result = ex.getBindingResult();
 
-        List<FieldError> errors = result
-                .getFieldErrors()
-                .stream()
-                .map(error -> new FieldError(
-                        error.getField(),
-                        error.getDefaultMessage()))
-                .toList();
+                List<FieldError> errors = result
+                                .getFieldErrors()
+                                .stream()
+                                .map(error -> new FieldError(
+                                                error.getField(),
+                                                error.getDefaultMessage()))
+                                .toList();
 
-        return ResponseEntity.badRequest()
-                .body(new ErrorResponse("Validation Failed", errors));
-    }
+                return ResponseEntity.badRequest()
+                                .body(new ErrorResponse("Validation Failed", errors));
+        }
 
 }
