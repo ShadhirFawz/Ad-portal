@@ -45,4 +45,10 @@ public class GlobalExceptionHandler {
                                 .body(new ErrorResponse("Validation Failed", errors));
         }
 
+        @ExceptionHandler(ConflictException.class)
+        public ResponseEntity<?> handleConflict(ConflictException ex) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                                .body(new ErrorResponse(ex.getMessage(), null));
+        }
+
 }
