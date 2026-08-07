@@ -9,8 +9,22 @@ server:
   port: 8080
 
 springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
   swagger-ui:
     path: /swagger-ui.html
+    enabled: true
+    try-it-out-enabled: true
+    operations-sorter: alpha
+    tags-sorter: alpha
+    display-request-duration: true
+    deep-linking: true
+    default-models-expand-depth: 1
+    default-model-expand-depth: 1
+    show-extensions: true
+    show-common-extensions: true
+  show-actuator: false
 
 logging:
   level:
