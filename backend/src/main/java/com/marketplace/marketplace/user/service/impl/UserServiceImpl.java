@@ -4,6 +4,9 @@ import com.marketplace.marketplace.user.entity.User;
 import com.marketplace.marketplace.user.repository.UserRepository;
 import com.marketplace.marketplace.user.service.UserService;
 import lombok.RequiredArgsConstructor;
+
+import java.util.Optional;
+
 import org.springframework.stereotype.Service;
 
 @Service
@@ -32,5 +35,10 @@ public class UserServiceImpl implements UserService {
     @Override
     public boolean existsByUsername(String username) {
         return username != null && !username.isBlank() && userRepository.existsByUsername(username);
+    }
+
+    @Override
+    public Optional<User> findByEmail(String email) {
+        return userRepository.findByEmailIgnoreCase(email);
     }
 }
