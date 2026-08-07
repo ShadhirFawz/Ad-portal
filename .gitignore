@@ -52,7 +52,7 @@ Thumbs.db
 # Application Config
 #############################
 
-application-dev.yml
+**/application-dev.yml
 
 #############################
 # Build
