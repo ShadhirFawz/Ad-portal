@@ -3,9 +3,11 @@ package com.marketplace.marketplace.auth.controller;
 import com.marketplace.marketplace.auth.dto.request.LoginRequest;
 import com.marketplace.marketplace.auth.dto.request.RefreshTokenRequest;
 import com.marketplace.marketplace.auth.dto.request.RegisterRequest;
+import com.marketplace.marketplace.auth.dto.request.VerifyEmailRequest;
 import com.marketplace.marketplace.auth.dto.response.AuthResponse;
 import com.marketplace.marketplace.auth.dto.response.UserResponse;
 import com.marketplace.marketplace.auth.service.AuthService;
+import com.marketplace.marketplace.auth.service.EmailVerificationService;
 import com.marketplace.marketplace.common.response.ApiResponse;
 import com.marketplace.marketplace.common.response.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
         private final AuthService authService;
+        private final EmailVerificationService emailVerificationService;
 
         @PostMapping("/register")
         @SecurityRequirements
@@ -54,6 +57,17 @@ public class AuthController {
                 return ApiResponse.success(
                                 "Login successful.",
                                 authService.login(request));
+        }
+
+        @PostMapping("/verify-email")
+        public ApiResponse<Void> verifyEmail(
+                        @Valid @RequestBody VerifyEmailRequest request) {
+
+                emailVerificationService.verify(request);
+
+                return ApiResponse.success(
+                                "Email verified successfully.",
+                                null);
         }
 
         @PostMapping("/refresh")
