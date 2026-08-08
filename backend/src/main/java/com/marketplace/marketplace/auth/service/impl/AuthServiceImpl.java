@@ -1,17 +1,18 @@
 package com.marketplace.marketplace.auth.service.impl;
 
 import com.marketplace.marketplace.auth.dto.request.LoginRequest;
+import com.marketplace.marketplace.auth.dto.request.RefreshTokenRequest;
 import com.marketplace.marketplace.auth.dto.request.RegisterRequest;
 import com.marketplace.marketplace.auth.dto.response.AuthResponse;
 import com.marketplace.marketplace.auth.entity.RefreshToken;
-import com.marketplace.marketplace.auth.repository.RefreshTokenRepository;
 import com.marketplace.marketplace.auth.service.AuthService;
+import com.marketplace.marketplace.auth.service.RefreshTokenService;
 import com.marketplace.marketplace.common.enums.Role;
 import com.marketplace.marketplace.common.enums.UserStatus;
 import com.marketplace.marketplace.common.exception.AuthenticationException;
 import com.marketplace.marketplace.common.exception.ConflictException;
-import com.marketplace.marketplace.common.security.config.JwtProperties;
 import com.marketplace.marketplace.common.security.jwt.JwtService;
+import com.marketplace.marketplace.common.security.util.SecurityUtils;
 import com.marketplace.marketplace.auth.dto.response.UserResponse;
 import com.marketplace.marketplace.user.entity.User;
 import com.marketplace.marketplace.user.mapper.UserMapper;
@@ -34,8 +35,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final JwtProperties jwtProperties;
-    private final RefreshTokenRepository refreshTokenRepository;
+    private final RefreshTokenService refreshTokenService;
 
     @Override
     public UserResponse register(RegisterRequest request) {
@@ -71,7 +71,7 @@ public class AuthServiceImpl implements AuthService {
                 user.getId(),
                 user.getRole().name());
 
-        RefreshToken refreshToken = createRefreshToken(user);
+        RefreshToken refreshToken = refreshTokenService.create(user);
 
         user.setLastLoginAt(OffsetDateTime.now(ZoneOffset.UTC));
 
@@ -79,23 +79,6 @@ public class AuthServiceImpl implements AuthService {
                 accessToken,
                 refreshToken.getToken(),
                 userMapper.toResponse(user));
-    }
-
-    private RefreshToken createRefreshToken(User user) {
-
-        String token = UUID.randomUUID().toString();
-
-        OffsetDateTime expiresAt = OffsetDateTime.now(ZoneOffset.UTC)
-                .plus(jwtProperties.refreshTokenExpiration());
-
-        RefreshToken refreshToken = RefreshToken.builder()
-                .user(user)
-                .token(token)
-                .expiresAt(expiresAt)
-                .revoked(false)
-                .build();
-
-        return refreshTokenRepository.save(refreshToken);
     }
 
     private void validateAccountStatus(User user) {
@@ -177,5 +160,64 @@ public class AuthServiceImpl implements AuthService {
         return trimmed.isEmpty()
                 ? null
                 : trimmed;
+    }
+
+    @Override
+    @Transactional
+    public AuthResponse refresh(
+            RefreshTokenRequest request) {
+
+        RefreshToken oldToken = refreshTokenService.validate(
+                request.refreshToken());
+
+        User user = oldToken.getUser();
+
+        validateAccountStatus(user);
+
+        RefreshToken newToken = refreshTokenService.rotate(oldToken);
+
+        String accessToken = jwtService.generateAccessToken(
+                user.getId(),
+                user.getRole().name());
+
+        return new AuthResponse(
+                accessToken,
+                newToken.getToken(),
+                userMapper.toResponse(user));
+    }
+
+    @Override
+    @Transactional
+    public void logout(
+            RefreshTokenRequest request) {
+
+        refreshTokenService.revoke(
+                request.refreshToken());
+    }
+
+    @Override
+    @Transactional
+    public void logoutAll() {
+
+        UUID userId = SecurityUtils.getCurrentUserId();
+
+        User user = userService.findById(userId)
+                .orElseThrow(() -> new AuthenticationException(
+                        "User not found."));
+
+        refreshTokenService.revokeAll(user);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserResponse me() {
+
+        UUID userId = SecurityUtils.getCurrentUserId();
+
+        User user = userService.findById(userId)
+                .orElseThrow(() -> new AuthenticationException(
+                        "User not found."));
+
+        return userMapper.toResponse(user);
     }
 }

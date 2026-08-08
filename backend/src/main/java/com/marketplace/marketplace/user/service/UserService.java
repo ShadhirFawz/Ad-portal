@@ -1,6 +1,7 @@
 package com.marketplace.marketplace.user.service;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import com.marketplace.marketplace.user.entity.User;
 
@@ -15,5 +16,7 @@ public interface UserService {
     boolean existsByPhoneNumber(String phoneNumber);
 
     boolean existsByUsername(String username);
+
+    Optional<User> findById(UUID id);
 
 }

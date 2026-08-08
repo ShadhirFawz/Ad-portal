@@ -1,6 +1,7 @@
 package com.marketplace.marketplace.auth.controller;
 
 import com.marketplace.marketplace.auth.dto.request.LoginRequest;
+import com.marketplace.marketplace.auth.dto.request.RefreshTokenRequest;
 import com.marketplace.marketplace.auth.dto.request.RegisterRequest;
 import com.marketplace.marketplace.auth.dto.response.AuthResponse;
 import com.marketplace.marketplace.auth.dto.response.UserResponse;
@@ -53,6 +54,68 @@ public class AuthController {
                 return ApiResponse.success(
                                 "Login successful.",
                                 authService.login(request));
+        }
+
+        @PostMapping("/refresh")
+        @SecurityRequirements
+        @Operation(summary = "Refresh authentication token", description = "Refreshes the authentication token using a valid refresh token.")
+        @ApiResponses({
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Token refreshed successfully", content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid or revoked refresh token", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+        })
+        public ApiResponse<AuthResponse> refresh(
+                        @Valid @RequestBody RefreshTokenRequest request) {
+
+                return ApiResponse.success(
+                                "Token refreshed successfully.",
+                                authService.refresh(request));
+        }
+
+        @PostMapping("/logout")
+        @SecurityRequirements
+        @Operation(summary = "Logout a user", description = "Logs out the user by revoking the provided refresh token.")
+        @ApiResponses({
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Logout successful", content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid refresh token", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+        })
+        public ApiResponse<Void> logout(
+                        @Valid @RequestBody RefreshTokenRequest request) {
+
+                authService.logout(request);
+
+                return ApiResponse.success(
+                                "Logout successful.",
+                                null);
+        }
+
+        @PostMapping("/logout-all")
+        @SecurityRequirements
+        @Operation(summary = "Logout from all devices", description = "Logs out the user from all devices by revoking all refresh tokens.")
+        @ApiResponses({
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Logged out from all devices successfully", content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+        })
+        public ApiResponse<Void> logoutAll() {
+
+                authService.logoutAll();
+
+                return ApiResponse.success(
+                                "Logged out from all devices.",
+                                null);
+        }
+
+        @GetMapping("/me")
+        @SecurityRequirements
+        @Operation(summary = "Get current user profile", description = "Retrieves the profile of the currently authenticated user.")
+        @ApiResponses({
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "User profile retrieved successfully", content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+        })
+        public ApiResponse<UserResponse> me() {
+
+                return ApiResponse.success(
+                                "User retrieved successfully.",
+                                authService.me());
         }
 
 }
