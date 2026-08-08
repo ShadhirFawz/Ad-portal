@@ -1,5 +1,6 @@
 package com.marketplace.marketplace.common.exception;
 
+import com.marketplace.marketplace.common.response.ApiResponse;
 import com.marketplace.marketplace.common.response.ErrorResponse;
 import com.marketplace.marketplace.common.response.FieldError;
 import org.springframework.http.HttpStatus;
@@ -49,6 +50,17 @@ public class GlobalExceptionHandler {
         public ResponseEntity<?> handleConflict(ConflictException ex) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
                                 .body(new ErrorResponse(ex.getMessage(), null));
+        }
+
+        @ExceptionHandler(AuthenticationException.class)
+        public ResponseEntity<ApiResponse<Void>> handleAuthenticationException(
+                        AuthenticationException ex) {
+
+                return ResponseEntity
+                                .status(HttpStatus.UNAUTHORIZED)
+                                .body(
+                                                ApiResponse.error(
+                                                                ex.getMessage()));
         }
 
 }

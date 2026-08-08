@@ -1,6 +1,8 @@
 package com.marketplace.marketplace.common.security.filter;
 
+import com.marketplace.marketplace.common.enums.UserStatus;
 import com.marketplace.marketplace.common.security.jwt.JwtService;
+import com.marketplace.marketplace.common.security.model.AuthenticatedUser;
 import com.marketplace.marketplace.user.entity.User;
 import com.marketplace.marketplace.user.repository.UserRepository;
 import jakarta.servlet.FilterChain;
@@ -20,8 +22,7 @@ import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
-public class JwtAuthenticationFilter
-        extends OncePerRequestFilter {
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserRepository userRepository;
@@ -34,8 +35,8 @@ public class JwtAuthenticationFilter
 
         String authorization = request.getHeader("Authorization");
 
-        if (authorization == null ||
-                !authorization.startsWith("Bearer ")) {
+        if (authorization == null
+                || !authorization.startsWith("Bearer ")) {
 
             filterChain.doFilter(request, response);
             return;
@@ -44,13 +45,11 @@ public class JwtAuthenticationFilter
         String token = authorization.substring(7);
 
         if (!jwtService.isValid(token)) {
-
             filterChain.doFilter(request, response);
             return;
         }
 
         try {
-
             UUID userId = jwtService.extractUserId(token);
 
             if (SecurityContextHolder
@@ -60,16 +59,19 @@ public class JwtAuthenticationFilter
                 User user = userRepository.findById(userId)
                         .orElse(null);
 
-                if (user != null &&
-                        user.getStatus() == com.marketplace.marketplace.common.enums.UserStatus.ACTIVE) {
+                if (user != null
+                        && user.getStatus() == UserStatus.ACTIVE) {
+
+                    AuthenticatedUser principal = new AuthenticatedUser(
+                            user.getId(),
+                            user.getRole());
 
                     var authorities = List.of(
                             new SimpleGrantedAuthority(
-                                    "ROLE_" +
-                                            user.getRole().name()));
+                                    "ROLE_" + user.getRole().name()));
 
                     var authentication = new UsernamePasswordAuthenticationToken(
-                            user.getId(),
+                            principal,
                             null,
                             authorities);
 
@@ -80,7 +82,7 @@ public class JwtAuthenticationFilter
             }
 
         } catch (Exception ignored) {
-
+            SecurityContextHolder.clearContext();
         }
 
         filterChain.doFilter(request, response);
