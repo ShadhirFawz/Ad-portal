@@ -1,13 +1,16 @@
 package com.marketplace.marketplace.auth.controller;
 
+import com.marketplace.marketplace.auth.dto.request.ForgotPasswordRequest;
 import com.marketplace.marketplace.auth.dto.request.LoginRequest;
 import com.marketplace.marketplace.auth.dto.request.RefreshTokenRequest;
 import com.marketplace.marketplace.auth.dto.request.RegisterRequest;
+import com.marketplace.marketplace.auth.dto.request.ResetPasswordRequest;
 import com.marketplace.marketplace.auth.dto.request.VerifyEmailRequest;
 import com.marketplace.marketplace.auth.dto.response.AuthResponse;
 import com.marketplace.marketplace.auth.dto.response.UserResponse;
 import com.marketplace.marketplace.auth.service.AuthService;
 import com.marketplace.marketplace.auth.service.EmailVerificationService;
+import com.marketplace.marketplace.auth.service.PasswordResetService;
 import com.marketplace.marketplace.common.response.ApiResponse;
 import com.marketplace.marketplace.common.response.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,6 +31,7 @@ public class AuthController {
 
         private final AuthService authService;
         private final EmailVerificationService emailVerificationService;
+        private final PasswordResetService passwordResetService;
 
         @PostMapping("/register")
         @SecurityRequirements
@@ -130,6 +134,40 @@ public class AuthController {
                 return ApiResponse.success(
                                 "User retrieved successfully.",
                                 authService.me());
+        }
+
+        @PostMapping("/forgot-password")
+        @SecurityRequirements
+        @Operation(summary = "Request password reset", description = "Initiates a password reset process by sending a reset link to the user's email if the account exists.")
+        @ApiResponses({
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Password reset instructions sent if the account exists", content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Validation error", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+        })
+        public ApiResponse<Void> forgotPassword(
+                        @Valid @RequestBody ForgotPasswordRequest request) {
+
+                passwordResetService.requestReset(request);
+
+                return ApiResponse.success(
+                                "If the account exists, password reset instructions have been sent.",
+                                null);
+        }
+
+        @PostMapping("/reset-password")
+        @SecurityRequirements
+        @Operation(summary = "Reset password", description = "Resets the user's password using a valid password reset token.")
+        @ApiResponses({
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Password reset successful", content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+                        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid or expired password reset token", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+        })
+        public ApiResponse<Void> resetPassword(
+                        @Valid @RequestBody ResetPasswordRequest request) {
+
+                passwordResetService.reset(request);
+
+                return ApiResponse.success(
+                                "Password reset successful.",
+                                null);
         }
 
 }
