@@ -88,10 +88,14 @@ public class AuthServiceImpl implements AuthService {
 
         private void validateAccountStatus(User user) {
 
-                if (user.getStatus() == UserStatus.PENDING_EMAIL_VERIFICATION) {
-                        throw new AuthenticationException(
-                                        "Please verify your email before logging in.");
-                }
+                // Email verification is NOT required to log in.
+                // The emailVerified flag remains false until the user completes
+                // /verify-email. Critical features should gate on that flag.
+
+                // if (user.getStatus() == UserStatus.PENDING_EMAIL_VERIFICATION) {
+                // throw new AuthenticationException(
+                // "Please verify your email before logging in.");
+                // }
 
                 if (user.getStatus() == UserStatus.SUSPENDED) {
                         throw new AuthenticationException(
@@ -108,10 +112,18 @@ public class AuthServiceImpl implements AuthService {
                                         "This account is no longer available.");
                 }
 
-                if (user.getStatus() != UserStatus.ACTIVE) {
-                        throw new AuthenticationException(
-                                        "Your account is not available for login.");
+                // if (user.getStatus() != UserStatus.ACTIVE) {
+                // throw new AuthenticationException(
+                // "Your account is not available for login.");
+                // }
+
+                if (user.getStatus() == UserStatus.PENDING_EMAIL_VERIFICATION
+                                || user.getStatus() == UserStatus.ACTIVE) {
+                        return; // Both states are permitted to log in
                 }
+
+                throw new AuthenticationException(
+                                "Your account is not available for login.");
         }
 
         private void validateRegistration(RegisterRequest request) {
@@ -135,6 +147,8 @@ public class AuthServiceImpl implements AuthService {
 
         private User buildUser(RegisterRequest request) {
 
+                // Users are created ACTIVE so they can log in freely.
+                // emailVerified stays false until they complete /verify-email.
                 return User.builder()
                                 .email(normalizeEmail(request.email()))
                                 .passwordHash(
@@ -143,7 +157,8 @@ public class AuthServiceImpl implements AuthService {
                                 .lastName(trimToNull(request.lastName()))
                                 .phoneNumber(trimToNull(request.phoneNumber()))
                                 .role(Role.USER)
-                                .status(UserStatus.PENDING_EMAIL_VERIFICATION)
+                                // .status(UserStatus.PENDING_EMAIL_VERIFICATION)
+                                .status(UserStatus.ACTIVE)
                                 .emailVerified(false)
                                 .phoneVerified(false)
                                 .publicProfile(true)
