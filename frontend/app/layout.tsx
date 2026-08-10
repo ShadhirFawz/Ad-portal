@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Providers from "@/components/common/providers";
+import { AuthProvider } from "@/providers/AuthProvider";
 
 export const metadata: Metadata = {
   title: "Marketplace",
@@ -19,11 +19,11 @@ export default function RootLayout({
 
       <body>
 
-        <Providers>
+        <AuthProvider>
 
           {children}
 
-        </Providers>
+        </AuthProvider>
 
       </body>
 
