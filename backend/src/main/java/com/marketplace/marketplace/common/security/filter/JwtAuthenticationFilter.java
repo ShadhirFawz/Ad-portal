@@ -42,7 +42,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        String token = authorization.substring(7);
+        String token = authorization.substring(7).trim();
+        if (token.startsWith("Bearer ")) {
+            token = token.substring(7).trim();
+        }
 
         if (!jwtService.isValid(token)) {
             filterChain.doFilter(request, response);
@@ -60,7 +63,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         .orElse(null);
 
                 if (user != null
-                        && user.getStatus() == UserStatus.ACTIVE) {
+                        && (user.getStatus() == UserStatus.ACTIVE
+                                || user.getStatus() == UserStatus.PENDING_EMAIL_VERIFICATION)) {
 
                     AuthenticatedUser principal = new AuthenticatedUser(
                             user.getId(),

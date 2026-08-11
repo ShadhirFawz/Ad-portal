@@ -43,7 +43,7 @@ public class OpenApiConfig {
                                         .type(SecurityScheme.Type.HTTP)
                                         .scheme("bearer")
                                         .bearerFormat("JWT")
-                                        .description("Provide a valid JWT access token. Example: **Bearer &lt;token&gt;**")));
+                                        .description("Paste your JWT access token below (without 'Bearer ' prefix).")));
     }
 
     private Info apiInfo() {
@@ -54,7 +54,7 @@ public class OpenApiConfig {
                         
                         ## Authentication
                         Most endpoints require a valid **JWT Bearer token**.  
-                        Register or login to obtain a token, then click **Authorize** and enter: `Bearer <your_token>`
+                        Register or login to obtain a token, then click **Authorize** and paste your `<access_token>` (Swagger UI will automatically add the Bearer prefix).
                         """)
                 .version("v1.0.0")
                 .contact(new Contact()
