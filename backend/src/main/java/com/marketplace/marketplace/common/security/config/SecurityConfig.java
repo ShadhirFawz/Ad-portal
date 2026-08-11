@@ -6,6 +6,7 @@ import com.marketplace.marketplace.common.security.handler.CustomAuthenticationE
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -53,6 +54,11 @@ public class SecurityConfig {
                                                                 "/api/v1/auth/verify-email",
                                                                 "/api/v1/auth/forgot-password",
                                                                 "/api/v1/auth/reset-password")
+                                                .permitAll()
+
+                                                .requestMatchers(
+                                                                HttpMethod.GET,
+                                                                "/api/v1/users/*")
                                                 .permitAll()
 
                                                 .requestMatchers(
