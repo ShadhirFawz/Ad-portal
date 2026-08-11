@@ -19,6 +19,7 @@ export interface UserResponse {
   avatarUrl: string | null;
   coverPhotoUrl: string | null;
   bio: string | null;
+  location: string | null;
   role: UserRole;
   status: UserStatus;
   emailVerified: boolean;
