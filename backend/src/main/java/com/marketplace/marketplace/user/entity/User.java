@@ -54,6 +54,9 @@ public class User extends BaseUuidEntity {
     @Column(columnDefinition = "TEXT")
     private String bio;
 
+    @Column(length = 255)
+    private String location;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Role role;
