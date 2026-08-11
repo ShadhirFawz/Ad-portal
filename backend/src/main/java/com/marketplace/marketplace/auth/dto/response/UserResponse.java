@@ -26,6 +26,8 @@ public record UserResponse(
 
         String bio,
 
+        String location,
+
         Role role,
 
         UserStatus status,
