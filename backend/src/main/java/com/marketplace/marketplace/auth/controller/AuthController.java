@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -64,6 +65,7 @@ public class AuthController {
         }
 
         @PostMapping("/verify-email")
+        @SecurityRequirements
         public ApiResponse<Void> verifyEmail(
                         @Valid @RequestBody VerifyEmailRequest request) {
 
@@ -107,7 +109,7 @@ public class AuthController {
         }
 
         @PostMapping("/logout-all")
-        @SecurityRequirements
+        @SecurityRequirement(name = "bearerAuth")
         @Operation(summary = "Logout from all devices", description = "Logs out the user from all devices by revoking all refresh tokens.")
         @ApiResponses({
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Logged out from all devices successfully", content = @Content(schema = @Schema(implementation = ApiResponse.class))),
@@ -123,7 +125,7 @@ public class AuthController {
         }
 
         @GetMapping("/me")
-        @SecurityRequirements
+        @SecurityRequirement(name = "bearerAuth")
         @Operation(summary = "Get current user profile", description = "Retrieves the profile of the currently authenticated user.")
         @ApiResponses({
                         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "User profile retrieved successfully", content = @Content(schema = @Schema(implementation = ApiResponse.class))),
