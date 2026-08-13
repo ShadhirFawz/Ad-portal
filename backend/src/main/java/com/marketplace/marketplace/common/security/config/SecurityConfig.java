@@ -17,7 +17,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
@@ -29,13 +29,14 @@ public class SecurityConfig {
 
         @Bean
         public SecurityFilterChain securityFilterChain(
-                        HttpSecurity http) throws Exception {
+                        HttpSecurity http,
+                        CorsConfigurationSource corsConfigurationSource) throws Exception {
 
                 http
                                 .csrf(AbstractHttpConfigurer::disable)
 
                                 .cors(cors -> cors.configurationSource(
-                                                corsConfigurationSource()))
+                                                corsConfigurationSource))
 
                                 .sessionManagement(session -> session.sessionCreationPolicy(
                                                 SessionCreationPolicy.STATELESS))
@@ -47,18 +48,17 @@ public class SecurityConfig {
                                 .authorizeHttpRequests(auth -> auth
 
                                                 .requestMatchers(
-                                                                "/api/v1/auth/register",
-                                                                "/api/v1/auth/login",
-                                                                "/api/v1/auth/refresh",
-                                                                "/api/v1/auth/logout",
-                                                                "/api/v1/auth/verify-email",
-                                                                "/api/v1/auth/forgot-password",
-                                                                "/api/v1/auth/reset-password")
+                                                                "/api/v1/auth/**")
                                                 .permitAll()
 
                                                 .requestMatchers(
                                                                 HttpMethod.GET,
                                                                 "/api/v1/users/*")
+                                                .permitAll()
+
+                                                .requestMatchers(
+                                                                HttpMethod.GET,
+                                                                "/api/v1/categories/**")
                                                 .permitAll()
 
                                                 .requestMatchers(
