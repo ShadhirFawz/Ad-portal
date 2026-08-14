@@ -1,24 +1,33 @@
 package com.marketplace.marketplace.category.dto.response;
 
+import java.util.Map;
 import java.util.UUID;
 
 public record CategoryResponse(
 
-        UUID id,
+                UUID id,
 
-        String name,
+                String name,
 
-        String slug,
+                String slug,
 
-        String description,
+                String code,
 
-        UUID parentId,
+                String description,
 
-        String iconUrl,
+                UUID parentId,
 
-        Integer displayOrder,
+                Integer level,
 
-        boolean active
+                Boolean allowListings,
+
+                String iconUrl,
+
+                Integer displayOrder,
+
+                boolean active,
+
+                Map<String, Object> metadata
 
 ) {
 }
