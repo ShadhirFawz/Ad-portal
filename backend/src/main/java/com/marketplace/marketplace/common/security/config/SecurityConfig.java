@@ -62,6 +62,11 @@ public class SecurityConfig {
                                                 .permitAll()
 
                                                 .requestMatchers(
+                                                                HttpMethod.GET,
+                                                                "/api/v1/listings/**")
+                                                .permitAll()
+
+                                                .requestMatchers(
                                                                 "/swagger-ui/**",
                                                                 "/swagger-ui.html",
                                                                 "/v3/api-docs/**")
