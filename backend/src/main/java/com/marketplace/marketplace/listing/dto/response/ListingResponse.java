@@ -1,47 +1,76 @@
 package com.marketplace.marketplace.listing.dto.response;
 
 import com.marketplace.marketplace.listing.enums.ListingCondition;
+import com.marketplace.marketplace.listing.enums.ListingLocationType;
 import com.marketplace.marketplace.listing.enums.ListingStatus;
+import com.marketplace.marketplace.listing.enums.ListingType;
+import com.marketplace.marketplace.listing.enums.ModerationStatus;
+import com.marketplace.marketplace.listing.enums.PricingType;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.Map;
 import java.util.UUID;
 
 public record ListingResponse(
 
-        UUID id,
+                UUID id,
 
-        UUID sellerId,
+                UUID sellerId,
 
-        String sellerUsername,
+                String sellerUsername,
 
-        UUID categoryId,
+                UUID categoryId,
 
-        String categoryName,
+                String categoryName,
 
-        String title,
+                String title,
 
-        String description,
+                String description,
 
-        BigDecimal price,
+                BigDecimal price,
 
-        String currency,
+                String currency,
 
-        ListingCondition condition,
+                PricingType pricingType,
 
-        String location,
+                boolean negotiable,
 
-        ListingStatus status,
+                BigDecimal minimumOfferPrice,
 
-        long viewCount,
+                ListingType listingType,
 
-        long favoriteCount,
+                ListingCondition condition,
 
-        OffsetDateTime publishedAt,
+                Integer quantity,
 
-        OffsetDateTime createdAt,
+                Integer availableQuantity,
 
-        OffsetDateTime updatedAt
+                ListingLocationType locationType,
+
+                String district,
+
+                String province,
+
+                String city,
+
+                String postalCode,
+
+                Map<String, Object> customAttributes,
+
+                ListingStatus status,
+
+                ModerationStatus moderationStatus,
+
+                long viewCount,
+
+                long favoriteCount,
+
+                OffsetDateTime publishedAt,
+
+                OffsetDateTime createdAt,
+
+                OffsetDateTime updatedAt
 
 ) {
 }
