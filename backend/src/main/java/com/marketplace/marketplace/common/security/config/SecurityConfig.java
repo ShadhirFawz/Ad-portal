@@ -47,33 +47,105 @@ public class SecurityConfig {
 
                                 .authorizeHttpRequests(auth -> auth
 
-                                                .requestMatchers(
-                                                                "/api/v1/auth/**")
-                                                .permitAll()
+                                // ── Root ──────────────────────────────────────
+                                .requestMatchers(HttpMethod.GET, "/")
+                                .permitAll()
 
-                                                .requestMatchers(
-                                                                HttpMethod.GET,
-                                                                "/api/v1/users/*")
-                                                .permitAll()
+                                // ── Swagger / OpenAPI ─────────────────────────
+                                .requestMatchers(
+                                                "/swagger-ui/**",
+                                                "/swagger-ui.html",
+                                                "/v3/api-docs/**")
+                                .permitAll()
 
-                                                .requestMatchers(
-                                                                HttpMethod.GET,
-                                                                "/api/v1/categories/**")
-                                                .permitAll()
+                                // ── Auth — fully public ───────────────────────
+                                .requestMatchers(HttpMethod.POST, "/api/v1/auth/register")
+                                .permitAll()
 
-                                                .requestMatchers(
-                                                                HttpMethod.GET,
-                                                                "/api/v1/listings/**")
-                                                .permitAll()
+                                .requestMatchers(HttpMethod.POST, "/api/v1/auth/login")
+                                .permitAll()
 
-                                                .requestMatchers(
-                                                                "/swagger-ui/**",
-                                                                "/swagger-ui.html",
-                                                                "/v3/api-docs/**")
-                                                .permitAll()
+                                .requestMatchers(HttpMethod.POST, "/api/v1/auth/verify-email")
+                                .permitAll()
 
-                                                .anyRequest()
-                                                .authenticated())
+                                .requestMatchers(HttpMethod.POST, "/api/v1/auth/refresh")
+                                .permitAll()
+
+                                .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout")
+                                .permitAll()
+
+                                .requestMatchers(HttpMethod.POST, "/api/v1/auth/forgot-password")
+                                .permitAll()
+
+                                .requestMatchers(HttpMethod.POST, "/api/v1/auth/reset-password")
+                                .permitAll()
+
+                                // ── Auth — requires authentication ────────────
+                                .requestMatchers(HttpMethod.GET, "/api/v1/auth/me")
+                                .authenticated()
+
+                                .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout-all")
+                                .authenticated()
+
+                                // ── Users — public ────────────────────────────
+                                .requestMatchers(HttpMethod.GET, "/api/v1/users/{username}")
+                                .permitAll()
+
+                                // ── Users — requires authentication ───────────
+                                .requestMatchers(HttpMethod.GET, "/api/v1/users/me")
+                                .authenticated()
+
+                                .requestMatchers(HttpMethod.PATCH, "/api/v1/users/me")
+                                .authenticated()
+
+                                .requestMatchers(HttpMethod.PATCH, "/api/v1/users/me/password")
+                                .authenticated()
+
+                                .requestMatchers(HttpMethod.DELETE, "/api/v1/users/me")
+                                .authenticated()
+
+                                // ── Categories — all public (read-only) ───────
+                                .requestMatchers(HttpMethod.GET, "/api/v1/categories")
+                                .permitAll()
+
+                                .requestMatchers(HttpMethod.GET, "/api/v1/categories/root")
+                                .permitAll()
+
+                                .requestMatchers(HttpMethod.GET, "/api/v1/categories/slug/{slug}")
+                                .permitAll()
+
+                                .requestMatchers(HttpMethod.GET, "/api/v1/categories/{id}")
+                                .permitAll()
+
+                                // ── Listings — public reads ───────────────────
+                                .requestMatchers(HttpMethod.GET, "/api/v1/listings")
+                                .permitAll()
+
+                                .requestMatchers(HttpMethod.GET, "/api/v1/listings/category/{categoryId}")
+                                .permitAll()
+
+                                .requestMatchers(HttpMethod.GET, "/api/v1/listings/{id}")
+                                .permitAll()
+
+                                // ── Listings — requires authentication ────────
+                                .requestMatchers(HttpMethod.GET, "/api/v1/listings/mine")
+                                .authenticated()
+
+                                .requestMatchers(HttpMethod.POST, "/api/v1/listings")
+                                .authenticated()
+
+                                .requestMatchers(HttpMethod.PATCH, "/api/v1/listings/{id}")
+                                .authenticated()
+
+                                .requestMatchers(HttpMethod.DELETE, "/api/v1/listings/{id}")
+                                .authenticated()
+
+                                .requestMatchers(HttpMethod.POST, "/api/v1/listings/{id}/publish")
+                                .authenticated()
+
+                                // ── Deny everything else ──────────────────────
+                                .anyRequest()
+                                .authenticated())
 
                                 .addFilterBefore(
                                                 jwtAuthenticationFilter,
