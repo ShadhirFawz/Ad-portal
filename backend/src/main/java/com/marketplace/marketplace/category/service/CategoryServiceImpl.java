@@ -16,65 +16,69 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class CategoryServiceImpl implements CategoryService {
 
-    private final CategoryRepository categoryRepository;
+        private final CategoryRepository categoryRepository;
 
-    @Override
-    public List<CategoryResponse> getActiveCategories() {
+        @Override
+        public List<CategoryResponse> getActiveCategories() {
 
-        return categoryRepository
-                .findAllByActiveTrueOrderByDisplayOrderAsc()
-                .stream()
-                .map(this::toResponse)
-                .toList();
-    }
+                return categoryRepository
+                                .findAllByActiveTrueOrderByDisplayOrderAsc()
+                                .stream()
+                                .map(this::toResponse)
+                                .toList();
+        }
 
-    @Override
-    public List<CategoryResponse> getRootCategories() {
+        @Override
+        public List<CategoryResponse> getRootCategories() {
 
-        return categoryRepository
-                .findAllByParentIsNullAndActiveTrueOrderByDisplayOrderAsc()
-                .stream()
-                .map(this::toResponse)
-                .toList();
-    }
+                return categoryRepository
+                                .findAllByParentIsNullAndActiveTrueOrderByDisplayOrderAsc()
+                                .stream()
+                                .map(this::toResponse)
+                                .toList();
+        }
 
-    @Override
-    public CategoryResponse getBySlug(String slug) {
+        @Override
+        public CategoryResponse getBySlug(String slug) {
 
-        Category category = categoryRepository
-                .findBySlug(slug)
-                .filter(Category::isActive)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Category not found."));
+                Category category = categoryRepository
+                                .findBySlug(slug)
+                                .filter(Category::isActive)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Category not found."));
 
-        return toResponse(category);
-    }
+                return toResponse(category);
+        }
 
-    @Override
-    public CategoryResponse getById(UUID id) {
+        @Override
+        public CategoryResponse getById(UUID id) {
 
-        Category category = categoryRepository
-                .findById(id)
-                .filter(Category::isActive)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Category not found."));
+                Category category = categoryRepository
+                                .findById(id)
+                                .filter(Category::isActive)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Category not found."));
 
-        return toResponse(category);
-    }
+                return toResponse(category);
+        }
 
-    private CategoryResponse toResponse(
-            Category category) {
+        private CategoryResponse toResponse(
+                        Category category) {
 
-        return new CategoryResponse(
-                category.getId(),
-                category.getName(),
-                category.getSlug(),
-                category.getDescription(),
-                category.getParent() != null
-                        ? category.getParent().getId()
-                        : null,
-                category.getIconUrl(),
-                category.getDisplayOrder(),
-                category.isActive());
-    }
+                return new CategoryResponse(
+                                category.getId(),
+                                category.getName(),
+                                category.getSlug(),
+                                category.getCode(),
+                                category.getDescription(),
+                                category.getParent() != null
+                                                ? category.getParent().getId()
+                                                : null,
+                                category.getLevel(),
+                                category.isAllowListings(),
+                                category.getIconUrl(),
+                                category.getDisplayOrder(),
+                                category.isActive(),
+                                category.getMetadata());
+        }
 }
