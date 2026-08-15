@@ -438,9 +438,14 @@ public class ListingServiceImpl
         private Category getCategoryForListing(UUID id) {
 
                 Category category = categoryRepository.findById(id)
-                                .filter(Category::isActive)
                                 .orElseThrow(() -> new ResourceNotFoundException(
                                                 "Category not found."));
+
+                if (!category.isActive()) {
+
+                        throw new ConflictException(
+                                        "Category is inactive.");
+                }
 
                 if (!category.isAllowListings()) {
 
@@ -448,7 +453,26 @@ public class ListingServiceImpl
                                         "Listings are not allowed in this category.");
                 }
 
+                validateCategoryHierarchy(category);
+
                 return category;
+        }
+
+        private void validateCategoryHierarchy(
+                        Category category) {
+
+                Category current = category;
+
+                while (current != null) {
+
+                        if (!current.isActive()) {
+
+                                throw new ConflictException(
+                                                "The selected category is unavailable.");
+                        }
+
+                        current = current.getParent();
+                }
         }
 
         private ListingResponse toResponse(
