@@ -1,8 +1,9 @@
-package com.marketplace.marketplace.category.service;
+package com.marketplace.marketplace.category.service.impl;
 
 import com.marketplace.marketplace.category.dto.response.CategoryResponse;
 import com.marketplace.marketplace.category.entity.Category;
 import com.marketplace.marketplace.category.repository.CategoryRepository;
+import com.marketplace.marketplace.category.service.CategoryService;
 import com.marketplace.marketplace.common.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

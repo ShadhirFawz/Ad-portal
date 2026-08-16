@@ -1,4 +1,4 @@
-package com.marketplace.marketplace.listing.service;
+package com.marketplace.marketplace.listing.service.impl;
 
 import com.marketplace.marketplace.category.entity.Category;
 import com.marketplace.marketplace.category.repository.CategoryRepository;
@@ -15,6 +15,7 @@ import com.marketplace.marketplace.listing.enums.ListingType;
 import com.marketplace.marketplace.listing.enums.ModerationStatus;
 import com.marketplace.marketplace.listing.enums.PricingType;
 import com.marketplace.marketplace.listing.repository.ListingRepository;
+import com.marketplace.marketplace.listing.service.ListingService;
 import com.marketplace.marketplace.user.entity.User;
 import com.marketplace.marketplace.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
