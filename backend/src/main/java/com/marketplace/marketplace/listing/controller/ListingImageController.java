@@ -16,52 +16,52 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ListingImageController {
 
-    private final ListingImageService imageService;
+        private final ListingImageService imageService;
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public ListingImageResponse registerImage(
-            @PathVariable UUID listingId,
-            @Valid @RequestBody RegisterListingImageRequest request) {
+        @PostMapping
+        @ResponseStatus(HttpStatus.CREATED)
+        public ListingImageResponse registerImage(
+                        @PathVariable UUID listingId,
+                        @Valid @RequestBody RegisterListingImageRequest request) {
 
-        return imageService.registerImage(
-                listingId,
-                request);
-    }
+                return imageService.registerImage(
+                                listingId,
+                                request);
+        }
 
-    @GetMapping
-    public List<ListingImageResponse> getImages(
-            @PathVariable UUID listingId) {
+        @GetMapping
+        public List<ListingImageResponse> getImages(
+                        @PathVariable UUID listingId) {
 
-        return imageService.getImages(
-                listingId);
-    }
+                return imageService.getImages(
+                                listingId);
+        }
 
-    @DeleteMapping("/{imageId}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteImage(
-            @PathVariable UUID listingId,
-            @PathVariable UUID imageId) {
+        @DeleteMapping("/{imageId}")
+        @ResponseStatus(HttpStatus.NO_CONTENT)
+        public void deleteImage(
+                        @PathVariable UUID listingId,
+                        @PathVariable UUID imageId) {
 
-        imageService.deleteImage(
-                listingId,
-                imageId);
-    }
+                imageService.deleteImage(
+                                listingId,
+                                imageId);
+        }
 
-    @PostMapping("/{imageId}/primary")
-    public ListingImageResponse setPrimary(
-            @PathVariable UUID listingId,
-            @PathVariable UUID imageId) {
+        @PostMapping("/{imageId}/primary")
+        public ListingImageResponse setPrimary(
+                        @PathVariable UUID listingId,
+                        @PathVariable UUID imageId) {
 
-        imageService.setPrimary(
-                listingId,
-                imageId);
+                imageService.setPrimary(
+                                listingId,
+                                imageId);
 
-        return imageService
-                .getImages(listingId)
-                .stream()
-                .filter(ListingImageResponse::primary)
-                .findFirst()
-                .orElseThrow();
-    }
+                return imageService
+                                .getImages(listingId)
+                                .stream()
+                                .filter(ListingImageResponse::primary)
+                                .findFirst()
+                                .orElseThrow();
+        }
 }

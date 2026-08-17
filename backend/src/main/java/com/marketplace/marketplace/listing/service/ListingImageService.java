@@ -8,18 +8,21 @@ import java.util.UUID;
 
 public interface ListingImageService {
 
-    ListingImageResponse registerImage(
-            UUID listingId,
-            RegisterListingImageRequest request);
+        ListingImageResponse registerImage(
+                        UUID listingId,
+                        RegisterListingImageRequest request);
 
-    List<ListingImageResponse> getImages(
-            UUID listingId);
+        List<ListingImageResponse> getImages(
+                        UUID listingId);
 
-    void deleteImage(
-            UUID listingId,
-            UUID imageId);
+        ListingImageResponse getPrimaryImage(
+                        UUID listingId);
 
-    void setPrimary(
-            UUID listingId,
-            UUID imageId);
+        void deleteImage(
+                        UUID listingId,
+                        UUID imageId);
+
+        void setPrimary(
+                        UUID listingId,
+                        UUID imageId);
 }

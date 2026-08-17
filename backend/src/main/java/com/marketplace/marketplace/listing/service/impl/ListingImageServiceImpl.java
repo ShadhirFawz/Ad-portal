@@ -12,6 +12,8 @@ import com.marketplace.marketplace.listing.repository.ListingRepository;
 import com.marketplace.marketplace.listing.service.ListingImageService;
 import com.marketplace.marketplace.listing.util.ListingImageMimeTypes;
 import com.marketplace.marketplace.common.security.util.SecurityUtils;
+import com.marketplace.marketplace.common.storage.SupabaseStorageService;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,237 +26,262 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Transactional
 public class ListingImageServiceImpl
-        implements ListingImageService {
+                implements ListingImageService {
 
-    private final ListingRepository listingRepository;
+        private final ListingRepository listingRepository;
+        private final ListingImageRepository imageRepository;
+        private final ListingImageProperties properties;
+        private final SupabaseStorageService storageService;
 
-    private final ListingImageRepository imageRepository;
+        @Override
+        public ListingImageResponse registerImage(
+                        UUID listingId,
+                        RegisterListingImageRequest request) {
 
-    private final ListingImageProperties properties;
+                Listing listing = getOwnedListing(listingId);
 
-    @Override
-    public ListingImageResponse registerImage(
-            UUID listingId,
-            RegisterListingImageRequest request) {
+                validateListingCanReceiveImages(listing);
 
-        Listing listing = getOwnedListing(listingId);
+                validateRequest(request, listingId);
 
-        validateListingCanReceiveImages(listing);
+                long existingCount = imageRepository.countByListingId(
+                                listingId);
 
-        validateRequest(request, listingId);
+                if (existingCount >= properties.getMaxImages()) {
 
-        long existingCount = imageRepository.countByListingId(
-                listingId);
+                        throw new ConflictException(
+                                        "Maximum number of images reached.");
+                }
 
-        if (existingCount >= properties.getMaxImages()) {
+                boolean firstImage = existingCount == 0;
 
-            throw new ConflictException(
-                    "Maximum number of images reached.");
+                ListingImage image = new ListingImage();
+
+                image.setListing(listing);
+
+                image.setStoragePath(
+                                request.storagePath());
+
+                image.setFileName(
+                                request.fileName());
+
+                image.setMimeType(
+                                request.mimeType());
+
+                image.setFileSize(
+                                request.fileSize());
+
+                image.setWidth(
+                                request.width());
+
+                image.setHeight(
+                                request.height());
+
+                image.setDisplayOrder(
+                                (int) existingCount);
+
+                image.setPrimary(
+                                firstImage);
+
+                image.setMetadata(
+                                request.metadata() != null
+                                                ? request.metadata()
+                                                : new HashMap<>());
+
+                return toResponse(
+                                imageRepository.save(image));
         }
 
-        boolean firstImage = existingCount == 0;
+        @Override
+        @Transactional(readOnly = true)
+        public List<ListingImageResponse> getImages(
+                        UUID listingId) {
 
-        ListingImage image = new ListingImage();
-
-        image.setListing(listing);
-
-        image.setStoragePath(
-                request.storagePath());
-
-        image.setFileName(
-                request.fileName());
-
-        image.setMimeType(
-                request.mimeType());
-
-        image.setFileSize(
-                request.fileSize());
-
-        image.setWidth(
-                request.width());
-
-        image.setHeight(
-                request.height());
-
-        image.setDisplayOrder(
-                (int) existingCount);
-
-        image.setPrimary(
-                firstImage);
-
-        image.setMetadata(
-                request.metadata() != null
-                        ? request.metadata()
-                        : new HashMap<>());
-
-        return toResponse(
-                imageRepository.save(image));
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ListingImageResponse> getImages(
-            UUID listingId) {
-
-        return imageRepository
-                .findAllByListingIdOrderByDisplayOrderAsc(
-                        listingId)
-                .stream()
-                .map(this::toResponse)
-                .toList();
-    }
-
-    @Override
-    public void deleteImage(
-            UUID listingId,
-            UUID imageId) {
-
-        Listing listing = getOwnedListing(listingId);
-
-        ListingImage image = imageRepository
-                .findByIdAndListingId(
-                        imageId,
-                        listingId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Listing image not found."));
-
-        imageRepository.delete(image);
-
-        if (image.isPrimary()) {
-
-            imageRepository
-                    .findAllByListingIdOrderByDisplayOrderAsc(
-                            listingId)
-                    .stream()
-                    .findFirst()
-                    .ifPresent(next -> {
-                        next.setPrimary(true);
-                        imageRepository.save(next);
-                    });
-        }
-    }
-
-    @Override
-    public void setPrimary(
-            UUID listingId,
-            UUID imageId) {
-
-        getOwnedListing(listingId);
-
-        ListingImage image = imageRepository
-                .findByIdAndListingId(
-                        imageId,
-                        listingId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Listing image not found."));
-
-        imageRepository
-                .findByListingIdAndPrimaryTrue(
-                        listingId)
-                .ifPresent(current -> {
-
-                    if (!current.getId()
-                            .equals(imageId)) {
-
-                        current.setPrimary(false);
-                        imageRepository.save(current);
-                    }
-                });
-
-        image.setPrimary(true);
-
-        imageRepository.save(image);
-    }
-
-    private Listing getOwnedListing(
-            UUID listingId) {
-
-        UUID currentUserId = SecurityUtils.getCurrentUserId();
-
-        return listingRepository
-                .findByIdAndSellerId(
-                        listingId,
-                        currentUserId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Listing not found."));
-    }
-
-    private void validateListingCanReceiveImages(
-            Listing listing) {
-
-        switch (listing.getStatus()) {
-
-            case DRAFT, ACTIVE, RESERVED -> {
-                // allowed
-            }
-
-            default ->
-                throw new ConflictException(
-                        "Images cannot be modified for this listing.");
-        }
-    }
-
-    private void validateRequest(
-            RegisterListingImageRequest request,
-            UUID listingId) {
-
-        if (!ListingImageMimeTypes.isAllowed(
-                request.mimeType())) {
-
-            throw new ConflictException(
-                    "Unsupported image type.");
+                return imageRepository
+                                .findAllByListingIdOrderByDisplayOrderAsc(
+                                                listingId)
+                                .stream()
+                                .map(this::toResponse)
+                                .toList();
         }
 
-        if (request.fileSize() > properties.getMaxFileSize()) {
+        @Override
+        public void deleteImage(
+                        UUID listingId,
+                        UUID imageId) {
 
-            throw new ConflictException(
-                    "Image exceeds the maximum allowed size.");
+                getOwnedListing(listingId);
+
+                ListingImage image = imageRepository
+                                .findByIdAndListingId(
+                                                imageId,
+                                                listingId)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Listing image not found."));
+
+                boolean wasPrimary = image.isPrimary();
+
+                String storagePath = image.getStoragePath();
+
+                /*
+                 * Delete physical file.
+                 */
+                storageService.delete(
+                                properties.getBucket(),
+                                storagePath);
+
+                /*
+                 * Remove database record.
+                 */
+                imageRepository.delete(image);
+
+                if (wasPrimary) {
+
+                        imageRepository
+                                        .findAllByListingIdOrderByDisplayOrderAsc(
+                                                        listingId)
+                                        .stream()
+                                        .findFirst()
+                                        .ifPresent(next -> {
+
+                                                next.setPrimary(true);
+
+                                                imageRepository.save(next);
+                                        });
+                }
         }
 
-        String expectedPrefix = "listings/"
-                + listingId
-                + "/";
+        @Override
+        public void setPrimary(
+                        UUID listingId,
+                        UUID imageId) {
 
-        if (!request.storagePath()
-                .startsWith(expectedPrefix)) {
+                getOwnedListing(listingId);
 
-            throw new ConflictException(
-                    "Invalid image storage path.");
+                ListingImage image = imageRepository
+                                .findByIdAndListingId(
+                                                imageId,
+                                                listingId)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Listing image not found."));
+
+                imageRepository
+                                .findByListingIdAndPrimaryTrue(
+                                                listingId)
+                                .ifPresent(current -> {
+
+                                        if (!current.getId()
+                                                        .equals(imageId)) {
+
+                                                current.setPrimary(false);
+                                                imageRepository.save(current);
+                                        }
+                                });
+
+                image.setPrimary(true);
+
+                imageRepository.save(image);
         }
 
-        if (request.storagePath().contains("..")) {
+        @Transactional(readOnly = true)
+        public ListingImageResponse getPrimaryImage(
+                        UUID listingId) {
 
-            throw new ConflictException(
-                    "Invalid image storage path.");
+                return imageRepository
+                                .findByListingIdAndPrimaryTrue(
+                                                listingId)
+                                .map(this::toResponse)
+                                .orElse(null);
         }
-    }
 
-    private ListingImageResponse toResponse(
-            ListingImage image) {
+        private Listing getOwnedListing(
+                        UUID listingId) {
 
-        return new ListingImageResponse(
-                image.getId(),
-                image.getListing().getId(),
-                image.getStoragePath(),
-                buildPublicUrl(
-                        image.getStoragePath()),
-                image.getFileName(),
-                image.getMimeType(),
-                image.getFileSize(),
-                image.getWidth(),
-                image.getHeight(),
-                image.getDisplayOrder(),
-                image.isPrimary(),
-                image.getMetadata(),
-                image.getCreatedAt());
-    }
+                UUID currentUserId = SecurityUtils.getCurrentUserId();
 
-    private String buildPublicUrl(
-            String storagePath) {
+                return listingRepository
+                                .findByIdAndSellerId(
+                                                listingId,
+                                                currentUserId)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Listing not found."));
+        }
 
-        // We will wire the Supabase URL
-        // from configuration in the next step.
+        private void validateListingCanReceiveImages(
+                        Listing listing) {
 
-        return storagePath;
-    }
+                switch (listing.getStatus()) {
+
+                        case DRAFT, ACTIVE, RESERVED -> {
+                                // allowed
+                        }
+
+                        default ->
+                                throw new ConflictException(
+                                                "Images cannot be modified for this listing.");
+                }
+        }
+
+        private void validateRequest(
+                        RegisterListingImageRequest request,
+                        UUID listingId) {
+
+                if (!ListingImageMimeTypes.isAllowed(
+                                request.mimeType())) {
+
+                        throw new ConflictException(
+                                        "Unsupported image type.");
+                }
+
+                if (request.fileSize() > properties.getMaxFileSize()) {
+
+                        throw new ConflictException(
+                                        "Image exceeds the maximum allowed size.");
+                }
+
+                String expectedPrefix = "listings/"
+                                + listingId
+                                + "/";
+
+                if (!request.storagePath()
+                                .startsWith(expectedPrefix)) {
+
+                        throw new ConflictException(
+                                        "Invalid image storage path.");
+                }
+
+                if (request.storagePath().contains("..")) {
+
+                        throw new ConflictException(
+                                        "Invalid image storage path.");
+                }
+        }
+
+        private ListingImageResponse toResponse(
+                        ListingImage image) {
+
+                return new ListingImageResponse(
+                                image.getId(),
+                                image.getListing().getId(),
+                                image.getStoragePath(),
+                                buildPublicUrl(
+                                                image.getStoragePath()),
+                                image.getFileName(),
+                                image.getMimeType(),
+                                image.getFileSize(),
+                                image.getWidth(),
+                                image.getHeight(),
+                                image.getDisplayOrder(),
+                                image.isPrimary(),
+                                image.getMetadata(),
+                                image.getCreatedAt());
+        }
+
+        private String buildPublicUrl(
+                        String storagePath) {
+
+                return storageService.getPublicUrl(
+                                properties.getBucket(),
+                                storagePath);
+        }
 }
