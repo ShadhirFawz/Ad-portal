@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { reorderListingImages } from "@/services/listing-image-service";
 import type { ListingImage } from "@/types/listing-image";
 
 const BUCKET = "listing-images";
@@ -47,18 +48,18 @@ export default function ListingImageUploader({
 }: ListingImageUploaderProps) {
 
     const [images, setImages] =
-        useState<ListingImage[]>(
-            initialImages
-        );
+        useState<ListingImage[]>(initialImages);
 
     const [uploading, setUploading] =
         useState<UploadingImage[]>([]);
 
+    const [draggedImageId, setDraggedImageId] =
+        useState<string | null>(null);
+
     const inputRef =
         useRef<HTMLInputElement>(null);
 
-    const supabase =
-        createClient();
+    const supabase = createClient();
 
     useEffect(() => {
 
@@ -294,8 +295,7 @@ export default function ListingImageUploader({
                 );
             }
 
-            const registeredImage:
-                ListingImage =
+            const registeredImage: ListingImage =
                 await response.json();
 
             updateImages([
@@ -438,17 +438,162 @@ export default function ListingImageUploader({
         updateImages(nextImages);
     }
 
+    async function persistOrder(
+        reorderedImages: ListingImage[]
+    ) {
+
+        try {
+
+            await reorderListingImages(
+                listingId,
+                reorderedImages.map(
+                    image => image.id
+                )
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Failed to persist image order:",
+                error
+            );
+
+            /*
+             * Reload server state so the UI
+             * doesn't remain inconsistent.
+             */
+            const response =
+                await fetch(
+                    `/api/v1/listings/${listingId}/images`
+                );
+
+            if (response.ok) {
+
+                const serverImages: ListingImage[] =
+                    await response.json();
+
+                updateImages(serverImages);
+            }
+        }
+    }
+
+    function moveImage(
+        sourceId: string,
+        targetId: string
+    ) {
+
+        if (sourceId === targetId) {
+            return;
+        }
+
+        const currentImages =
+            [...images];
+
+        const sourceIndex =
+            currentImages.findIndex(
+                image =>
+                    image.id === sourceId
+            );
+
+        const targetIndex =
+            currentImages.findIndex(
+                image =>
+                    image.id === targetId
+            );
+
+        if (
+            sourceIndex === -1 ||
+            targetIndex === -1
+        ) {
+            return;
+        }
+
+        const [movedImage] =
+            currentImages.splice(
+                sourceIndex,
+                1
+            );
+
+        currentImages.splice(
+            targetIndex,
+            0,
+            movedImage
+        );
+
+        const reordered =
+            currentImages.map(
+                (image, index) => ({
+                    ...image,
+                    displayOrder: index,
+                })
+            );
+
+        updateImages(reordered);
+
+        void persistOrder(reordered);
+    }
+
+    function moveImageByOffset(
+        imageId: string,
+        offset: number
+    ) {
+
+        const currentImages =
+            [...images];
+
+        const currentIndex =
+            currentImages.findIndex(
+                image =>
+                    image.id === imageId
+            );
+
+        const targetIndex =
+            currentIndex + offset;
+
+        if (
+            currentIndex === -1 ||
+            targetIndex < 0 ||
+            targetIndex >= currentImages.length
+        ) {
+            return;
+        }
+
+        const [moved] =
+            currentImages.splice(
+                currentIndex,
+                1
+            );
+
+        currentImages.splice(
+            targetIndex,
+            0,
+            moved
+        );
+
+        const reordered =
+            currentImages.map(
+                (image, index) => ({
+                    ...image,
+                    displayOrder: index,
+                })
+            );
+
+        updateImages(reordered);
+
+        void persistOrder(reordered);
+    }
+
     return (
         <div className="space-y-6">
 
             <div
                 className="
-          rounded-lg
-          border-2
-          border-dashed
-          p-6
-          text-center
-        "
+                    rounded-lg
+                    border-2
+                    border-dashed
+                    p-6
+                    text-center
+                "
             >
 
                 <input
@@ -478,13 +623,13 @@ export default function ListingImageUploader({
                         >= MAX_IMAGES
                     }
                     className="
-            rounded-md
-            border
-            px-4
-            py-2
-            disabled:cursor-not-allowed
-            disabled:opacity-50
-          "
+                        rounded-md
+                        border
+                        px-4
+                        py-2
+                        disabled:cursor-not-allowed
+                        disabled:opacity-50
+                    "
                 >
                     Add photos
                 </button>
@@ -506,24 +651,24 @@ export default function ListingImageUploader({
                         <div
                             key={item.id}
                             className="
-                flex
-                items-center
-                gap-3
-                rounded-md
-                border
-                p-3
-              "
+                                flex
+                                items-center
+                                gap-3
+                                rounded-md
+                                border
+                                p-3
+                            "
                         >
 
                             <img
                                 src={item.previewUrl}
                                 alt=""
                                 className="
-                  h-16
-                  w-16
-                  rounded
-                  object-cover
-                "
+                                    h-16
+                                    w-16
+                                    rounded
+                                    object-cover
+                                "
                             />
 
                             <div className="flex-1">
@@ -557,23 +702,55 @@ export default function ListingImageUploader({
 
                 <div
                     className="
-            grid
-            grid-cols-2
-            gap-4
-            sm:grid-cols-3
-            lg:grid-cols-4
-          "
+                        grid
+                        grid-cols-2
+                        gap-4
+                        sm:grid-cols-3
+                        lg:grid-cols-4
+                    "
                 >
 
                     {images.map(image => (
 
                         <div
                             key={image.id}
+
+                            draggable
+
+                            onDragStart={() => {
+                                setDraggedImageId(
+                                    image.id
+                                );
+                            }}
+
+                            onDragOver={event => {
+                                event.preventDefault();
+                            }}
+
+                            onDrop={() => {
+
+                                if (draggedImageId) {
+
+                                    moveImage(
+                                        draggedImageId,
+                                        image.id
+                                    );
+                                }
+
+                                setDraggedImageId(null);
+                            }}
+
+                            onDragEnd={() => {
+                                setDraggedImageId(null);
+                            }}
+
                             className="
-                overflow-hidden
-                rounded-lg
-                border
-              "
+                                cursor-grab
+                                overflow-hidden
+                                rounded-lg
+                                border
+                                active:cursor-grabbing
+                            "
                         >
 
                             <div className="relative">
@@ -585,26 +762,26 @@ export default function ListingImageUploader({
                                         "Listing image"
                                     }
                                     className="
-                    aspect-square
-                    w-full
-                    object-cover
-                  "
+                                        aspect-square
+                                        w-full
+                                        object-cover
+                                    "
                                 />
 
                                 {image.primary && (
 
                                     <span
                                         className="
-                      absolute
-                      left-2
-                      top-2
-                      rounded
-                      bg-black
-                      px-2
-                      py-1
-                      text-xs
-                      text-white
-                    "
+                                            absolute
+                                            left-2
+                                            top-2
+                                            rounded
+                                            bg-black
+                                            px-2
+                                            py-1
+                                            text-xs
+                                            text-white
+                                        "
                                     >
                                         Primary
                                     </span>
@@ -614,6 +791,58 @@ export default function ListingImageUploader({
 
                             <div className="flex gap-2 p-2">
 
+                                {/* ← Move left */}
+                                <button
+                                    type="button"
+                                    disabled={
+                                        image.displayOrder === 0
+                                    }
+                                    onClick={() =>
+                                        moveImageByOffset(
+                                            image.id,
+                                            -1
+                                        )
+                                    }
+                                    className="
+                                        rounded
+                                        border
+                                        px-2
+                                        py-1
+                                        text-xs
+                                        disabled:cursor-not-allowed
+                                        disabled:opacity-40
+                                    "
+                                >
+                                    ←
+                                </button>
+
+                                {/* → Move right */}
+                                <button
+                                    type="button"
+                                    disabled={
+                                        image.displayOrder ===
+                                        images.length - 1
+                                    }
+                                    onClick={() =>
+                                        moveImageByOffset(
+                                            image.id,
+                                            1
+                                        )
+                                    }
+                                    className="
+                                        rounded
+                                        border
+                                        px-2
+                                        py-1
+                                        text-xs
+                                        disabled:cursor-not-allowed
+                                        disabled:opacity-40
+                                    "
+                                >
+                                    →
+                                </button>
+
+                                {/* Make primary */}
                                 {!image.primary && (
 
                                     <button
@@ -622,30 +851,31 @@ export default function ListingImageUploader({
                                             setPrimary(image)
                                         }
                                         className="
-                      flex-1
-                      rounded
-                      border
-                      px-2
-                      py-1
-                      text-xs
-                    "
+                                            flex-1
+                                            rounded
+                                            border
+                                            px-2
+                                            py-1
+                                            text-xs
+                                        "
                                     >
                                         Make primary
                                     </button>
                                 )}
 
+                                {/* Remove */}
                                 <button
                                     type="button"
                                     onClick={() =>
                                         deleteImage(image)
                                     }
                                     className="
-                    rounded
-                    border
-                    px-2
-                    py-1
-                    text-xs
-                  "
+                                        rounded
+                                        border
+                                        px-2
+                                        py-1
+                                        text-xs
+                                    "
                                 >
                                     Remove
                                 </button>
