@@ -1,3 +1,5 @@
+import { ListingImage } from "./listing-image";
+
 export type ListingStatus =
   | "DRAFT"
   | "ACTIVE"
@@ -80,6 +82,9 @@ export interface Listing {
   viewCount: number;
   favoriteCount: number;
 
+  images: ListingImage[];
+  primaryImage?: ListingCardImage | null;
+
   publishedAt: string | null;
 
   createdAt: string;
@@ -124,4 +129,37 @@ export interface UpdateListingRequest {
   city?: string;
   postalCode?: string;
   customAttributes?: Record<string, unknown>;
+}
+
+export interface ListingCardImage {
+  url: string;
+  width?: number | null;
+  height?: number | null;
+}
+
+export interface ListingCardData {
+  id: string;
+  sellerId?: string;
+  sellerUsername?: string;
+  categoryId?: string;
+  categoryName?: string;
+  title: string;
+  description?: string;
+  price: number;
+  currency?: string;
+  pricingType?: PricingType;
+  negotiable?: boolean;
+  listingType?: ListingType;
+  condition?: ListingCondition;
+  locationType?: ListingLocationType;
+  district?: string | null;
+  province?: string | null;
+  city?: string | null;
+  status?: ListingStatus;
+  primaryImage?: ListingCardImage | null;
+  images?: ListingImage[];
+  viewCount?: number;
+  favoriteCount?: number;
+  publishedAt?: string | null;
+  createdAt?: string;
 }

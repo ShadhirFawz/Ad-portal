@@ -135,3 +135,33 @@ export async function registerListingImage(
 
     return response.json();
 }
+
+export async function reorderListingImages(
+  listingId: string,
+  imageIds: string[]
+): Promise<void> {
+
+  const response =
+    await fetch(
+      `/api/v1/listings/${listingId}/images/order`,
+      {
+        method: "PUT",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+
+        body: JSON.stringify({
+          imageIds,
+        }),
+      }
+    );
+
+  if (!response.ok) {
+
+    throw new Error(
+      "Failed to reorder listing images."
+    );
+  }
+}
