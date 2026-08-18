@@ -84,8 +84,10 @@ export default function NewListingPage() {
             title,
             description,
             price: Number(price),
+            pricingType: "FIXED",
+            negotiable: false,
             condition,
-            location,
+            city: location || undefined,
           }
         );
 
