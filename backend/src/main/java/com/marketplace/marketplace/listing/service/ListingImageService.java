@@ -25,4 +25,8 @@ public interface ListingImageService {
         void setPrimary(
                         UUID listingId,
                         UUID imageId);
+
+        void reorderImages(
+                        UUID listingId,
+                        List<UUID> imageIds);
 }

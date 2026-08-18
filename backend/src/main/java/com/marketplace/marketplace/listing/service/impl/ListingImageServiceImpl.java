@@ -2,18 +2,18 @@ package com.marketplace.marketplace.listing.service.impl;
 
 import com.marketplace.marketplace.common.exception.ConflictException;
 import com.marketplace.marketplace.common.exception.ResourceNotFoundException;
+import com.marketplace.marketplace.common.security.util.SecurityUtils;
+import com.marketplace.marketplace.common.storage.SupabaseStorageService;
 import com.marketplace.marketplace.listing.config.ListingImageProperties;
+import com.marketplace.marketplace.listing.dto.request.RegisterListingImageRequest;
+import com.marketplace.marketplace.listing.dto.response.ListingImageResponse;
 import com.marketplace.marketplace.listing.entity.Listing;
 import com.marketplace.marketplace.listing.entity.ListingImage;
-import com.marketplace.marketplace.listing.dto.response.ListingImageResponse;
-import com.marketplace.marketplace.listing.dto.request.RegisterListingImageRequest;
+import com.marketplace.marketplace.listing.mapper.ListingImageMapper;
 import com.marketplace.marketplace.listing.repository.ListingImageRepository;
 import com.marketplace.marketplace.listing.repository.ListingRepository;
 import com.marketplace.marketplace.listing.service.ListingImageService;
 import com.marketplace.marketplace.listing.util.ListingImageMimeTypes;
-import com.marketplace.marketplace.common.security.util.SecurityUtils;
-import com.marketplace.marketplace.common.storage.SupabaseStorageService;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +32,7 @@ public class ListingImageServiceImpl
         private final ListingImageRepository imageRepository;
         private final ListingImageProperties properties;
         private final SupabaseStorageService storageService;
+        private final ListingImageMapper imageMapper;
 
         @Override
         public ListingImageResponse registerImage(
@@ -88,7 +89,7 @@ public class ListingImageServiceImpl
                                                 ? request.metadata()
                                                 : new HashMap<>());
 
-                return toResponse(
+                return imageMapper.toResponse(
                                 imageRepository.save(image));
         }
 
@@ -101,7 +102,7 @@ public class ListingImageServiceImpl
                                 .findAllByListingIdOrderByDisplayOrderAsc(
                                                 listingId)
                                 .stream()
-                                .map(this::toResponse)
+                                .map(imageMapper::toResponse)
                                 .toList();
         }
 
@@ -190,8 +191,57 @@ public class ListingImageServiceImpl
                 return imageRepository
                                 .findByListingIdAndPrimaryTrue(
                                                 listingId)
-                                .map(this::toResponse)
+                                .map(imageMapper::toResponse)
                                 .orElse(null);
+        }
+
+        @Override
+        public void reorderImages(
+                        UUID listingId,
+                        List<UUID> imageIds) {
+
+                getOwnedListing(listingId);
+
+                List<ListingImage> images = imageRepository
+                                .findAllByListingIdOrderByDisplayOrderAsc(
+                                                listingId);
+
+                if (images.size() != imageIds.size()) {
+
+                        throw new ConflictException(
+                                        "Image list does not match the listing images.");
+                }
+
+                var existingIds = images.stream()
+                                .map(ListingImage::getId)
+                                .collect(
+                                                java.util.stream.Collectors.toSet());
+
+                var requestedIds = new java.util.HashSet<>(imageIds);
+
+                if (existingIds.size() != requestedIds.size()
+                                || !existingIds.equals(requestedIds)) {
+
+                        throw new ConflictException(
+                                        "Invalid image ordering.");
+                }
+
+                var imageById = images.stream()
+                                .collect(
+                                                java.util.stream.Collectors.toMap(
+                                                                ListingImage::getId,
+                                                                image -> image));
+
+                for (int index = 0; index < imageIds.size(); index++) {
+
+                        UUID imageId = imageIds.get(index);
+
+                        ListingImage image = imageById.get(imageId);
+
+                        image.setDisplayOrder(index);
+                }
+
+                imageRepository.saveAll(images);
         }
 
         private Listing getOwnedListing(
@@ -255,33 +305,5 @@ public class ListingImageServiceImpl
                         throw new ConflictException(
                                         "Invalid image storage path.");
                 }
-        }
-
-        private ListingImageResponse toResponse(
-                        ListingImage image) {
-
-                return new ListingImageResponse(
-                                image.getId(),
-                                image.getListing().getId(),
-                                image.getStoragePath(),
-                                buildPublicUrl(
-                                                image.getStoragePath()),
-                                image.getFileName(),
-                                image.getMimeType(),
-                                image.getFileSize(),
-                                image.getWidth(),
-                                image.getHeight(),
-                                image.getDisplayOrder(),
-                                image.isPrimary(),
-                                image.getMetadata(),
-                                image.getCreatedAt());
-        }
-
-        private String buildPublicUrl(
-                        String storagePath) {
-
-                return storageService.getPublicUrl(
-                                properties.getBucket(),
-                                storagePath);
         }
 }
