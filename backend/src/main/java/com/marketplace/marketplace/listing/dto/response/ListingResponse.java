@@ -9,68 +9,71 @@ import com.marketplace.marketplace.listing.enums.PricingType;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 public record ListingResponse(
 
-                UUID id,
+        UUID id,
 
-                UUID sellerId,
+        UUID sellerId,
 
-                String sellerUsername,
+        String sellerUsername,
 
-                UUID categoryId,
+        UUID categoryId,
 
-                String categoryName,
+        String categoryName,
 
-                String title,
+        String title,
 
-                String description,
+        String description,
 
-                BigDecimal price,
+        BigDecimal price,
 
-                String currency,
+        String currency,
 
-                PricingType pricingType,
+        PricingType pricingType,
 
-                boolean negotiable,
+        boolean negotiable,
 
-                BigDecimal minimumOfferPrice,
+        BigDecimal minimumOfferPrice,
 
-                ListingType listingType,
+        ListingType listingType,
 
-                ListingCondition condition,
+        ListingCondition condition,
 
-                Integer quantity,
+        Integer quantity,
 
-                Integer availableQuantity,
+        Integer availableQuantity,
 
-                ListingLocationType locationType,
+        ListingLocationType locationType,
 
-                String district,
+        String district,
 
-                String province,
+        String province,
 
-                String city,
+        String city,
 
-                String postalCode,
+        String postalCode,
 
-                Map<String, Object> customAttributes,
+        Map<String, Object> customAttributes,
 
-                ListingStatus status,
+        ListingStatus status,
 
-                ModerationStatus moderationStatus,
+        ModerationStatus moderationStatus,
 
-                long viewCount,
+        long viewCount,
 
-                long favoriteCount,
+        long favoriteCount,
 
-                OffsetDateTime publishedAt,
+        List<ListingImageResponse> images,
 
-                OffsetDateTime createdAt,
+        OffsetDateTime publishedAt,
 
-                OffsetDateTime updatedAt
+        OffsetDateTime createdAt,
+
+        OffsetDateTime updatedAt
 
 ) {
 }

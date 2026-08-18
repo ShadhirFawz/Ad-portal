@@ -7,6 +7,7 @@ import com.marketplace.marketplace.common.exception.ResourceNotFoundException;
 import com.marketplace.marketplace.common.security.util.SecurityUtils;
 import com.marketplace.marketplace.listing.dto.request.CreateListingRequest;
 import com.marketplace.marketplace.listing.dto.request.UpdateListingRequest;
+import com.marketplace.marketplace.listing.dto.response.ListingImageResponse;
 import com.marketplace.marketplace.listing.dto.response.ListingResponse;
 import com.marketplace.marketplace.listing.entity.Listing;
 import com.marketplace.marketplace.listing.enums.ListingLocationType;
@@ -14,6 +15,8 @@ import com.marketplace.marketplace.listing.enums.ListingStatus;
 import com.marketplace.marketplace.listing.enums.ListingType;
 import com.marketplace.marketplace.listing.enums.ModerationStatus;
 import com.marketplace.marketplace.listing.enums.PricingType;
+import com.marketplace.marketplace.listing.mapper.ListingImageMapper;
+import com.marketplace.marketplace.listing.repository.ListingImageRepository;
 import com.marketplace.marketplace.listing.repository.ListingRepository;
 import com.marketplace.marketplace.listing.service.ListingService;
 import com.marketplace.marketplace.user.entity.User;
@@ -27,16 +30,18 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class ListingServiceImpl
-                implements ListingService {
+public class ListingServiceImpl implements ListingService {
 
         private final ListingRepository listingRepository;
         private final CategoryRepository categoryRepository;
         private final UserRepository userRepository;
+        private final ListingImageRepository imageRepository;
+        private final ListingImageMapper imageMapper;
 
         @Override
         @Transactional
@@ -434,6 +439,17 @@ public class ListingServiceImpl
                         throw new ConflictException(
                                         "At least one item must be available.");
                 }
+
+                long imageCount = imageRepository.countByListingId(listing.getId());
+                if (imageCount == 0) {
+                        throw new ConflictException(
+                                        "A listing must have at least one image before publishing.");
+                }
+
+                if (imageRepository.findByListingIdAndPrimaryTrue(listing.getId()).isEmpty()) {
+                        throw new ConflictException(
+                                        "A listing must have a primary image before publishing.");
+                }
         }
 
         private Category getCategoryForListing(UUID id) {
@@ -479,6 +495,13 @@ public class ListingServiceImpl
         private ListingResponse toResponse(
                         Listing listing) {
 
+                List<ListingImageResponse> images = imageRepository
+                                .findAllByListingIdOrderByDisplayOrderAsc(
+                                                listing.getId())
+                                .stream()
+                                .map(imageMapper::toResponse)
+                                .toList();
+
                 return new ListingResponse(
                                 listing.getId(),
                                 listing.getSeller().getId(),
@@ -506,6 +529,7 @@ public class ListingServiceImpl
                                 listing.getModerationStatus(),
                                 listing.getViewCount(),
                                 listing.getFavoriteCount(),
+                                images,
                                 listing.getPublishedAt(),
                                 listing.getCreatedAt(),
                                 listing.getUpdatedAt());
@@ -523,4 +547,5 @@ public class ListingServiceImpl
                                 ? null
                                 : trimmed;
         }
+
 }
