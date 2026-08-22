@@ -21,6 +21,31 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface SyncUserPayload {
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
+  username?: string;
+}
+
+export async function syncUser(
+  accessToken: string,
+  payload?: SyncUserPayload
+): Promise<UserResponse> {
+  const response = await apiRequest<ApiResponse<UserResponse>>(
+    "/auth/sync",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(payload ?? {}),
+    }
+  );
+
+  return response.data;
+}
+
 export async function register(
   request: RegisterRequest
 ): Promise<UserResponse> {

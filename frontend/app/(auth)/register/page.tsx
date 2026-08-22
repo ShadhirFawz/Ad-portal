@@ -3,10 +3,11 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { register } from "@/lib/api/auth";
+import { useAuth } from "@/providers/AuthProvider";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { signUp } = useAuth();
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -22,15 +23,13 @@ export default function RegisterPage() {
     setSubmitting(true);
 
     try {
-      await register({
+      await signUp(email, password, {
         firstName,
-        lastName,
-        email,
-        phoneNumber,
-        password,
+        lastName: lastName || undefined,
+        phoneNumber: phoneNumber || undefined,
       });
 
-      router.push("/login");
+      router.push("/");
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Registration failed. Please check inputs."
