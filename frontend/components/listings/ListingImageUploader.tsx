@@ -1,43 +1,31 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
-import { reorderListingImages } from "@/services/listing-image-service";
+import { useAuth } from "@/providers/AuthProvider";
+import {
+    uploadListingImage,
+    registerListingImage,
+    deleteListingImage,
+    setPrimaryListingImage,
+    reorderListingImages,
+    getListingImages,
+    validateFile,
+} from "@/services/listing-image-service";
 import type { ListingImage } from "@/types/listing-image";
-
-const BUCKET = "listing-images";
 
 const MAX_IMAGES = 10;
 
-const MAX_FILE_SIZE = 6 * 1024 * 1024;
-
-const ALLOWED_TYPES = new Set([
-    "image/jpeg",
-    "image/png",
-    "image/webp",
-]);
-
 interface ListingImageUploaderProps {
-
     listingId: string;
-
     initialImages?: ListingImage[];
-
-    onChange?: (
-        images: ListingImage[]
-    ) => void;
+    onChange?: (images: ListingImage[]) => void;
 }
 
 interface UploadingImage {
-
     id: string;
-
     file: File;
-
     previewUrl: string;
-
     progress: number;
-
     error?: string;
 }
 
@@ -46,509 +34,209 @@ export default function ListingImageUploader({
     initialImages = [],
     onChange,
 }: ListingImageUploaderProps) {
+    const { accessToken } = useAuth();
 
-    const [images, setImages] =
-        useState<ListingImage[]>(initialImages);
+    const [images, setImages] = useState<ListingImage[]>(initialImages);
+    const [uploading, setUploading] = useState<UploadingImage[]>([]);
+    const [draggedImageId, setDraggedImageId] = useState<string | null>(null);
 
-    const [uploading, setUploading] =
-        useState<UploadingImage[]>([]);
-
-    const [draggedImageId, setDraggedImageId] =
-        useState<string | null>(null);
-
-    const inputRef =
-        useRef<HTMLInputElement>(null);
-
-    const supabase = createClient();
+    const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-
         return () => {
-
-            uploading.forEach(
-                item =>
-                    URL.revokeObjectURL(
-                        item.previewUrl
-                    )
-            );
+            uploading.forEach((item) => URL.revokeObjectURL(item.previewUrl));
         };
-
     }, [uploading]);
 
-    function updateImages(
-        nextImages: ListingImage[]
-    ) {
-
+    function updateImages(nextImages: ListingImage[]) {
         setImages(nextImages);
-
         onChange?.(nextImages);
-    }
-
-    function validateFile(
-        file: File
-    ): string | null {
-
-        if (!ALLOWED_TYPES.has(file.type)) {
-
-            return (
-                "Only JPEG, PNG and WebP images are supported."
-            );
-        }
-
-        if (file.size > MAX_FILE_SIZE) {
-
-            return (
-                "Image must be 6 MB or smaller."
-            );
-        }
-
-        return null;
     }
 
     async function getImageDimensions(
         file: File
-    ): Promise<{
-        width: number;
-        height: number;
-    }> {
-
-        const url =
-            URL.createObjectURL(file);
-
+    ): Promise<{ width: number; height: number }> {
+        const url = URL.createObjectURL(file);
         try {
-
-            const dimensions =
-                await new Promise<{
-                    width: number;
-                    height: number;
-                }>((resolve, reject) => {
-
-                    const image =
-                        new Image();
-
+            return await new Promise<{ width: number; height: number }>(
+                (resolve, reject) => {
+                    const image = new Image();
                     image.onload = () => {
-
                         resolve({
                             width: image.naturalWidth,
                             height: image.naturalHeight,
                         });
                     };
-
                     image.onerror = () => {
-
-                        reject(
-                            new Error(
-                                "Unable to read image."
-                            )
-                        );
+                        reject(new Error("Unable to read image."));
                     };
-
                     image.src = url;
-                });
-
-            return dimensions;
-
+                }
+            );
         } finally {
-
             URL.revokeObjectURL(url);
         }
     }
 
-    async function uploadFile(
-        file: File
-    ) {
-
-        const validationError =
+    async function uploadFile(file: File) {
+        try {
             validateFile(file);
-
-        if (validationError) {
-
-            throw new Error(
-                validationError
-            );
+        } catch (validationErr) {
+            throw validationErr;
         }
 
-        const uploadId =
-            crypto.randomUUID();
+        if (!accessToken) {
+            throw new Error("You must be logged in to upload images.");
+        }
 
-        const previewUrl =
-            URL.createObjectURL(file);
+        const uploadId = crypto.randomUUID();
+        const previewUrl = URL.createObjectURL(file);
 
-        setUploading(previous => [
-            ...previous,
+        setUploading((prev) => [
+            ...prev,
             {
                 id: uploadId,
                 file,
                 previewUrl,
-                progress: 0,
+                progress: 20,
             },
         ]);
 
-        let storagePath: string | null =
-            null;
-
         try {
+            // 1. Upload file directly to Supabase Storage bucket
+            const storagePath = await uploadListingImage(listingId, file);
 
-            const extension =
-                getExtension(file);
-
-            storagePath =
-                `listings/${listingId}/${uploadId}.${extension}`;
-
-            setUploading(previous =>
-                previous.map(item =>
-                    item.id === uploadId
-                        ? {
-                            ...item,
-                            progress: 20,
-                        }
-                        : item
+            setUploading((prev) =>
+                prev.map((item) =>
+                    item.id === uploadId ? { ...item, progress: 70 } : item
                 )
             );
 
-            const {
-                data,
-                error,
-            } = await supabase.storage
-                .from(BUCKET)
-                .upload(
+            // 2. Read dimensions
+            const dimensions = await getImageDimensions(file);
+
+            // 3. Register image metadata with backend
+            const registeredImage = await registerListingImage(
+                accessToken,
+                listingId,
+                {
                     storagePath,
-                    file,
-                    {
-                        contentType:
-                            file.type,
+                    fileName: file.name,
+                    mimeType: file.type,
+                    fileSize: file.size,
+                    width: dimensions.width,
+                    height: dimensions.height,
+                }
+            );
 
-                        cacheControl:
-                            "31536000",
-
-                        upsert:
-                            false,
-                    }
-                );
-
-            if (error) {
-
-                throw new Error(
-                    error.message
-                );
-            }
-
-            setUploading(previous =>
-                previous.map(item =>
-                    item.id === uploadId
-                        ? {
-                            ...item,
-                            progress: 60,
-                        }
-                        : item
+            setUploading((prev) =>
+                prev.map((item) =>
+                    item.id === uploadId ? { ...item, progress: 100 } : item
                 )
             );
 
-            const dimensions =
-                await getImageDimensions(
-                    file
-                );
+            updateImages([...images, registeredImage]);
 
-            const response =
-                await fetch(
-                    `/api/v1/listings/${listingId}/images`,
-                    {
-                        method: "POST",
-
-                        headers: {
-                            "Content-Type":
-                                "application/json",
-                        },
-
-                        body: JSON.stringify({
-                            storagePath:
-                                data.path,
-
-                            fileName:
-                                file.name,
-
-                            mimeType:
-                                file.type,
-
-                            fileSize:
-                                file.size,
-
-                            width:
-                                dimensions.width,
-
-                            height:
-                                dimensions.height,
-
-                            metadata: {},
-                        }),
-                    }
-                );
-
-            if (!response.ok) {
-
-                const message =
-                    await response.text();
-
-                throw new Error(
-                    message ||
-                    "Failed to register listing image."
-                );
-            }
-
-            const registeredImage: ListingImage =
-                await response.json();
-
-            updateImages([
-                ...images,
-                registeredImage,
-            ]);
-
-            setUploading(previous =>
-                previous.filter(
-                    item =>
-                        item.id !== uploadId
-                )
-            );
-
+            setUploading((prev) => prev.filter((item) => item.id !== uploadId));
         } catch (error) {
-
-            if (storagePath) {
-
-                await supabase.storage
-                    .from(BUCKET)
-                    .remove([
-                        storagePath,
-                    ])
-                    .catch(() => {
-                        // Cleanup failure will be handled
-                        // by the orphan-storage cleanup process.
-                    });
-            }
-
             const message =
-                error instanceof Error
-                    ? error.message
-                    : "Image upload failed.";
+                error instanceof Error ? error.message : "Image upload failed.";
 
-            setUploading(previous =>
-                previous.map(item =>
+            setUploading((prev) =>
+                prev.map((item) =>
                     item.id === uploadId
-                        ? {
-                            ...item,
-                            progress: 0,
-                            error: message,
-                        }
+                        ? { ...item, progress: 0, error: message }
                         : item
                 )
             );
         }
     }
 
-    async function handleFiles(
-        files: FileList | null
-    ) {
+    async function handleFiles(files: FileList | null) {
+        if (!files) return;
 
-        if (!files) {
-            return;
-        }
+        const remainingSlots = MAX_IMAGES - images.length - uploading.length;
+        if (remainingSlots <= 0) return;
 
-        const remainingSlots =
-            MAX_IMAGES
-            - images.length
-            - uploading.length;
-
-        if (remainingSlots <= 0) {
-
-            return;
-        }
-
-        const selectedFiles =
-            Array.from(files)
-                .slice(
-                    0,
-                    remainingSlots
-                );
-
+        const selectedFiles = Array.from(files).slice(0, remainingSlots);
         for (const file of selectedFiles) {
-
             await uploadFile(file);
         }
     }
 
-    async function deleteImage(
-        image: ListingImage
-    ) {
+    async function deleteImage(image: ListingImage) {
+        if (!accessToken) return;
 
-        const response =
-            await fetch(
-                `/api/v1/listings/${listingId}/images/${image.id}`,
-                {
-                    method: "DELETE",
-                }
-            );
-
-        if (!response.ok) {
-
-            throw new Error(
-                "Failed to delete image."
-            );
-        }
+        await deleteListingImage(accessToken, listingId, image.id);
 
         updateImages(
             images
-                .filter(
-                    item =>
-                        item.id !== image.id
-                )
-                .map(
-                    (item, index) => ({
-                        ...item,
-                        displayOrder: index,
-                    })
-                )
+                .filter((item) => item.id !== image.id)
+                .map((item, index) => ({
+                    ...item,
+                    displayOrder: index,
+                }))
         );
     }
 
-    async function setPrimary(
-        image: ListingImage
-    ) {
+    async function setPrimary(image: ListingImage) {
+        if (!accessToken) return;
 
-        const response =
-            await fetch(
-                `/api/v1/listings/${listingId}/images/${image.id}/primary`,
-                {
-                    method: "POST",
-                }
-            );
+        await setPrimaryListingImage(accessToken, listingId, image.id);
 
-        if (!response.ok) {
-
-            throw new Error(
-                "Failed to set primary image."
-            );
-        }
-
-        const nextImages =
-            images.map(item => ({
-                ...item,
-                primary:
-                    item.id === image.id,
-            }));
+        const nextImages = images.map((item) => ({
+            ...item,
+            primary: item.id === image.id,
+        }));
 
         updateImages(nextImages);
     }
 
-    async function persistOrder(
-        reorderedImages: ListingImage[]
-    ) {
+    async function persistOrder(reorderedImages: ListingImage[]) {
+        if (!accessToken) return;
 
         try {
-
             await reorderListingImages(
+                accessToken,
                 listingId,
-                reorderedImages.map(
-                    image => image.id
-                )
+                reorderedImages.map((image) => image.id)
             );
-
         } catch (error) {
-
-            console.error(
-                "Failed to persist image order:",
-                error
-            );
-
-            /*
-             * Reload server state so the UI
-             * doesn't remain inconsistent.
-             */
-            const response =
-                await fetch(
-                    `/api/v1/listings/${listingId}/images`
-                );
-
-            if (response.ok) {
-
-                const serverImages: ListingImage[] =
-                    await response.json();
-
+            console.error("Failed to persist image order:", error);
+            try {
+                const serverImages = await getListingImages(listingId);
                 updateImages(serverImages);
+            } catch {
+                // ignore reload error
             }
         }
     }
 
-    function moveImage(
-        sourceId: string,
-        targetId: string
-    ) {
+    function moveImage(sourceId: string, targetId: string) {
+        if (sourceId === targetId) return;
 
-        if (sourceId === targetId) {
-            return;
-        }
+        const currentImages = [...images];
+        const sourceIndex = currentImages.findIndex((img) => img.id === sourceId);
+        const targetIndex = currentImages.findIndex((img) => img.id === targetId);
 
-        const currentImages =
-            [...images];
+        if (sourceIndex === -1 || targetIndex === -1) return;
 
-        const sourceIndex =
-            currentImages.findIndex(
-                image =>
-                    image.id === sourceId
-            );
+        const [movedImage] = currentImages.splice(sourceIndex, 1);
+        currentImages.splice(targetIndex, 0, movedImage);
 
-        const targetIndex =
-            currentImages.findIndex(
-                image =>
-                    image.id === targetId
-            );
-
-        if (
-            sourceIndex === -1 ||
-            targetIndex === -1
-        ) {
-            return;
-        }
-
-        const [movedImage] =
-            currentImages.splice(
-                sourceIndex,
-                1
-            );
-
-        currentImages.splice(
-            targetIndex,
-            0,
-            movedImage
-        );
-
-        const reordered =
-            currentImages.map(
-                (image, index) => ({
-                    ...image,
-                    displayOrder: index,
-                })
-            );
+        const reordered = currentImages.map((image, index) => ({
+            ...image,
+            displayOrder: index,
+        }));
 
         updateImages(reordered);
-
         void persistOrder(reordered);
     }
 
-    function moveImageByOffset(
-        imageId: string,
-        offset: number
-    ) {
-
-        const currentImages =
-            [...images];
-
-        const currentIndex =
-            currentImages.findIndex(
-                image =>
-                    image.id === imageId
-            );
-
-        const targetIndex =
-            currentIndex + offset;
+    function moveImageByOffset(imageId: string, offset: number) {
+        const currentImages = [...images];
+        const currentIndex = currentImages.findIndex((img) => img.id === imageId);
+        const targetIndex = currentIndex + offset;
 
         if (
             currentIndex === -1 ||
@@ -558,358 +246,163 @@ export default function ListingImageUploader({
             return;
         }
 
-        const [moved] =
-            currentImages.splice(
-                currentIndex,
-                1
-            );
+        const [moved] = currentImages.splice(currentIndex, 1);
+        currentImages.splice(targetIndex, 0, moved);
 
-        currentImages.splice(
-            targetIndex,
-            0,
-            moved
-        );
-
-        const reordered =
-            currentImages.map(
-                (image, index) => ({
-                    ...image,
-                    displayOrder: index,
-                })
-            );
+        const reordered = currentImages.map((image, index) => ({
+            ...image,
+            displayOrder: index,
+        }));
 
         updateImages(reordered);
-
         void persistOrder(reordered);
     }
 
     return (
         <div className="space-y-6">
-
-            <div
-                className="
-                    rounded-lg
-                    border-2
-                    border-dashed
-                    p-6
-                    text-center
-                "
-            >
-
+            <div className="rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 p-8 text-center bg-slate-50/50 dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-900/60 transition">
                 <input
                     ref={inputRef}
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
                     multiple
                     className="hidden"
-                    onChange={event => {
-
-                        handleFiles(
-                            event.target.files
-                        );
-
+                    onChange={(event) => {
+                        handleFiles(event.target.files);
                         event.target.value = "";
                     }}
                 />
 
-                <button
-                    type="button"
-                    onClick={() =>
-                        inputRef.current?.click()
-                    }
-                    disabled={
-                        images.length
-                        + uploading.length
-                        >= MAX_IMAGES
-                    }
-                    className="
-                        rounded-md
-                        border
-                        px-4
-                        py-2
-                        disabled:cursor-not-allowed
-                        disabled:opacity-50
-                    "
-                >
-                    Add photos
-                </button>
-
-                <p className="mt-2 text-sm">
-                    JPEG, PNG or WebP ·
-                    Maximum 6 MB each ·
-                    Maximum {MAX_IMAGES} images
-                </p>
-
+                <div className="flex flex-col items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-2xl font-bold">
+                        📷
+                    </div>
+                    <div>
+                        <button
+                            type="button"
+                            onClick={() => inputRef.current?.click()}
+                            disabled={images.length + uploading.length >= MAX_IMAGES}
+                            className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-md shadow-emerald-600/20 disabled:cursor-not-allowed disabled:opacity-50 transition"
+                        >
+                            Select Photos
+                        </button>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                        JPEG, PNG or WebP • Max 6 MB each • Up to {MAX_IMAGES} photos
+                    </p>
+                </div>
             </div>
 
             {uploading.length > 0 && (
-
                 <div className="space-y-3">
-
-                    {uploading.map(item => (
-
+                    {uploading.map((item) => (
                         <div
                             key={item.id}
-                            className="
-                                flex
-                                items-center
-                                gap-3
-                                rounded-md
-                                border
-                                p-3
-                            "
+                            className="flex items-center gap-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3"
                         >
-
                             <img
                                 src={item.previewUrl}
                                 alt=""
-                                className="
-                                    h-16
-                                    w-16
-                                    rounded
-                                    object-cover
-                                "
+                                className="h-14 w-14 rounded-lg object-cover border border-slate-200 dark:border-slate-800"
                             />
-
-                            <div className="flex-1">
-
-                                <p className="text-sm">
-                                    {item.file.name}
-                                </p>
-
-                                <progress
-                                    value={item.progress}
-                                    max={100}
-                                    className="w-full"
-                                />
-
+                            <div className="flex-1 space-y-1.5">
+                                <div className="flex justify-between text-xs font-medium text-slate-700 dark:text-slate-300">
+                                    <span className="truncate max-w-[200px]">{item.file.name}</span>
+                                    <span>{item.progress}%</span>
+                                </div>
+                                <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-emerald-500 transition-all duration-300 rounded-full"
+                                        style={{ width: `${item.progress}%` }}
+                                    />
+                                </div>
                                 {item.error && (
-
-                                    <p className="text-sm text-red-600">
+                                    <p className="text-xs text-rose-600 dark:text-rose-400 font-medium">
                                         {item.error}
                                     </p>
                                 )}
-
                             </div>
-
                         </div>
                     ))}
-
                 </div>
             )}
 
             {images.length > 0 && (
-
-                <div
-                    className="
-                        grid
-                        grid-cols-2
-                        gap-4
-                        sm:grid-cols-3
-                        lg:grid-cols-4
-                    "
-                >
-
-                    {images.map(image => (
-
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                    {images.map((image) => (
                         <div
                             key={image.id}
-
                             draggable
-
-                            onDragStart={() => {
-                                setDraggedImageId(
-                                    image.id
-                                );
-                            }}
-
-                            onDragOver={event => {
-                                event.preventDefault();
-                            }}
-
+                            onDragStart={() => setDraggedImageId(image.id)}
+                            onDragOver={(event) => event.preventDefault()}
                             onDrop={() => {
-
                                 if (draggedImageId) {
-
-                                    moveImage(
-                                        draggedImageId,
-                                        image.id
-                                    );
+                                    moveImage(draggedImageId, image.id);
                                 }
-
                                 setDraggedImageId(null);
                             }}
-
-                            onDragEnd={() => {
-                                setDraggedImageId(null);
-                            }}
-
-                            className="
-                                cursor-grab
-                                overflow-hidden
-                                rounded-lg
-                                border
-                                active:cursor-grabbing
-                            "
+                            onDragEnd={() => setDraggedImageId(null)}
+                            className="group relative overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 shadow-sm transition hover:shadow-md cursor-grab active:cursor-grabbing"
                         >
-
-                            <div className="relative">
-
+                            <div className="relative aspect-square w-full">
                                 <img
                                     src={image.url}
-                                    alt={
-                                        image.fileName ??
-                                        "Listing image"
-                                    }
-                                    className="
-                                        aspect-square
-                                        w-full
-                                        object-cover
-                                    "
+                                    alt={image.fileName ?? "Listing photo"}
+                                    className="h-full w-full object-cover"
                                 />
-
                                 {image.primary && (
-
-                                    <span
-                                        className="
-                                            absolute
-                                            left-2
-                                            top-2
-                                            rounded
-                                            bg-black
-                                            px-2
-                                            py-1
-                                            text-xs
-                                            text-white
-                                        "
-                                    >
-                                        Primary
+                                    <span className="absolute left-2.5 top-2.5 rounded-lg bg-emerald-600/90 backdrop-blur-md px-2.5 py-1 text-[11px] font-bold text-white shadow-sm uppercase tracking-wider">
+                                        Cover Photo
                                     </span>
                                 )}
-
                             </div>
 
-                            <div className="flex gap-2 p-2">
-
-                                {/* ← Move left */}
-                                <button
-                                    type="button"
-                                    disabled={
-                                        image.displayOrder === 0
-                                    }
-                                    onClick={() =>
-                                        moveImageByOffset(
-                                            image.id,
-                                            -1
-                                        )
-                                    }
-                                    className="
-                                        rounded
-                                        border
-                                        px-2
-                                        py-1
-                                        text-xs
-                                        disabled:cursor-not-allowed
-                                        disabled:opacity-40
-                                    "
-                                >
-                                    ←
-                                </button>
-
-                                {/* → Move right */}
-                                <button
-                                    type="button"
-                                    disabled={
-                                        image.displayOrder ===
-                                        images.length - 1
-                                    }
-                                    onClick={() =>
-                                        moveImageByOffset(
-                                            image.id,
-                                            1
-                                        )
-                                    }
-                                    className="
-                                        rounded
-                                        border
-                                        px-2
-                                        py-1
-                                        text-xs
-                                        disabled:cursor-not-allowed
-                                        disabled:opacity-40
-                                    "
-                                >
-                                    →
-                                </button>
-
-                                {/* Make primary */}
-                                {!image.primary && (
-
+                            <div className="p-2.5 bg-white dark:bg-slate-900/90 border-t border-slate-200/60 dark:border-slate-800 flex items-center justify-between gap-1 text-xs">
+                                <div className="flex items-center gap-1">
                                     <button
                                         type="button"
-                                        onClick={() =>
-                                            setPrimary(image)
-                                        }
-                                        className="
-                                            flex-1
-                                            rounded
-                                            border
-                                            px-2
-                                            py-1
-                                            text-xs
-                                        "
+                                        disabled={image.displayOrder === 0}
+                                        onClick={() => moveImageByOffset(image.id, -1)}
+                                        className="h-7 w-7 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                                        title="Move Left"
                                     >
-                                        Make primary
+                                        ←
                                     </button>
-                                )}
+                                    <button
+                                        type="button"
+                                        disabled={image.displayOrder === images.length - 1}
+                                        onClick={() => moveImageByOffset(image.id, 1)}
+                                        className="h-7 w-7 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                                        title="Move Right"
+                                    >
+                                        →
+                                    </button>
+                                </div>
 
-                                {/* Remove */}
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        deleteImage(image)
-                                    }
-                                    className="
-                                        rounded
-                                        border
-                                        px-2
-                                        py-1
-                                        text-xs
-                                    "
-                                >
-                                    Remove
-                                </button>
-
+                                <div className="flex items-center gap-1.5">
+                                    {!image.primary && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setPrimary(image)}
+                                            className="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-[11px] font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                                        >
+                                            Set Primary
+                                        </button>
+                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={() => deleteImage(image)}
+                                        className="h-7 w-7 rounded-lg border border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center transition"
+                                        title="Delete photo"
+                                    >
+                                        🗑
+                                    </button>
+                                </div>
                             </div>
-
                         </div>
                     ))}
-
                 </div>
             )}
-
         </div>
     );
-}
-
-function getExtension(
-    file: File
-): string {
-
-    switch (file.type) {
-
-        case "image/jpeg":
-            return "jpg";
-
-        case "image/png":
-            return "png";
-
-        case "image/webp":
-            return "webp";
-
-        default:
-            throw new Error(
-                "Unsupported image type."
-            );
-    }
 }
