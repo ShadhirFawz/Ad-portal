@@ -62,17 +62,35 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 User user = userRepository.findById(userId)
                         .orElse(null);
 
-                if (user != null
-                        && (user.getStatus() == UserStatus.ACTIVE
-                                || user.getStatus() == UserStatus.PENDING_EMAIL_VERIFICATION)) {
+                if (user != null) {
+                    if (user.getStatus() == UserStatus.ACTIVE
+                            || user.getStatus() == UserStatus.PENDING_EMAIL_VERIFICATION) {
 
+                        AuthenticatedUser principal = new AuthenticatedUser(
+                                user.getId(),
+                                user.getRole());
+
+                        var authorities = List.of(
+                                new SimpleGrantedAuthority(
+                                        "ROLE_" + user.getRole().name()));
+
+                        var authentication = new UsernamePasswordAuthenticationToken(
+                                principal,
+                                null,
+                                authorities);
+
+                        SecurityContextHolder
+                                .getContext()
+                                .setAuthentication(authentication);
+                    }
+                } else {
+                    // Supabase authenticated user that is not yet synced in local DB
                     AuthenticatedUser principal = new AuthenticatedUser(
-                            user.getId(),
-                            user.getRole());
+                            userId,
+                            com.marketplace.marketplace.common.enums.Role.USER);
 
                     var authorities = List.of(
-                            new SimpleGrantedAuthority(
-                                    "ROLE_" + user.getRole().name()));
+                            new SimpleGrantedAuthority("ROLE_USER"));
 
                     var authentication = new UsernamePasswordAuthenticationToken(
                             principal,

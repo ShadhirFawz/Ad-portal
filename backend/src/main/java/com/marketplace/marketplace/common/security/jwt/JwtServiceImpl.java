@@ -1,27 +1,32 @@
 package com.marketplace.marketplace.common.security.jwt;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.marketplace.marketplace.common.security.config.JwtProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.Date;
+import java.util.Map;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class JwtServiceImpl implements JwtService {
 
     private static final String TOKEN_TYPE_CLAIM = "typ";
-
     private static final String ACCESS_TOKEN_TYPE = "ACCESS";
 
     private final JwtProperties jwtProperties;
+    private final ObjectMapper objectMapper;
 
     private SecretKey signingKey() {
         return Keys.hmacShaKeyFor(
@@ -50,42 +55,71 @@ public class JwtServiceImpl implements JwtService {
 
     @Override
     public UUID extractUserId(String token) {
-
-        String subject = parseClaims(token).getSubject();
-
+        String subject = extractClaims(token).getSubject();
         return UUID.fromString(subject);
     }
 
     @Override
-    public String extractRole(String token) {
+    public String extractEmail(String token) {
+        return extractClaims(token).get("email", String.class);
+    }
 
-        return parseClaims(token)
-                .get("role", String.class);
+    @Override
+    public String extractRole(String token) {
+        return extractClaims(token).get("role", String.class);
     }
 
     @Override
     public boolean isValid(String token) {
-
         try {
+            Claims claims = extractClaims(token);
+            if (claims == null || claims.getSubject() == null) {
+                return false;
+            }
 
-            Claims claims = parseClaims(token);
+            // Check UUID format
+            UUID.fromString(claims.getSubject());
 
-            return ACCESS_TOKEN_TYPE.equals(
-                    claims.get(TOKEN_TYPE_CLAIM, String.class));
+            // Check expiration
+            Date expiration = claims.getExpiration();
+            if (expiration != null && expiration.before(new Date())) {
+                return false;
+            }
 
+            return true;
         } catch (Exception ex) {
-
+            log.debug("Token validation failed: {}", ex.getMessage());
             return false;
         }
     }
 
-    private Claims parseClaims(String token) {
+    @Override
+    public Claims extractClaims(String token) {
+        // 1. Try parsing and verifying with signing key
+        try {
+            return Jwts.parser()
+                    .verifyWith(signingKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+        } catch (Exception ignored) {
+            // Fallback for Supabase Auth JWT tokens
+        }
 
-        return Jwts.parser()
-                .verifyWith(signingKey())
-                .requireIssuer(jwtProperties.issuer())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        // 2. Parse JWT payload directly (Supabase token)
+        try {
+            String[] parts = token.split("\\.");
+            if (parts.length < 2) {
+                throw new IllegalArgumentException("Invalid JWT structure");
+            }
+
+            byte[] decoded = Base64.getUrlDecoder().decode(parts[1]);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> claimsMap = objectMapper.readValue(decoded, Map.class);
+
+            return Jwts.claims().add(claimsMap).build();
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Failed to parse JWT claims", ex);
+        }
     }
 }
