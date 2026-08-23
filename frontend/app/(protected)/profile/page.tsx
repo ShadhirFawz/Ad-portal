@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/providers/AuthProvider";
 import { updateMyProfile } from "@/lib/api/users";
+import { ExternalLink, UserCog, CheckCircle2, AlertTriangle } from "lucide-react";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -117,28 +118,30 @@ export default function ProfilePage() {
             href={`/profile/${user.username}`}
             className="btn-outline text-xs px-4 py-2 flex items-center gap-1.5 self-stretch sm:self-auto justify-center"
           >
-            <span>🔗 View Public Profile</span>
+            <ExternalLink className="w-3.5 h-3.5" />
+            <span>View Public Profile</span>
           </Link>
         )}
       </div>
 
       {/* Main Settings Form Card */}
       <div className="glass-panel p-6 sm:p-8">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-          <span>⚙️</span> Edit Personal Details
+        <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2.5">
+          <UserCog className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+          <span>Edit Personal Details</span>
         </h2>
 
         {/* Alerts */}
         {message && (
-          <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-sm font-medium flex items-center gap-2">
-            <span>✅</span>
+          <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-sm font-medium flex items-center gap-2.5">
+            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />
             <span>{message}</span>
           </div>
         )}
 
         {error && (
-          <div className="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-sm font-medium flex items-center gap-2">
-            <span>⚠️</span>
+          <div className="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-sm font-medium flex items-center gap-2.5">
+            <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500" />
             <span>{error}</span>
           </div>
         )}
