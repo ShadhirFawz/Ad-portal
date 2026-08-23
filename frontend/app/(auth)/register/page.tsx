@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/providers/AuthProvider";
+import { UserPlus, AlertTriangle } from "lucide-react";
 
 // Mirrors the backend validation rules exactly
 const PERSON_NAME_REGEX = /^[\p{L} .'-]{1,100}$/u;
@@ -114,8 +115,8 @@ export default function RegisterPage() {
 
         {/* Header */}
         <div className="text-center space-y-2">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold text-2xl flex items-center justify-center mx-auto mb-3">
-            ✨
+          <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto mb-3 border border-indigo-500/20">
+            <UserPlus className="w-6 h-6" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
             Create Your Account
@@ -127,8 +128,8 @@ export default function RegisterPage() {
 
         {/* Global Error Alert */}
         {error && (
-          <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-sm font-medium flex items-center gap-2">
-            <span>⚠️</span>
+          <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-sm font-medium flex items-center gap-2.5">
+            <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500" />
             <span>{error}</span>
           </div>
         )}
