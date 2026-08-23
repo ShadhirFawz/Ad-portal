@@ -152,7 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [supabase.auth]);
 
   const login = async (email: string, password: string) => {
     setLoading(true);

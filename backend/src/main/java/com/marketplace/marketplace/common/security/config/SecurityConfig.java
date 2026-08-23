@@ -58,36 +58,11 @@ public class SecurityConfig {
                                                 "/v3/api-docs/**")
                                 .permitAll()
 
-                                // ── Auth — fully public ───────────────────────
-                                .requestMatchers(HttpMethod.POST, "/api/v1/auth/register")
-                                .permitAll()
-
-                                .requestMatchers(HttpMethod.POST, "/api/v1/auth/login")
-                                .permitAll()
-
-                                .requestMatchers(HttpMethod.POST, "/api/v1/auth/verify-email")
-                                .permitAll()
-
-                                .requestMatchers(HttpMethod.POST, "/api/v1/auth/refresh")
-                                .permitAll()
-
-                                .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout")
-                                .permitAll()
-
-                                .requestMatchers(HttpMethod.POST, "/api/v1/auth/forgot-password")
-                                .permitAll()
-
-                                .requestMatchers(HttpMethod.POST, "/api/v1/auth/reset-password")
-                                .permitAll()
-
                                 // ── Auth — requires authentication ────────────
                                 .requestMatchers(HttpMethod.GET, "/api/v1/auth/me")
                                 .authenticated()
 
                                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/sync")
-                                .authenticated()
-
-                                .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout-all")
                                 .authenticated()
 
                                 // ── Users — public ────────────────────────────
