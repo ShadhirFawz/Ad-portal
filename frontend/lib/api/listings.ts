@@ -23,19 +23,21 @@ export interface PageResponse<T> {
 }
 
 export async function createListing(
-  accessToken: string,
+  accessToken: string | undefined | null,
   request: CreateListingRequest
 ): Promise<Listing> {
+
+  const headers: Record<string, string> = {};
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
 
   const response =
     await apiRequest<ApiResponse<Listing>>(
       "/listings",
       {
         method: "POST",
-        headers: {
-          Authorization:
-            `Bearer ${accessToken}`,
-        },
+        headers,
         body: JSON.stringify(request),
       }
     );
@@ -56,20 +58,22 @@ export async function getListing(
 }
 
 export async function updateListing(
-  accessToken: string,
+  accessToken: string | undefined | null,
   id: string,
   request: UpdateListingRequest
 ): Promise<Listing> {
+
+  const headers: Record<string, string> = {};
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
 
   const response =
     await apiRequest<ApiResponse<Listing>>(
       `/listings/${id}`,
       {
         method: "PATCH",
-        headers: {
-          Authorization:
-            `Bearer ${accessToken}`,
-        },
+        headers,
         body: JSON.stringify(request),
       }
     );
@@ -78,36 +82,40 @@ export async function updateListing(
 }
 
 export async function deleteListing(
-  accessToken: string,
+  accessToken: string | undefined | null,
   id: string
 ): Promise<void> {
+
+  const headers: Record<string, string> = {};
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
 
   await apiRequest<ApiResponse<null>>(
     `/listings/${id}`,
     {
       method: "DELETE",
-      headers: {
-        Authorization:
-          `Bearer ${accessToken}`,
-      },
+      headers,
     }
   );
 }
 
 export async function publishListing(
-  accessToken: string,
+  accessToken: string | undefined | null,
   id: string
 ): Promise<Listing> {
+
+  const headers: Record<string, string> = {};
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
 
   const response =
     await apiRequest<ApiResponse<Listing>>(
       `/listings/${id}/publish`,
       {
         method: "POST",
-        headers: {
-          Authorization:
-            `Bearer ${accessToken}`,
-        },
+        headers,
       }
     );
 
@@ -115,10 +123,15 @@ export async function publishListing(
 }
 
 export async function getMyListings(
-  accessToken: string,
+  accessToken?: string | null,
   page = 0,
   size = 20
 ): Promise<PageResponse<Listing>> {
+
+  const headers: Record<string, string> = {};
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
 
   const response =
     await apiRequest<
@@ -126,10 +139,7 @@ export async function getMyListings(
     >(
       `/listings/mine?page=${page}&size=${size}`,
       {
-        headers: {
-          Authorization:
-            `Bearer ${accessToken}`,
-        },
+        headers,
       }
     );
 

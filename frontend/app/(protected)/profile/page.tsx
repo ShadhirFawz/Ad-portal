@@ -86,13 +86,13 @@ export default function ProfilePage() {
         
         <div className="flex items-center gap-5 z-10">
           <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white font-bold text-2xl sm:text-3xl flex items-center justify-center shadow-lg shadow-emerald-500/20 border-2 border-white/20">
-            {user.firstName[0]?.toUpperCase()}
+            {(user.firstName?.[0] ?? user.email?.[0] ?? "U").toUpperCase()}
           </div>
 
           <div className="space-y-1">
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-                {user.firstName} {user.lastName}
+                {user.firstName || user.email?.split("@")[0] || "User"} {user.lastName || ""}
               </h1>
               
               <span className="badge-emerald">

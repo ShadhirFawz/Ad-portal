@@ -22,17 +22,19 @@ export interface ChangePasswordRequest {
 }
 
 export async function getMyProfile(
-  accessToken: string
+  accessToken?: string | null
 ): Promise<UserResponse> {
+
+  const headers: Record<string, string> = {};
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
 
   const response =
     await apiRequest<ApiResponse<UserResponse>>(
       "/users/me",
       {
-        headers: {
-          Authorization:
-            `Bearer ${accessToken}`,
-        },
+        headers,
       }
     );
 
@@ -40,19 +42,21 @@ export async function getMyProfile(
 }
 
 export async function updateMyProfile(
-  accessToken: string,
+  accessToken: string | undefined | null,
   request: UpdateProfileRequest
 ): Promise<UserResponse> {
+
+  const headers: Record<string, string> = {};
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
 
   const response =
     await apiRequest<ApiResponse<UserResponse>>(
       "/users/me",
       {
         method: "PATCH",
-        headers: {
-          Authorization:
-            `Bearer ${accessToken}`,
-        },
+        headers,
         body: JSON.stringify(request),
       }
     );
@@ -61,35 +65,39 @@ export async function updateMyProfile(
 }
 
 export async function changePassword(
-  accessToken: string,
+  accessToken: string | undefined | null,
   request: ChangePasswordRequest
 ): Promise<void> {
+
+  const headers: Record<string, string> = {};
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
 
   await apiRequest<ApiResponse<null>>(
     "/users/me/password",
     {
       method: "PATCH",
-      headers: {
-        Authorization:
-          `Bearer ${accessToken}`,
-      },
+      headers,
       body: JSON.stringify(request),
     }
   );
 }
 
 export async function deleteAccount(
-  accessToken: string
+  accessToken?: string | null
 ): Promise<void> {
+
+  const headers: Record<string, string> = {};
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
 
   await apiRequest<ApiResponse<null>>(
     "/users/me",
     {
       method: "DELETE",
-      headers: {
-        Authorization:
-          `Bearer ${accessToken}`,
-      },
+      headers,
     }
   );
 }

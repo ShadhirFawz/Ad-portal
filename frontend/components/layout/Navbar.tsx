@@ -41,10 +41,10 @@ export default function Navbar() {
                 className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 hover:border-emerald-500/50 transition-all group"
               >
                 <div className="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center justify-center border border-emerald-500/30">
-                  {user.firstName[0]?.toUpperCase()}
+                  {(user.firstName?.[0] ?? user.email?.[0] ?? "U").toUpperCase()}
                 </div>
                 <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                  {user.firstName}
+                  {user.firstName || user.email?.split("@")[0] || "Account"}
                 </span>
                 {!user.emailVerified && (
                   <span
