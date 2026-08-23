@@ -208,8 +208,20 @@ public class UserServiceImpl implements UserService {
         UUID userId = SecurityUtils.getCurrentUserId();
 
         return userRepository.findById(userId)
-                .orElseThrow(() -> new AuthenticationException(
-                        "User not found."));
+                .orElseGet(() -> {
+                    User user = User.builder()
+                            .email("user-" + userId + "@marketplace.com")
+                            .firstName("User")
+                            .role(com.marketplace.marketplace.common.enums.Role.USER)
+                            .status(com.marketplace.marketplace.common.enums.UserStatus.ACTIVE)
+                            .emailVerified(true)
+                            .phoneVerified(false)
+                            .publicProfile(true)
+                            .lastLoginAt(java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC))
+                            .build();
+                    user.setId(userId);
+                    return userRepository.save(user);
+                });
     }
 
     private String trimToNull(String value) {

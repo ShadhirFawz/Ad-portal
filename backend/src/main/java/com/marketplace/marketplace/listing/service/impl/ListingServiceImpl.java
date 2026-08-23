@@ -352,8 +352,20 @@ public class ListingServiceImpl implements ListingService {
                 UUID userId = SecurityUtils.getCurrentUserId();
 
                 return userRepository.findById(userId)
-                                .orElseThrow(() -> new ResourceNotFoundException(
-                                                "User not found."));
+                                .orElseGet(() -> {
+                                        User user = User.builder()
+                                                        .email("user-" + userId + "@marketplace.com")
+                                                        .firstName("User")
+                                                        .role(com.marketplace.marketplace.common.enums.Role.USER)
+                                                        .status(com.marketplace.marketplace.common.enums.UserStatus.ACTIVE)
+                                                        .emailVerified(true)
+                                                        .phoneVerified(false)
+                                                        .publicProfile(true)
+                                                        .lastLoginAt(OffsetDateTime.now(java.time.ZoneOffset.UTC))
+                                                        .build();
+                                        user.setId(userId);
+                                        return userRepository.save(user);
+                                });
         }
 
         private void validatePricing(

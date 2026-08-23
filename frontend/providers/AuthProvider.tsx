@@ -10,7 +10,7 @@ import {
 
 import { createClient } from "@/lib/supabase/client";
 import type { UserResponse } from "@/types/auth";
-import { getMe, syncUser, type SyncUserPayload } from "@/lib/api/auth";
+import { getMe, syncUser } from "@/lib/api/auth";
 
 interface AuthContextValue {
   user: UserResponse | null;
@@ -24,9 +24,50 @@ interface AuthContextValue {
   ) => Promise<void>;
   logout: () => Promise<void>;
   refreshSession: () => Promise<void>;
+  syncProfile: () => Promise<UserResponse | null>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+
+function mapSupabaseUserToUserResponse(supabaseUser: {
+  id: string;
+  email?: string;
+  user_metadata?: Record<string, unknown>;
+  created_at?: string;
+}): UserResponse {
+  const metadata = supabaseUser.user_metadata ?? {};
+  const email = supabaseUser.email ?? "";
+  const firstName =
+    (typeof metadata.first_name === "string" && metadata.first_name.trim()) ||
+    (typeof metadata.full_name === "string" && metadata.full_name.split(" ")[0]) ||
+    (email.includes("@") ? email.substring(0, email.indexOf("@")) : "User");
+  const lastName =
+    (typeof metadata.last_name === "string" && metadata.last_name.trim()) ||
+    "";
+  const phoneNumber =
+    (typeof metadata.phone_number === "string" && metadata.phone_number.trim()) ||
+    (typeof metadata.phone === "string" && metadata.phone.trim()) ||
+    "";
+
+  return {
+    id: supabaseUser.id,
+    firstName,
+    lastName,
+    username: (typeof metadata.username === "string" && metadata.username) || "",
+    email,
+    phoneNumber,
+    avatarUrl: (typeof metadata.avatar_url === "string" && metadata.avatar_url) || "",
+    coverPhotoUrl: "",
+    bio: "",
+    location: "",
+    role: "USER",
+    status: "ACTIVE",
+    emailVerified: true,
+    phoneVerified: false,
+    publicProfile: true,
+    createdAt: supabaseUser.created_at || new Date().toISOString(),
+  };
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserResponse | null>(null);
@@ -35,47 +76,71 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const supabase = createClient();
 
+  const syncBackendProfile = async (token: string, fallbackUser?: UserResponse) => {
+    try {
+      const profile = await getMe(token);
+      setUser(profile);
+      return profile;
+    } catch {
+      try {
+        const synced = await syncUser(token, fallbackUser ? {
+          firstName: fallbackUser.firstName,
+          lastName: fallbackUser.lastName,
+          phoneNumber: fallbackUser.phoneNumber,
+        } : undefined);
+        setUser(synced);
+        return synced;
+      } catch (err) {
+        console.warn("Backend profile sync notice:", err);
+        return null;
+      }
+    }
+  };
+
   useEffect(() => {
-    // Initial session check
+    let isMounted = true;
+
     const initializeAuth = async () => {
       try {
         const {
           data: { session },
         } = await supabase.auth.getSession();
 
-        if (session?.access_token) {
+        if (!isMounted) return;
+
+        if (session?.user && session?.access_token) {
+          const fallback = mapSupabaseUserToUserResponse(session.user);
           setAccessToken(session.access_token);
-          try {
-            const profile = await getMe(session.access_token);
-            setUser(profile);
-          } catch {
-            // Profile may need syncing
-            const synced = await syncUser(session.access_token);
-            setUser(synced);
-          }
+          setUser(fallback);
+
+          // Sync in background with backend
+          void syncBackendProfile(session.access_token, fallback);
+        } else {
+          setAccessToken(null);
+          setUser(null);
         }
       } catch (err) {
         console.error("Failed to initialize session:", err);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
-    initializeAuth();
+    void initializeAuth();
 
-    // Listen to Supabase Auth State changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.access_token) {
+      if (!isMounted) return;
+
+      if (session?.user && session?.access_token) {
+        const fallback = mapSupabaseUserToUserResponse(session.user);
         setAccessToken(session.access_token);
-        try {
-          const profile = await getMe(session.access_token);
-          setUser(profile);
-        } catch {
-          const synced = await syncUser(session.access_token);
-          setUser(synced);
-        }
+        setUser(fallback);
+
+        void syncBackendProfile(session.access_token, fallback);
       } else {
         setAccessToken(null);
         setUser(null);
@@ -84,6 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, []);
@@ -100,14 +166,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(error.message);
     }
 
-    if (data.session?.access_token) {
+    if (data.session?.user && data.session?.access_token) {
+      const fallback = mapSupabaseUserToUserResponse(data.session.user);
       setAccessToken(data.session.access_token);
-      try {
-        const profile = await syncUser(data.session.access_token);
-        setUser(profile);
-      } catch {
-        // Ignored, user state managed by listener
-      }
+      setUser(fallback);
+      void syncBackendProfile(data.session.access_token, fallback);
     }
     setLoading(false);
   };
@@ -135,14 +198,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(error.message);
     }
 
-    if (data.session?.access_token) {
+    if (data.session?.user && data.session?.access_token) {
+      const fallback = mapSupabaseUserToUserResponse(data.session.user);
       setAccessToken(data.session.access_token);
-      const synced = await syncUser(data.session.access_token, {
-        firstName: profile.firstName,
-        lastName: profile.lastName,
-        phoneNumber: profile.phoneNumber,
-      });
-      setUser(synced);
+      setUser(fallback);
+      void syncBackendProfile(data.session.access_token, fallback);
     }
     setLoading(false);
   };
@@ -163,6 +223,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
+  const syncProfile = async () => {
+    if (accessToken && user) {
+      return await syncBackendProfile(accessToken, user);
+    }
+    return null;
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -173,6 +240,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signUp,
         logout,
         refreshSession,
+        syncProfile,
       }}
     >
       {children}

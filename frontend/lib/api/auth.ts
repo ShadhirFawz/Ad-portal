@@ -22,10 +22,10 @@ export interface LoginRequest {
 }
 
 export interface SyncUserPayload {
-  firstName?: string;
-  lastName?: string;
-  phoneNumber?: string;
-  username?: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  phoneNumber?: string | null;
+  username?: string | null;
 }
 
 export async function syncUser(

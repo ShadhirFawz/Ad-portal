@@ -25,4 +25,8 @@ public abstract class BaseUuidEntity extends BaseEntity {
     public UUID getIdValue() {
         return id;
     }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
 }
