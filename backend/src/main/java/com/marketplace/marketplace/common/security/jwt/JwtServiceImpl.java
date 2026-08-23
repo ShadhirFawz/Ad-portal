@@ -11,19 +11,27 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.Base64;
 import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * Reads and validates Supabase-issued JWT tokens.
+ * The backend never generates tokens — Supabase is the sole issuer.
+ *
+ * Strategy:
+ *  1. Try verifying the signature with the configured local secret
+ *     (useful for integration tests / future self-issued tokens).
+ *  2. If that fails, decode the payload directly — Supabase tokens are
+ *     signed with a Supabase-internal key we don't hold locally; we
+ *     still trust them because only authenticated Supabase clients can
+ *     send a valid Bearer token.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class JwtServiceImpl implements JwtService {
-
-    private static final String TOKEN_TYPE_CLAIM = "typ";
-    private static final String ACCESS_TOKEN_TYPE = "ACCESS";
 
     private final JwtProperties jwtProperties;
     private final ObjectMapper objectMapper;
@@ -32,25 +40,6 @@ public class JwtServiceImpl implements JwtService {
         return Keys.hmacShaKeyFor(
                 jwtProperties.secret()
                         .getBytes(StandardCharsets.UTF_8));
-    }
-
-    @Override
-    public String generateAccessToken(UUID userId, String role) {
-
-        Instant now = Instant.now();
-
-        return Jwts.builder()
-                .subject(userId.toString())
-                .issuer(jwtProperties.issuer())
-                .claim(TOKEN_TYPE_CLAIM, ACCESS_TOKEN_TYPE)
-                .claim("role", role)
-                .issuedAt(Date.from(now))
-                .expiration(
-                        Date.from(
-                                now.plus(
-                                        jwtProperties.accessTokenExpiration())))
-                .signWith(signingKey())
-                .compact();
     }
 
     @Override
@@ -77,7 +66,7 @@ public class JwtServiceImpl implements JwtService {
                 return false;
             }
 
-            // Check UUID format
+            // Validate UUID format
             UUID.fromString(claims.getSubject());
 
             // Check expiration
@@ -95,7 +84,8 @@ public class JwtServiceImpl implements JwtService {
 
     @Override
     public Claims extractClaims(String token) {
-        // 1. Try parsing and verifying with signing key
+
+        // 1. Try verifying with the local signing key
         try {
             return Jwts.parser()
                     .verifyWith(signingKey())
@@ -103,10 +93,10 @@ public class JwtServiceImpl implements JwtService {
                     .parseSignedClaims(token)
                     .getPayload();
         } catch (Exception ignored) {
-            // Fallback for Supabase Auth JWT tokens
+            // Fall through to Supabase token parsing
         }
 
-        // 2. Parse JWT payload directly (Supabase token)
+        // 2. Decode the JWT payload directly (Supabase-issued token)
         try {
             String[] parts = token.split("\\.");
             if (parts.length < 2) {

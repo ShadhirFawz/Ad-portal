@@ -4,9 +4,11 @@ import io.jsonwebtoken.Claims;
 
 import java.util.UUID;
 
+/**
+ * JWT utility for reading Supabase-issued access tokens.
+ * The backend only *validates and reads* tokens; Supabase is the sole issuer.
+ */
 public interface JwtService {
-
-    String generateAccessToken(UUID userId, String role);
 
     UUID extractUserId(String token);
 

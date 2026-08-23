@@ -3,6 +3,7 @@ package com.marketplace.marketplace.user.service;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.marketplace.marketplace.auth.dto.request.SyncUserRequest;
 import com.marketplace.marketplace.auth.dto.response.UserResponse;
 import com.marketplace.marketplace.user.dto.request.ChangePasswordRequest;
 import com.marketplace.marketplace.user.dto.request.UpdateProfileRequest;
@@ -35,5 +36,12 @@ public interface UserService {
             ChangePasswordRequest request);
 
     void deleteCurrentUser();
+
+    /**
+     * Upserts the Supabase-authenticated user into the local DB.
+     * Called by POST /auth/sync immediately after sign-up or sign-in.
+     * If the user already exists the optional profile hints are ignored.
+     */
+    UserResponse syncCurrentUser(SyncUserRequest request);
 
 }
