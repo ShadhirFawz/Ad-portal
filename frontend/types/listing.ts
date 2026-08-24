@@ -45,6 +45,7 @@ export interface Listing {
 
   sellerId: string;
   sellerUsername: string;
+  sellerPhoneNumber?: string | null;
 
   categoryId: string;
   categoryName: string;

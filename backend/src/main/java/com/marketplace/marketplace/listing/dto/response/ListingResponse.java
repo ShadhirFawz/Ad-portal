@@ -73,7 +73,9 @@ public record ListingResponse(
 
         OffsetDateTime createdAt,
 
-        OffsetDateTime updatedAt
+        OffsetDateTime updatedAt,
+
+        String sellerPhoneNumber
 
 ) {
 }
