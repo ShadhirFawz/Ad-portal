@@ -1,10 +1,13 @@
 package com.marketplace.marketplace.listing.dto.request;
 
 import com.marketplace.marketplace.listing.enums.ListingCondition;
+import com.marketplace.marketplace.listing.enums.ListingLocationType;
+import com.marketplace.marketplace.listing.enums.ListingType;
 import com.marketplace.marketplace.listing.enums.PricingType;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
+import java.util.Map;
 import java.util.UUID;
 
 public record UpdateListingRequest(
@@ -19,13 +22,29 @@ public record UpdateListingRequest(
 
         PricingType pricingType,
 
+        ListingType listingType,
+
         Boolean negotiable,
 
         @DecimalMin(value = "0.00", message = "Minimum offer price cannot be negative") @Digits(integer = 12, fraction = 2) BigDecimal minimumOfferPrice,
 
         ListingCondition condition,
 
-        @Size(max = 150) String location
+        @Min(value = 1, message = "Quantity must be at least 1") Integer quantity,
+
+        ListingLocationType locationType,
+
+        @Size(max = 100) String district,
+
+        @Size(max = 100) String province,
+
+        @Size(max = 100) String city,
+
+        @Size(max = 20) String postalCode,
+
+        @Size(max = 150) String location,
+
+        Map<String, Object> customAttributes
 
 ) {
 }

@@ -105,7 +105,14 @@ export async function getListingImages(
     const response = await fetch(`${API_URL}/listings/${listingId}/images`);
 
     if (!response.ok) {
-        throw new Error("Failed to fetch listing images.");
+        let message = "Failed to fetch listing images.";
+        try {
+            const body = await response.json();
+            message = body?.message || message;
+        } catch {
+            // ignore
+        }
+        throw new Error(message);
     }
 
     return response.json();
@@ -127,7 +134,14 @@ export async function deleteListingImage(
     );
 
     if (!response.ok) {
-        throw new Error("Failed to delete image.");
+        let message = "Failed to delete image.";
+        try {
+            const body = await response.json();
+            message = body?.message || message;
+        } catch {
+            // ignore
+        }
+        throw new Error(message);
     }
 }
 
@@ -147,7 +161,14 @@ export async function setPrimaryListingImage(
     );
 
     if (!response.ok) {
-        throw new Error("Failed to set primary image.");
+        let message = "Failed to set primary image.";
+        try {
+            const body = await response.json();
+            message = body?.message || message;
+        } catch {
+            // ignore
+        }
+        throw new Error(message);
     }
 
     return response.json();
@@ -173,6 +194,13 @@ export async function reorderListingImages(
     );
 
     if (!response.ok) {
-        throw new Error("Failed to reorder listing images.");
+        let message = "Failed to reorder listing images.";
+        try {
+            const body = await response.json();
+            message = body?.message || message;
+        } catch {
+            // ignore
+        }
+        throw new Error(message);
     }
 }

@@ -213,14 +213,46 @@ public class ListingServiceImpl implements ListingService {
                         listing.setMinimumOfferPrice(request.minimumOfferPrice());
                 }
 
+                if (request.listingType() != null) {
+                        listing.setListingType(request.listingType());
+                }
+
                 if (request.condition() != null) {
                         listing.setCondition(
                                         request.condition());
                 }
 
+                if (request.quantity() != null) {
+                        listing.setQuantity(request.quantity());
+                }
+
+                if (request.locationType() != null) {
+                        listing.setLocationType(request.locationType());
+                }
+
+                if (request.city() != null) {
+                        listing.setCity(trimToNull(request.city()));
+                }
+
+                if (request.district() != null) {
+                        listing.setDistrict(trimToNull(request.district()));
+                }
+
+                if (request.province() != null) {
+                        listing.setProvince(trimToNull(request.province()));
+                }
+
+                if (request.postalCode() != null) {
+                        listing.setPostalCode(trimToNull(request.postalCode()));
+                }
+
                 if (request.location() != null) {
                         listing.setLocation(
                                         trimToNull(request.location()));
+                }
+
+                if (request.customAttributes() != null) {
+                        listing.setCustomAttributes(request.customAttributes());
                 }
 
                 return toResponse(

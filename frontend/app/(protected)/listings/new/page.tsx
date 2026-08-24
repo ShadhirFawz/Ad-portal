@@ -5,16 +5,20 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/providers/AuthProvider";
 import { getCategories } from "@/lib/api/categories";
-import { createListing } from "@/lib/api/listings";
+import { createListing, publishListing, updateListing } from "@/lib/api/listings";
 import NestedCategorySelector from "@/components/listings/NestedCategorySelector";
+import ListingImageUploader from "@/components/listings/ListingImageUploader";
 import type { Category } from "@/types/category";
 import type {
   CreateListingRequest,
+  Listing,
   ListingCondition,
   ListingLocationType,
   ListingType,
   PricingType,
+  UpdateListingRequest,
 } from "@/types/listing";
+import type { ListingImage } from "@/types/listing-image";
 import {
   Layers,
   ShoppingBag,
@@ -36,7 +40,13 @@ import {
   X,
   AlertTriangle,
   ArrowRight,
+  ArrowLeft,
+  Check,
+  CheckCircle2,
   Sparkles,
+  Camera,
+  Eye,
+  Rocket,
   LucideIcon,
 } from "lucide-react";
 
@@ -151,6 +161,12 @@ export default function NewListingPage() {
   >([]);
   const [newAttrKey, setNewAttrKey] = useState("");
   const [newAttrValue, setNewAttrValue] = useState("");
+
+  // Multi-step creation wizard: 1 = Item Details, 2 = Photos & Publish
+  const [step, setStep] = useState<1 | 2>(1);
+  const [createdListing, setCreatedListing] = useState<Listing | null>(null);
+  const [publishing, setPublishing] = useState(false);
+  const [publishSuccess, setPublishSuccess] = useState(false);
 
   // Status & Validation
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -322,17 +338,48 @@ export default function NewListingPage() {
     };
 
     try {
-      const created = await createListing(accessToken, payload);
-      router.push(`/listings/${created.id}/edit`);
+      if (createdListing) {
+        const updated = await updateListing(accessToken, createdListing.id, payload as UpdateListingRequest);
+        setCreatedListing(updated);
+      } else {
+        const created = await createListing(accessToken, payload);
+        setCreatedListing(created);
+      }
+      setStep(2);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : "Failed to create listing. Please check your inputs and try again."
+          : "Failed to save listing. Please check your inputs and try again."
       );
       window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handlePublish = async () => {
+    if (!accessToken || !createdListing) return;
+
+    setPublishing(true);
+    setError(null);
+
+    try {
+      const updated = await publishListing(accessToken, createdListing.id);
+      setCreatedListing(updated);
+      setPublishSuccess(true);
+      setTimeout(() => {
+        router.push(`/listings/${createdListing.id}`);
+      }, 1200);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to publish listing. Make sure at least one image is uploaded."
+      );
+    } finally {
+      setPublishing(false);
     }
   };
 
@@ -349,7 +396,7 @@ export default function NewListingPage() {
 
   return (
     <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-      {/* Header & Flow Status */}
+      {/* Header & Breadcrumb */}
       <div className="space-y-3">
         <nav className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
           <Link
@@ -370,27 +417,100 @@ export default function NewListingPage() {
               Create a New Listing
             </h1>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              Step 1 of 2: Fill in item details, pricing &amp; specifications
+              {step === 1
+                ? "Step 1 of 2: Fill in item details, pricing & specifications"
+                : "Step 2 of 2: Upload item photos & set cover image"}
             </p>
           </div>
 
           <div className="flex items-center gap-2 text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-3.5 py-1.5 rounded-full w-fit">
             <Sparkles className="w-3.5 h-3.5 text-emerald-500 animate-pulse" />
-            <span>Photos added in next step</span>
+            <span>{step === 1 ? "Photos added in step 2" : "Auto-saved as draft"}</span>
           </div>
         </div>
       </div>
 
+      {/* 2-Step Interactive Progress Stepper */}
+      <div className="grid grid-cols-2 gap-3 p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 text-xs font-semibold select-none">
+        <button
+          type="button"
+          onClick={() => {
+            if (createdListing) setStep(1);
+          }}
+          disabled={step === 1}
+          className={`flex items-center justify-center gap-2.5 py-2.5 px-3 rounded-xl transition-all ${
+            step === 1
+              ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm ring-1 ring-emerald-500/20"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+          }`}
+        >
+          <span
+            className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold ${
+              createdListing && step === 2
+                ? "bg-emerald-500 text-white"
+                : step === 1
+                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                : "bg-slate-200 dark:bg-slate-700 text-slate-500"
+            }`}
+          >
+            {createdListing && step === 2 ? <Check className="w-3 h-3" /> : "1"}
+          </span>
+          <span>1. Item Details &amp; Pricing</span>
+        </button>
+
+        <button
+          type="button"
+          disabled={!createdListing}
+          onClick={() => {
+            if (createdListing) setStep(2);
+          }}
+          className={`flex items-center justify-center gap-2.5 py-2.5 px-3 rounded-xl transition-all ${
+            step === 2
+              ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm ring-1 ring-emerald-500/20"
+              : createdListing
+              ? "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              : "text-slate-400 dark:text-slate-600 cursor-not-allowed opacity-60"
+          }`}
+        >
+          <span
+            className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold ${
+              step === 2
+                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                : "bg-slate-200 dark:bg-slate-700 text-slate-500"
+            }`}
+          >
+            2
+          </span>
+          <span>2. Photos &amp; Publish</span>
+        </button>
+      </div>
+
       {/* Global Error Alert */}
       {error && (
-        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-sm font-medium flex items-center gap-3">
-          <AlertTriangle className="w-5 h-5 shrink-0 text-rose-500" />
-          <span>{error}</span>
+        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-sm font-medium flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle className="w-5 h-5 shrink-0 text-rose-500" />
+            <span>{error}</span>
+          </div>
+          <button
+            onClick={() => setError(null)}
+            className="text-xs font-bold hover:underline"
+          >
+            Dismiss
+          </button>
         </div>
       )}
 
-      {/* Main Form */}
-      <form onSubmit={handleSubmit} className="space-y-8" noValidate>
+      {publishSuccess && (
+        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-sm font-medium flex items-center gap-2.5">
+          <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-500" />
+          <span>Listing published successfully! Redirecting to public listing...</span>
+        </div>
+      )}
+
+      {/* STEP 1: ITEM DETAILS FORM */}
+      {step === 1 && (
+        <form onSubmit={handleSubmit} className="space-y-8" noValidate>
         {/* Section 1: Classification (Type & Category) */}
         <section className="glass-panel p-6 sm:p-8 space-y-6">
           <div className="flex items-center gap-2.5 pb-4 border-b border-slate-200 dark:border-slate-800">
@@ -1010,17 +1130,119 @@ export default function NewListingPage() {
             {submitting ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span>Creating Listing...</span>
+                <span>{createdListing ? "Updating Details..." : "Saving Draft..."}</span>
               </>
             ) : (
               <>
-                <span>Save &amp; Add Photos</span>
+                <span>{createdListing ? "Update & Go to Photos" : "Save Draft & Continue to Photos"}</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
           </button>
         </div>
       </form>
+      )}
+
+      {/* STEP 2: PHOTOS & PUBLISH VIEW */}
+      {step === 2 && createdListing && (
+        <div className="space-y-8 animate-fadeIn">
+          {/* Draft Item Summary Card */}
+          <div className="glass-panel p-6 sm:p-7 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-emerald-500/20 bg-emerald-500/[0.03]">
+            <div className="space-y-1.5 min-w-0">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <span className="badge-emerald">Draft Created</span>
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                  {createdListing.categoryName || "Selected Category"}
+                </span>
+              </div>
+              <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white truncate">
+                {createdListing.title}
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {createdListing.pricingType === "FREE"
+                  ? "Free"
+                  : createdListing.pricingType === "CONTACT_FOR_PRICE"
+                  ? "Contact for price"
+                  : `Rs. ${Number(createdListing.price).toLocaleString()}`}
+                {createdListing.negotiable ? " (Negotiable)" : ""} • {createdListing.condition}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setStep(1)}
+              className="btn-outline text-xs px-4 py-2 flex items-center gap-1.5 shrink-0 self-stretch sm:self-auto justify-center"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Edit Item Details</span>
+            </button>
+          </div>
+
+          {/* Photos Management Section */}
+          <section className="glass-panel p-6 sm:p-8 space-y-6">
+            <div className="flex items-center gap-2.5 pb-4 border-b border-slate-200 dark:border-slate-800">
+              <Camera className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <div>
+                <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                  Add Item Photos
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Upload up to 10 photos. Set your best shot as the primary cover photo.
+                </p>
+              </div>
+            </div>
+
+            <ListingImageUploader
+              listingId={createdListing.id}
+              initialImages={createdListing.images || []}
+              onChange={(updatedImages) => {
+                setCreatedListing((prev) =>
+                  prev ? { ...prev, images: updatedImages } : null
+                );
+              }}
+            />
+          </section>
+
+          {/* Bottom Publishing Actions */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+            <Link
+              href="/profile"
+              className="btn-outline w-full sm:w-auto text-center text-sm py-3 px-6"
+            >
+              Save as Draft &amp; Exit
+            </Link>
+
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <Link
+                href={`/listings/${createdListing.id}`}
+                className="btn-outline w-full sm:w-auto text-center text-sm py-3 px-5 flex items-center justify-center gap-1.5"
+              >
+                <Eye className="w-4 h-4" />
+                <span>Preview</span>
+              </Link>
+
+              <button
+                type="button"
+                onClick={handlePublish}
+                disabled={publishing}
+                className="btn-primary w-full sm:w-auto text-sm py-3 px-8 font-semibold shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+              >
+                {publishing ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Publishing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Rocket className="w-4 h-4" />
+                    <span>Publish Listing Now</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
