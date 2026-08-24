@@ -54,6 +54,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             UUID userId = jwtService.extractUserId(token);
+            String tokenEmail = jwtService.extractEmail(token);
 
             if (SecurityContextHolder
                     .getContext()
@@ -66,8 +67,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     if (user.getStatus() == UserStatus.ACTIVE
                             || user.getStatus() == UserStatus.PENDING_EMAIL_VERIFICATION) {
 
+                        String email = (tokenEmail != null && !tokenEmail.isBlank())
+                                ? tokenEmail
+                                : user.getEmail();
+
                         AuthenticatedUser principal = new AuthenticatedUser(
                                 user.getId(),
+                                email,
                                 user.getRole());
 
                         var authorities = List.of(
@@ -87,6 +93,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     // Supabase authenticated user that is not yet synced in local DB
                     AuthenticatedUser principal = new AuthenticatedUser(
                             userId,
+                            tokenEmail,
                             com.marketplace.marketplace.common.enums.Role.USER);
 
                     var authorities = List.of(

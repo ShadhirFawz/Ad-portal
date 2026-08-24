@@ -177,64 +177,105 @@ public class UserServiceImpl implements UserService {
     public UserResponse syncCurrentUser(SyncUserRequest request) {
 
         UUID userId = SecurityUtils.getCurrentUserId();
+        String tokenEmail = SecurityUtils.getCurrentUserEmail();
+
+        String resolvedEmail = (request != null && request.email() != null && !request.email().isBlank())
+                ? request.email().trim()
+                : ((tokenEmail != null && !tokenEmail.isBlank())
+                        ? tokenEmail.trim()
+                        : ("user-" + userId + "@marketplace.com"));
 
         return userMapper.toResponse(
-                userRepository.findById(userId).orElseGet(() -> {
+                userRepository.findById(userId)
+                        .map(existingUser -> {
+                            // If existing user had a temporary placeholder email, update to their real email
+                            if (existingUser.getEmail() != null
+                                    && existingUser.getEmail().startsWith("user-")
+                                    && !resolvedEmail.startsWith("user-")) {
+                                existingUser.setEmail(resolvedEmail);
+                            }
 
-                    String firstName = (request != null
-                            && request.firstName() != null
-                            && !request.firstName().isBlank())
-                            ? request.firstName().trim()
-                            : "User";
+                            if (request != null) {
+                                if (request.firstName() != null && !request.firstName().isBlank()) {
+                                    existingUser.setFirstName(request.firstName().trim());
+                                }
+                                if (request.lastName() != null) {
+                                    existingUser.setLastName(trimToNull(request.lastName()));
+                                }
+                                if (request.phoneNumber() != null) {
+                                    existingUser.setPhoneNumber(trimToNull(request.phoneNumber()));
+                                }
+                                if (request.username() != null && !request.username().isBlank()) {
+                                    String uname = request.username().trim().toLowerCase();
+                                    if (!uname.equals(existingUser.getUsername()) && !userRepository.existsByUsername(uname)) {
+                                        existingUser.setUsername(uname);
+                                    }
+                                }
+                            }
+                            existingUser.setLastLoginAt(OffsetDateTime.now(ZoneOffset.UTC));
+                            return userRepository.save(existingUser);
+                        })
+                        .orElseGet(() -> {
+                            String firstName = (request != null
+                                    && request.firstName() != null
+                                    && !request.firstName().isBlank())
+                                    ? request.firstName().trim()
+                                    : "User";
 
-                    String lastName = (request != null
-                            && request.lastName() != null
-                            && !request.lastName().isBlank())
-                            ? request.lastName().trim()
-                            : null;
+                            String lastName = (request != null) ? trimToNull(request.lastName()) : null;
+                            String phoneNumber = (request != null) ? trimToNull(request.phoneNumber()) : null;
+                            String username = (request != null) ? trimToNull(request.username()) : null;
 
-                    String phoneNumber = (request != null
-                            && request.phoneNumber() != null
-                            && !request.phoneNumber().isBlank())
-                            ? request.phoneNumber().trim()
-                            : null;
+                            User newUser = User.builder()
+                                    .email(resolvedEmail)
+                                    .firstName(firstName)
+                                    .lastName(lastName)
+                                    .phoneNumber(phoneNumber)
+                                    .username(username)
+                                    .role(Role.USER)
+                                    .status(UserStatus.ACTIVE)
+                                    .emailVerified(true)
+                                    .phoneVerified(false)
+                                    .publicProfile(true)
+                                    .lastLoginAt(OffsetDateTime.now(ZoneOffset.UTC))
+                                    .build();
+                            newUser.setId(userId);
+                            newUser.setIsNew(true);
 
-                    // Build a placeholder email derived from the Supabase UUID —
-                    // the real email lives in Supabase; this is only a local record key.
-                    String email = "user-" + userId + "@marketplace.com";
-
-                    User newUser = User.builder()
-                            .email(email)
-                            .firstName(firstName)
-                            .lastName(lastName)
-                            .phoneNumber(phoneNumber)
-                            .role(Role.USER)
-                            .status(UserStatus.ACTIVE)
-                            .emailVerified(true)
-                            .phoneVerified(false)
-                            .publicProfile(true)
-                            .lastLoginAt(OffsetDateTime.now(ZoneOffset.UTC))
-                            .build();
-                    newUser.setId(userId);
-
-                    return userRepository.save(newUser);
-                }));
+                            return userRepository.save(newUser);
+                        }));
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     /**
      * Returns the local DB user for the currently authenticated Supabase user,
-     * creating a minimal placeholder record on first access if one does not exist.
+     * creating a minimal record on first access if one does not exist.
      */
     private User getAuthenticatedUser() {
 
         UUID userId = SecurityUtils.getCurrentUserId();
+        String tokenEmail = SecurityUtils.getCurrentUserEmail();
 
         return userRepository.findById(userId)
+                .map(existingUser -> {
+                    if (existingUser.getEmail() != null
+                            && existingUser.getEmail().startsWith("user-")
+                            && tokenEmail != null
+                            && !tokenEmail.isBlank()
+                            && !tokenEmail.startsWith("user-")) {
+                        existingUser.setEmail(tokenEmail.trim());
+                        return userRepository.save(existingUser);
+                    }
+                    return existingUser;
+                })
                 .orElseGet(() -> {
+                    String email = (tokenEmail != null && !tokenEmail.isBlank())
+                            ? tokenEmail.trim()
+                            : ("user-" + userId + "@marketplace.com");
+
                     User user = User.builder()
-                            .email("user-" + userId + "@marketplace.com")
+                            .email(email)
                             .firstName("User")
                             .role(Role.USER)
                             .status(UserStatus.ACTIVE)
@@ -244,6 +285,7 @@ public class UserServiceImpl implements UserService {
                             .lastLoginAt(OffsetDateTime.now(ZoneOffset.UTC))
                             .build();
                     user.setId(userId);
+                    user.setIsNew(true);
                     return userRepository.save(user);
                 });
     }

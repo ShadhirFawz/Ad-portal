@@ -2,12 +2,15 @@ package com.marketplace.marketplace.auth.dto.request;
 
 import com.marketplace.marketplace.common.validation.annotation.PersonName;
 import com.marketplace.marketplace.common.validation.annotation.PhoneNumber;
+import jakarta.validation.constraints.Email;
 
 /**
  * Optional profile hints sent by the frontend on first sync after Supabase sign-up.
  * All fields are nullable; the backend uses them only when creating a new local user.
  */
 public record SyncUserRequest(
+
+        @Email String email,
 
         @PersonName String firstName,
 

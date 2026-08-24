@@ -30,4 +30,8 @@ public final class SecurityUtils {
     public static UUID getCurrentUserId() {
         return getCurrentUser().id();
     }
+
+    public static String getCurrentUserEmail() {
+        return getCurrentUser().email();
+    }
 }

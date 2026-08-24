@@ -9,7 +9,7 @@ import { ExternalLink, UserCog, CheckCircle2, AlertTriangle } from "lucide-react
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, accessToken, loading } = useAuth();
+  const { user, accessToken, loading, syncProfile } = useAuth();
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -60,7 +60,7 @@ export default function ProfilePage() {
     setError(null);
 
     try {
-      await updateMyProfile(accessToken, {
+      const updated = await updateMyProfile(accessToken, {
         firstName,
         lastName,
         username,
@@ -69,6 +69,16 @@ export default function ProfilePage() {
         publicProfile,
       });
 
+      if (updated) {
+        setFirstName(updated.firstName ?? "");
+        setLastName(updated.lastName ?? "");
+        setUsername(updated.username ?? "");
+        setBio(updated.bio ?? "");
+        setLocation(updated.location ?? "");
+        setPublicProfile(updated.publicProfile ?? true);
+      }
+
+      await syncProfile();
       setMessage("Profile updated successfully!");
     } catch (err) {
       setError(

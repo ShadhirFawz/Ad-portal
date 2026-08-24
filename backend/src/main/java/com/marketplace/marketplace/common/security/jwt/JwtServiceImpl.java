@@ -12,22 +12,9 @@ import org.springframework.stereotype.Service;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Reads and validates Supabase-issued JWT tokens.
- * The backend never generates tokens — Supabase is the sole issuer.
- *
- * Strategy:
- *  1. Try verifying the signature with the configured local secret
- *     (useful for integration tests / future self-issued tokens).
- *  2. If that fails, decode the payload directly — Supabase tokens are
- *     signed with a Supabase-internal key we don't hold locally; we
- *     still trust them because only authenticated Supabase clients can
- *     send a valid Bearer token.
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -36,6 +23,7 @@ public class JwtServiceImpl implements JwtService {
     private final JwtProperties jwtProperties;
     private final ObjectMapper objectMapper;
 
+    // Kept for potential future self-signed token verification
     private SecretKey signingKey() {
         return Keys.hmacShaKeyFor(
                 jwtProperties.secret()
@@ -44,35 +32,46 @@ public class JwtServiceImpl implements JwtService {
 
     @Override
     public UUID extractUserId(String token) {
-        String subject = extractClaims(token).getSubject();
-        return UUID.fromString(subject);
+        Map<String, Object> claims = decodePayload(token);
+        Object sub = claims.get("sub");
+        if (sub == null)
+            throw new IllegalArgumentException("JWT missing 'sub' claim");
+        return UUID.fromString(sub.toString());
     }
 
     @Override
     public String extractEmail(String token) {
-        return extractClaims(token).get("email", String.class);
+        return (String) decodePayload(token).get("email");
     }
 
     @Override
     public String extractRole(String token) {
-        return extractClaims(token).get("role", String.class);
+        return (String) decodePayload(token).get("role");
     }
 
     @Override
     public boolean isValid(String token) {
         try {
-            Claims claims = extractClaims(token);
-            if (claims == null || claims.getSubject() == null) {
-                return false;
-            }
+            Map<String, Object> claims = decodePayload(token);
 
-            // Validate UUID format
-            UUID.fromString(claims.getSubject());
-
-            // Check expiration
-            Date expiration = claims.getExpiration();
-            if (expiration != null && expiration.before(new Date())) {
+            Object sub = claims.get("sub");
+            if (sub == null)
                 return false;
+            UUID.fromString(sub.toString());
+
+            Object expObj = claims.get("exp");
+            if (expObj != null) {
+                long expSeconds;
+                if (expObj instanceof Number) {
+                    expSeconds = ((Number) expObj).longValue();
+                } else {
+                    expSeconds = Long.parseLong(expObj.toString());
+                }
+                long nowSeconds = System.currentTimeMillis() / 1000L;
+                if (nowSeconds > expSeconds) {
+                    log.debug("Supabase token expired: exp={} now={}", expSeconds, nowSeconds);
+                    return false;
+                }
             }
 
             return true;
@@ -84,8 +83,6 @@ public class JwtServiceImpl implements JwtService {
 
     @Override
     public Claims extractClaims(String token) {
-
-        // 1. Try verifying with the local signing key
         try {
             return Jwts.parser()
                     .verifyWith(signingKey())
@@ -93,23 +90,36 @@ public class JwtServiceImpl implements JwtService {
                     .parseSignedClaims(token)
                     .getPayload();
         } catch (Exception ignored) {
-            // Fall through to Supabase token parsing
         }
 
-        // 2. Decode the JWT payload directly (Supabase-issued token)
         try {
-            String[] parts = token.split("\\.");
-            if (parts.length < 2) {
-                throw new IllegalArgumentException("Invalid JWT structure");
-            }
-
-            byte[] decoded = Base64.getUrlDecoder().decode(parts[1]);
-            @SuppressWarnings("unchecked")
-            Map<String, Object> claimsMap = objectMapper.readValue(decoded, Map.class);
-
+            Map<String, Object> claimsMap = decodePayload(token);
             return Jwts.claims().add(claimsMap).build();
         } catch (Exception ex) {
             throw new IllegalArgumentException("Failed to parse JWT claims", ex);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> decodePayload(String token) {
+        try {
+            String[] parts = token.split("\\.");
+            if (parts.length < 2) {
+                throw new IllegalArgumentException(
+                        "Invalid JWT structure: expected at least 2 parts, got " + parts.length);
+            }
+
+            String base64 = parts[1];
+            int pad = base64.length() % 4;
+            if (pad == 2)
+                base64 += "==";
+            else if (pad == 3)
+                base64 += "=";
+
+            byte[] decoded = Base64.getUrlDecoder().decode(base64);
+            return objectMapper.readValue(decoded, Map.class);
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Failed to decode JWT payload: " + ex.getMessage(), ex);
         }
     }
 }
