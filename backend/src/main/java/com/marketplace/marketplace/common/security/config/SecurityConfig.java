@@ -121,6 +121,14 @@ public class SecurityConfig {
                                 .requestMatchers(HttpMethod.POST, "/api/v1/listings/{id}/publish")
                                 .authenticated()
 
+                                // ── Listing Images — public reads ─────────────
+                                .requestMatchers(HttpMethod.GET, "/api/v1/listings/{listingId}/images")
+                                .permitAll()
+
+                                // ── Listing Images — requires authentication ───
+                                .requestMatchers("/api/v1/listings/{listingId}/images/**")
+                                .authenticated()
+
                                 // ── Deny everything else ──────────────────────
                                 .anyRequest()
                                 .authenticated())
