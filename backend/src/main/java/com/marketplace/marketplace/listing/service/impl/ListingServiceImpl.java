@@ -140,7 +140,11 @@ public class ListingServiceImpl implements ListingService {
                                 .orElseThrow(() -> new ResourceNotFoundException(
                                                 "Listing not found."));
 
-                return toResponse(listing);
+                boolean includeSellerContact = com.marketplace.marketplace.common.security.util.SecurityUtils
+                                .getCurrentUserOptional()
+                                .isPresent();
+
+                return toResponse(listing, includeSellerContact);
         }
 
         @Override
@@ -553,8 +557,13 @@ public class ListingServiceImpl implements ListingService {
                 }
         }
 
+        private ListingResponse toResponse(Listing listing) {
+                return toResponse(listing, false);
+        }
+
         private ListingResponse toResponse(
-                        Listing listing) {
+                        Listing listing,
+                        boolean includeSellerContact) {
 
                 List<ListingImageResponse> images = imageRepository
                                 .findAllByListingIdOrderByDisplayOrderAsc(
@@ -562,6 +571,10 @@ public class ListingServiceImpl implements ListingService {
                                 .stream()
                                 .map(imageMapper::toResponse)
                                 .toList();
+
+                String sellerPhoneNumber = includeSellerContact
+                                ? listing.getSeller().getPhoneNumber()
+                                : null;
 
                 return new ListingResponse(
                                 listing.getId(),
@@ -593,7 +606,8 @@ public class ListingServiceImpl implements ListingService {
                                 images,
                                 listing.getPublishedAt(),
                                 listing.getCreatedAt(),
-                                listing.getUpdatedAt());
+                                listing.getUpdatedAt(),
+                                sellerPhoneNumber);
         }
 
         private String trimToNull(String value) {
