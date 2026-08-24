@@ -54,9 +54,22 @@ export default function ListingImageUploader({
     const [draggedImageId, setDraggedImageId] = useState<string | null>(null);
     const [reorderError, setReorderError] = useState<string | null>(null);
 
-    function updateImages(nextImages: ListingImage[]) {
-        setImages(nextImages);
-        onChange?.(nextImages);
+    function updateImages(
+        nextOrUpdater:
+            | ListingImage[]
+            | ((current: ListingImage[]) => ListingImage[])
+    ) {
+        if (typeof nextOrUpdater === "function") {
+            let nextImages: ListingImage[] = [];
+            setImages((current) => {
+                nextImages = nextOrUpdater(current);
+                return nextImages;
+            });
+            onChange?.(nextImages);
+        } else {
+            setImages(nextOrUpdater);
+            onChange?.(nextOrUpdater);
+        }
     }
 
     async function getImageDimensions(
@@ -141,11 +154,7 @@ export default function ListingImageUploader({
                 )
             );
 
-            setImages((current) => {
-                const next = [...current, registeredImage];
-                onChange?.(next);
-                return next;
-            });
+            updateImages((current) => [...current, registeredImage]);
 
             setUploading((prev) => prev.filter((item) => item.id !== uploadId));
         } catch (error) {
@@ -185,16 +194,14 @@ export default function ListingImageUploader({
 
         await deleteListingImage(accessToken, listingId, image.id);
 
-        setImages((current) => {
-            const next = current
+        updateImages((current) =>
+            current
                 .filter((item) => item.id !== image.id)
                 .map((item, index) => ({
                     ...item,
                     displayOrder: index,
-                }));
-            onChange?.(next);
-            return next;
-        });
+                }))
+        );
     }
 
     async function setPrimary(image: ListingImage) {
@@ -202,14 +209,12 @@ export default function ListingImageUploader({
 
         await setPrimaryListingImage(accessToken, listingId, image.id);
 
-        setImages((current) => {
-            const next = current.map((item) => ({
+        updateImages((current) =>
+            current.map((item) => ({
                 ...item,
                 primary: item.id === image.id,
-            }));
-            onChange?.(next);
-            return next;
-        });
+            }))
+        );
     }
 
     async function persistOrder(reorderedImages: ListingImage[]) {
