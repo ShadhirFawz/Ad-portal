@@ -2,6 +2,7 @@ import { apiRequest } from "@/lib/api/client";
 import type { ApiResponse, UserResponse } from "@/types/auth";
 
 export interface SyncUserPayload {
+  email?: string | null;
   firstName?: string | null;
   lastName?: string | null;
   phoneNumber?: string | null;

@@ -84,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       try {
         const synced = await syncUser(token, fallbackUser ? {
+          email: fallbackUser.email,
           firstName: fallbackUser.firstName,
           lastName: fallbackUser.lastName,
           phoneNumber: fallbackUser.phoneNumber,

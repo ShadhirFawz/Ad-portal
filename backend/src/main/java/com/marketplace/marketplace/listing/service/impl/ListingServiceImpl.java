@@ -350,11 +350,27 @@ public class ListingServiceImpl implements ListingService {
         private User getCurrentUser() {
 
                 UUID userId = SecurityUtils.getCurrentUserId();
+                String tokenEmail = SecurityUtils.getCurrentUserEmail();
 
                 return userRepository.findById(userId)
+                                .map(existingUser -> {
+                                        if (existingUser.getEmail() != null
+                                                        && existingUser.getEmail().startsWith("user-")
+                                                        && tokenEmail != null
+                                                        && !tokenEmail.isBlank()
+                                                        && !tokenEmail.startsWith("user-")) {
+                                                existingUser.setEmail(tokenEmail.trim());
+                                                return userRepository.save(existingUser);
+                                        }
+                                        return existingUser;
+                                })
                                 .orElseGet(() -> {
+                                        String email = (tokenEmail != null && !tokenEmail.isBlank())
+                                                        ? tokenEmail.trim()
+                                                        : ("user-" + userId + "@marketplace.com");
+
                                         User user = User.builder()
-                                                        .email("user-" + userId + "@marketplace.com")
+                                                        .email(email)
                                                         .firstName("User")
                                                         .role(com.marketplace.marketplace.common.enums.Role.USER)
                                                         .status(com.marketplace.marketplace.common.enums.UserStatus.ACTIVE)
@@ -364,6 +380,7 @@ public class ListingServiceImpl implements ListingService {
                                                         .lastLoginAt(OffsetDateTime.now(java.time.ZoneOffset.UTC))
                                                         .build();
                                         user.setId(userId);
+                                        user.setIsNew(true);
                                         return userRepository.save(user);
                                 });
         }
