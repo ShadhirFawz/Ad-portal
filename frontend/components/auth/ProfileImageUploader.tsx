@@ -5,6 +5,7 @@ interface ProfileImageUploaderProps {
   type: "avatar" | "cover";
   currentImageUrl?: string;
   onUpload: (file: File) => Promise<string>;
+  onDelete?: () => Promise<void>;
   onSuccess?: (imageUrl: string) => void;
   onError?: (error: string) => void;
   disabled?: boolean;
@@ -14,11 +15,13 @@ export function ProfileImageUploader({
   type,
   currentImageUrl,
   onUpload,
+  onDelete,
   onSuccess,
   onError,
   disabled = false,
 }: ProfileImageUploaderProps) {
   const [isUploading, setIsUploading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(
     currentImageUrl || null
@@ -73,9 +76,30 @@ export function ProfileImageUploader({
     }
   };
 
+  const handleDelete = async () => {
+    if (!onDelete) return;
+
+    setError(null);
+    setIsDeleting(true);
+
+    try {
+      await onDelete();
+      setPreviewUrl(null);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to remove image.";
+      setError(message);
+      onError?.(message);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const triggerFileSelect = () => {
     fileInputRef.current?.click();
   };
+
+  const isBusy = isUploading || isDeleting || disabled;
 
   return (
     <div className="space-y-3">
@@ -84,7 +108,7 @@ export function ProfileImageUploader({
         type="file"
         accept="image/jpeg,image/png,image/webp"
         onChange={handleFileSelect}
-        disabled={disabled || isUploading}
+        disabled={isBusy}
         className="hidden"
         aria-label={`Upload ${type}`}
       />
@@ -104,24 +128,37 @@ export function ProfileImageUploader({
             )}
           </div>
 
-          <button
-            type="button"
-            onClick={triggerFileSelect}
-            disabled={disabled || isUploading}
-            className="btn-primary text-sm px-4 py-2 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isUploading ? (
-              <>
-                <Loader className="w-4 h-4 animate-spin" />
-                <span>Uploading...</span>
-              </>
-            ) : (
-              <>
-                <Upload className="w-4 h-4" />
-                <span>Upload Avatar</span>
-              </>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={triggerFileSelect}
+              disabled={isBusy}
+              className="btn-primary text-sm px-4 py-2 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isUploading ? (
+                <>
+                  <Loader className="w-4 h-4 animate-spin" />
+                  <span>Uploading...</span>
+                </>
+              ) : (
+                <>
+                  <Upload className="w-4 h-4" />
+                  <span>{previewUrl ? "Change Avatar" : "Upload Avatar"}</span>
+                </>
+              )}
+            </button>
+
+            {previewUrl && onDelete && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={isBusy}
+                className="px-3 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {isDeleting ? "Removing..." : "Remove"}
+              </button>
             )}
-          </button>
+          </div>
         </div>
       ) : (
         <div className="space-y-2">
@@ -141,24 +178,37 @@ export function ProfileImageUploader({
             )}
           </div>
 
-          <button
-            type="button"
-            onClick={triggerFileSelect}
-            disabled={disabled || isUploading}
-            className="btn-secondary text-sm px-4 py-2 flex items-center gap-2 w-full justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isUploading ? (
-              <>
-                <Loader className="w-4 h-4 animate-spin" />
-                <span>Uploading...</span>
-              </>
-            ) : (
-              <>
-                <Upload className="w-4 h-4" />
-                <span>Upload Cover Photo</span>
-              </>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={triggerFileSelect}
+              disabled={isBusy}
+              className="btn-secondary text-sm px-4 py-2 flex items-center gap-2 flex-1 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isUploading ? (
+                <>
+                  <Loader className="w-4 h-4 animate-spin" />
+                  <span>Uploading...</span>
+                </>
+              ) : (
+                <>
+                  <Upload className="w-4 h-4" />
+                  <span>{previewUrl ? "Change Cover Photo" : "Upload Cover Photo"}</span>
+                </>
+              )}
+            </button>
+
+            {previewUrl && onDelete && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={isBusy}
+                className="px-3 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {isDeleting ? "Removing..." : "Remove"}
+              </button>
             )}
-          </button>
+          </div>
         </div>
       )}
 
