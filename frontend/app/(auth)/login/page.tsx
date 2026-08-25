@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/providers/AuthProvider";
+import { Lock, AlertTriangle } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -37,8 +38,8 @@ export default function LoginPage() {
         
         {/* Header */}
         <div className="text-center space-y-2">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-2xl flex items-center justify-center mx-auto mb-3">
-            🔐
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-3 border border-emerald-500/20">
+            <Lock className="w-6 h-6" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
             Welcome Back
@@ -50,8 +51,8 @@ export default function LoginPage() {
 
         {/* Error Alert */}
         {error && (
-          <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-sm font-medium flex items-center gap-2">
-            <span>⚠️</span>
+          <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-sm font-medium flex items-center gap-2.5">
+            <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500" />
             <span>{error}</span>
           </div>
         )}
@@ -94,7 +95,7 @@ export default function LoginPage() {
             className="btn-primary w-full py-3.5 text-base mt-2"
           >
             {submitting ? (
-              <span className="flex items-center gap-2">
+              <span className="flex items-center justify-center gap-2">
                 <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 Signing in...
               </span>
