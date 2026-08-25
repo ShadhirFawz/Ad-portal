@@ -82,6 +82,9 @@ public class SecurityConfig {
                                 .requestMatchers(HttpMethod.DELETE, "/api/v1/users/me")
                                 .authenticated()
 
+                                .requestMatchers("/api/v1/users/me/images/**")
+                                .authenticated()
+
                                 // ── Categories — all public (read-only) ───────
                                 .requestMatchers(HttpMethod.GET, "/api/v1/categories")
                                 .permitAll()

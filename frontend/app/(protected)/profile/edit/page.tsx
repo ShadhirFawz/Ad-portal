@@ -4,10 +4,11 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/providers/AuthProvider";
-import { updateMyProfile, updateProfileImage } from "@/lib/api/users";
+import { updateMyProfile } from "@/lib/api/users";
 import {
   uploadProfileImage,
-  getProfileImageUrl,
+  registerProfileImage,
+  deleteProfileImage,
 } from "@/services/profile-image-service";
 import { ProfileImageUploader } from "@/components/auth/ProfileImageUploader";
 import {
@@ -64,36 +65,70 @@ export default function EditProfilePage() {
   }
 
   const handleAvatarUpload = async (file: File) => {
-    if (!user) return "";
+    if (!user || !accessToken) return "";
 
     try {
+      // 1. Upload to Supabase Storage
       const storagePath = await uploadProfileImage(user.id, file, "avatar");
-      const imageUrl = getProfileImageUrl(storagePath);
 
-      // Update profile with new avatar URL
-      const updated = await updateProfileImage(accessToken, "avatar", storagePath);
-      setAvatarUrl(updated.avatarUrl ?? "");
+      // 2. Register with backend API
+      const result = await registerProfileImage(accessToken, "avatar", {
+        storagePath,
+        fileName: file.name,
+        mimeType: file.type,
+        fileSize: file.size,
+      });
+
+      setAvatarUrl(result.url);
       await syncProfile();
 
-      return imageUrl;
+      return result.url;
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const handleAvatarDelete = async () => {
+    if (!accessToken) return;
+    try {
+      await deleteProfileImage(accessToken, "avatar");
+      setAvatarUrl("");
+      await syncProfile();
     } catch (err) {
       throw err;
     }
   };
 
   const handleCoverPhotoUpload = async (file: File) => {
-    if (!user) return "";
+    if (!user || !accessToken) return "";
 
     try {
+      // 1. Upload to Supabase Storage
       const storagePath = await uploadProfileImage(user.id, file, "cover");
-      const imageUrl = getProfileImageUrl(storagePath);
 
-      // Update profile with new cover photo URL
-      const updated = await updateProfileImage(accessToken, "cover", storagePath);
-      setCoverPhotoUrl(updated.coverPhotoUrl ?? "");
+      // 2. Register with backend API
+      const result = await registerProfileImage(accessToken, "cover", {
+        storagePath,
+        fileName: file.name,
+        mimeType: file.type,
+        fileSize: file.size,
+      });
+
+      setCoverPhotoUrl(result.url);
       await syncProfile();
 
-      return imageUrl;
+      return result.url;
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const handleCoverPhotoDelete = async () => {
+    if (!accessToken) return;
+    try {
+      await deleteProfileImage(accessToken, "cover");
+      setCoverPhotoUrl("");
+      await syncProfile();
     } catch (err) {
       throw err;
     }
@@ -194,6 +229,7 @@ export default function EditProfilePage() {
               type="cover"
               currentImageUrl={coverPhotoUrl}
               onUpload={handleCoverPhotoUpload}
+              onDelete={handleCoverPhotoDelete}
               onSuccess={() => {
                 setError(null);
                 setMessage("Cover photo updated successfully!");
@@ -215,6 +251,7 @@ export default function EditProfilePage() {
               type="avatar"
               currentImageUrl={avatarUrl}
               onUpload={handleAvatarUpload}
+              onDelete={handleAvatarDelete}
               onSuccess={() => {
                 setError(null);
                 setMessage("Profile picture updated successfully!");
