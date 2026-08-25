@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { useAuth } from "@/providers/AuthProvider";
 import { getListing } from "@/lib/api/listings";
 import ListingImageGallery from "@/components/listings/ListingImageGallery";
+import ListingBreadcrumb from "@/components/listings/ListingBreadcrumb";
 import LoginModal from "@/components/auth/LoginModal";
 import { formatTimeAgo } from "@/lib/format/time-ago";
 import {
@@ -199,19 +200,12 @@ export default function ListingDetailsPage() {
       <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 space-y-8">
         {/* Breadcrumb & owner actions */}
         <div className="flex flex-wrap items-center justify-between gap-4 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Link href="/" className="hover:text-emerald-600 transition">
-              Home
-            </Link>
-            <span>/</span>
-            <span className="font-medium text-slate-700 dark:text-slate-300">
-              {listing.categoryName}
-            </span>
-            <span>/</span>
-            <span className="truncate max-w-[200px] sm:max-w-xs text-slate-900 dark:text-white font-semibold">
-              {listing.title}
-            </span>
-          </div>
+          <ListingBreadcrumb
+            breadcrumbs={listing.categoryBreadcrumbs}
+            fallbackCategoryName={listing.categoryName}
+            fallbackCategoryId={listing.categoryId}
+            currentTitle={listing.title}
+          />
 
           {isOwner && (
             <Link

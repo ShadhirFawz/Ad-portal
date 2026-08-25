@@ -25,6 +25,11 @@ public interface ListingRepository
                         ListingStatus status,
                         Pageable pageable);
 
+        Page<Listing> findAllByCategoryIdInAndStatus(
+                        java.util.Collection<UUID> categoryIds,
+                        ListingStatus status,
+                        Pageable pageable);
+
         Optional<Listing> findByIdAndSellerId(
                         UUID id,
                         UUID sellerId);

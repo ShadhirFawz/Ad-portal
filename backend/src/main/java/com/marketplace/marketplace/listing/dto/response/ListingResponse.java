@@ -1,5 +1,6 @@
 package com.marketplace.marketplace.listing.dto.response;
 
+import com.marketplace.marketplace.category.dto.response.CategoryBreadcrumbResponse;
 import com.marketplace.marketplace.listing.enums.ListingCondition;
 import com.marketplace.marketplace.listing.enums.ListingLocationType;
 import com.marketplace.marketplace.listing.enums.ListingStatus;
@@ -24,6 +25,8 @@ public record ListingResponse(
         UUID categoryId,
 
         String categoryName,
+
+        List<CategoryBreadcrumbResponse> categoryBreadcrumbs,
 
         String title,
 
