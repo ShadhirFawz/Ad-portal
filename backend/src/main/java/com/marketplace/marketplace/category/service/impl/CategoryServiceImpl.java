@@ -1,5 +1,6 @@
 package com.marketplace.marketplace.category.service.impl;
 
+import com.marketplace.marketplace.category.dto.response.CategoryBreadcrumbResponse;
 import com.marketplace.marketplace.category.dto.response.CategoryResponse;
 import com.marketplace.marketplace.category.entity.Category;
 import com.marketplace.marketplace.category.repository.CategoryRepository;
@@ -61,6 +62,79 @@ public class CategoryServiceImpl implements CategoryService {
                                                 "Category not found."));
 
                 return toResponse(category);
+        }
+
+        @Override
+        public List<CategoryBreadcrumbResponse> getBreadcrumbs(UUID categoryId) {
+
+                Category category = categoryRepository
+                                .findById(categoryId)
+                                .filter(Category::isActive)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Category not found."));
+
+                return buildBreadcrumbs(category);
+        }
+
+        @Override
+        public List<CategoryBreadcrumbResponse> getBreadcrumbsBySlug(String slug) {
+
+                Category category = categoryRepository
+                                .findBySlug(slug)
+                                .filter(Category::isActive)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Category not found."));
+
+                return buildBreadcrumbs(category);
+        }
+
+        @Override
+        public List<UUID> getSelfAndDescendantCategoryIds(UUID categoryId) {
+
+                List<Category> allActive = categoryRepository.findAllByActiveTrueOrderByDisplayOrderAsc();
+
+                java.util.Map<UUID, List<UUID>> parentToChildren = new java.util.HashMap<>();
+                for (Category cat : allActive) {
+                        if (cat.getParent() != null) {
+                                parentToChildren
+                                                .computeIfAbsent(cat.getParent().getId(), k -> new java.util.ArrayList<>())
+                                                .add(cat.getId());
+                        }
+                }
+
+                List<UUID> result = new java.util.ArrayList<>();
+                result.add(categoryId);
+                collectDescendantIds(categoryId, parentToChildren, result);
+
+                return result;
+        }
+
+        private List<CategoryBreadcrumbResponse> buildBreadcrumbs(Category category) {
+
+                List<CategoryBreadcrumbResponse> breadcrumbs = new java.util.ArrayList<>();
+                Category current = category;
+
+                while (current != null) {
+                        breadcrumbs.add(0, new CategoryBreadcrumbResponse(
+                                        current.getId(),
+                                        current.getName(),
+                                        current.getSlug(),
+                                        current.getLevel()));
+                        current = current.getParent();
+                }
+
+                return breadcrumbs;
+        }
+
+        private void collectDescendantIds(UUID parentId, java.util.Map<UUID, List<UUID>> parentToChildren, List<UUID> accumulator) {
+
+                List<UUID> children = parentToChildren.get(parentId);
+                if (children != null) {
+                        for (UUID childId : children) {
+                                accumulator.add(childId);
+                                collectDescendantIds(childId, parentToChildren, accumulator);
+                        }
+                }
         }
 
         private CategoryResponse toResponse(

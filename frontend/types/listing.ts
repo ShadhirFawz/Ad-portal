@@ -1,4 +1,5 @@
 import { ListingImage } from "./listing-image";
+import type { CategoryBreadcrumb } from "./category";
 
 export type ListingStatus =
   | "DRAFT"
@@ -49,6 +50,7 @@ export interface Listing {
 
   categoryId: string;
   categoryName: string;
+  categoryBreadcrumbs?: CategoryBreadcrumb[];
 
   title: string;
   description: string;
