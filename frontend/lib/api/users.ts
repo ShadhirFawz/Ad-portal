@@ -14,6 +14,8 @@ export interface UpdateProfileRequest {
   bio?: string;
   location?: string;
   publicProfile?: boolean;
+  avatarUrl?: string;
+  coverPhotoUrl?: string;
 }
 
 export interface ChangePasswordRequest {
@@ -109,6 +111,35 @@ export async function getPublicProfile(
   const response =
     await apiRequest<ApiResponse<UserResponse>>(
       `/users/${encodeURIComponent(username)}`
+    );
+
+  return response.data;
+}
+
+export async function updateProfileImage(
+  accessToken: string | undefined | null,
+  imageType: "avatar" | "cover",
+  storagePath: string
+): Promise<UserResponse> {
+
+  const headers: Record<string, string> = {};
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
+
+  const payload =
+    imageType === "avatar"
+      ? { avatarUrl: storagePath }
+      : { coverPhotoUrl: storagePath };
+
+  const response =
+    await apiRequest<ApiResponse<UserResponse>>(
+      "/users/me",
+      {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify(payload),
+      }
     );
 
   return response.data;

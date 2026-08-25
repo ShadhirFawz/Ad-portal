@@ -45,10 +45,20 @@ public class SupabaseStorageServiceImpl
             String bucket,
             String storagePath) {
 
+        if (storagePath == null || storagePath.isBlank()) {
+            return null;
+        }
+
+        if (storagePath.startsWith("http://") || storagePath.startsWith("https://")) {
+            return storagePath;
+        }
+
+        String cleanPath = storagePath.startsWith("/") ? storagePath.substring(1) : storagePath;
+
         return properties.getUrl()
                 + "/storage/v1/object/public/"
                 + bucket
                 + "/"
-                + storagePath;
+                + cleanPath;
     }
 }
