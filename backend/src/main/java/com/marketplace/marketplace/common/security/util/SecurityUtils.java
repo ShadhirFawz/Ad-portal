@@ -4,6 +4,7 @@ import com.marketplace.marketplace.common.security.model.AuthenticatedUser;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.util.Optional;
 import java.util.UUID;
 
 public final class SecurityUtils {
@@ -11,7 +12,7 @@ public final class SecurityUtils {
     private SecurityUtils() {
     }
 
-    public static AuthenticatedUser getCurrentUser() {
+    public static Optional<AuthenticatedUser> getCurrentUserOptional() {
 
         Authentication authentication = SecurityContextHolder
                 .getContext()
@@ -20,14 +21,24 @@ public final class SecurityUtils {
         if (authentication == null
                 || !(authentication.getPrincipal() instanceof AuthenticatedUser user)) {
 
-            throw new IllegalStateException(
-                    "Authenticated user is not available.");
+            return Optional.empty();
         }
 
-        return user;
+        return Optional.of(user);
+    }
+
+    public static AuthenticatedUser getCurrentUser() {
+
+        return getCurrentUserOptional()
+                .orElseThrow(() -> new IllegalStateException(
+                        "Authenticated user is not available."));
     }
 
     public static UUID getCurrentUserId() {
         return getCurrentUser().id();
+    }
+
+    public static String getCurrentUserEmail() {
+        return getCurrentUser().email();
     }
 }

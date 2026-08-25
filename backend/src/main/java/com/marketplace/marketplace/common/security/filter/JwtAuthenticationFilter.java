@@ -54,6 +54,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             UUID userId = jwtService.extractUserId(token);
+            String tokenEmail = jwtService.extractEmail(token);
 
             if (SecurityContextHolder
                     .getContext()
@@ -62,17 +63,41 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 User user = userRepository.findById(userId)
                         .orElse(null);
 
-                if (user != null
-                        && (user.getStatus() == UserStatus.ACTIVE
-                                || user.getStatus() == UserStatus.PENDING_EMAIL_VERIFICATION)) {
+                if (user != null) {
+                    if (user.getStatus() == UserStatus.ACTIVE
+                            || user.getStatus() == UserStatus.PENDING_EMAIL_VERIFICATION) {
 
+                        String email = (tokenEmail != null && !tokenEmail.isBlank())
+                                ? tokenEmail
+                                : user.getEmail();
+
+                        AuthenticatedUser principal = new AuthenticatedUser(
+                                user.getId(),
+                                email,
+                                user.getRole());
+
+                        var authorities = List.of(
+                                new SimpleGrantedAuthority(
+                                        "ROLE_" + user.getRole().name()));
+
+                        var authentication = new UsernamePasswordAuthenticationToken(
+                                principal,
+                                null,
+                                authorities);
+
+                        SecurityContextHolder
+                                .getContext()
+                                .setAuthentication(authentication);
+                    }
+                } else {
+                    // Supabase authenticated user that is not yet synced in local DB
                     AuthenticatedUser principal = new AuthenticatedUser(
-                            user.getId(),
-                            user.getRole());
+                            userId,
+                            tokenEmail,
+                            com.marketplace.marketplace.common.enums.Role.USER);
 
                     var authorities = List.of(
-                            new SimpleGrantedAuthority(
-                                    "ROLE_" + user.getRole().name()));
+                            new SimpleGrantedAuthority("ROLE_USER"));
 
                     var authentication = new UsernamePasswordAuthenticationToken(
                             principal,

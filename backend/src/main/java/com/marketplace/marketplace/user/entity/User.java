@@ -3,13 +3,10 @@ package com.marketplace.marketplace.user.entity;
 import com.marketplace.marketplace.common.entity.BaseUuidEntity;
 import com.marketplace.marketplace.common.enums.Role;
 import com.marketplace.marketplace.common.enums.UserStatus;
-import com.marketplace.marketplace.auth.entity.RefreshToken;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(
@@ -30,7 +27,7 @@ public class User extends BaseUuidEntity {
     @Column(nullable = false, unique = true, length = 255)
     private String email;
 
-    @Column(name = "password_hash", nullable = false)
+    @Column(name = "password_hash")
     private String passwordHash;
 
     @Column(name = "first_name", nullable = false, length = 100)
@@ -82,12 +79,4 @@ public class User extends BaseUuidEntity {
 
     @Column(name = "last_seen_at")
     private OffsetDateTime lastSeenAt;
-
-    @OneToMany(
-            mappedBy = "user",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true
-    )
-    @Builder.Default
-    private List<RefreshToken> refreshTokens = new ArrayList<>();
 }

@@ -8,145 +8,227 @@ import {
   type ReactNode,
 } from "react";
 
+import { createClient } from "@/lib/supabase/client";
 import type { UserResponse } from "@/types/auth";
-
-import {
-  clearAuth,
-  getAccessToken,
-  getRefreshToken,
-  saveAuth,
-} from "@/lib/auth/auth-storage";
-
-import {
-  getMe,
-  login as loginApi,
-  logout as logoutApi,
-  refresh as refreshApi,
-} from "@/lib/api/auth";
+import { getMe, syncUser } from "@/lib/api/auth";
 
 interface AuthContextValue {
   user: UserResponse | null;
   accessToken: string | null;
   loading: boolean;
-  login: (
+  login: (email: string, password: string) => Promise<void>;
+  signUp: (
     email: string,
-    password: string
+    password: string,
+    profile: { firstName: string; lastName?: string; phoneNumber?: string }
   ) => Promise<void>;
   logout: () => Promise<void>;
   refreshSession: () => Promise<void>;
+  syncProfile: () => Promise<UserResponse | null>;
 }
 
-const AuthContext =
-  createContext<AuthContextValue | undefined>(
-    undefined
-  );
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-export function AuthProvider({
-  children,
-}: {
-  children: ReactNode;
-}) {
+function mapSupabaseUserToUserResponse(supabaseUser: {
+  id: string;
+  email?: string;
+  user_metadata?: Record<string, unknown>;
+  created_at?: string;
+}): UserResponse {
+  const metadata = supabaseUser.user_metadata ?? {};
+  const email = supabaseUser.email ?? "";
+  const firstName =
+    (typeof metadata.first_name === "string" && metadata.first_name.trim()) ||
+    (typeof metadata.full_name === "string" && metadata.full_name.split(" ")[0]) ||
+    (email.includes("@") ? email.substring(0, email.indexOf("@")) : "User");
+  const lastName =
+    (typeof metadata.last_name === "string" && metadata.last_name.trim()) ||
+    "";
+  const phoneNumber =
+    (typeof metadata.phone_number === "string" && metadata.phone_number.trim()) ||
+    (typeof metadata.phone === "string" && metadata.phone.trim()) ||
+    "";
 
-  const [user, setUser] =
-    useState<UserResponse | null>(null);
+  return {
+    id: supabaseUser.id,
+    firstName,
+    lastName,
+    username: (typeof metadata.username === "string" && metadata.username) || "",
+    email,
+    phoneNumber,
+    avatarUrl: (typeof metadata.avatar_url === "string" && metadata.avatar_url) || "",
+    coverPhotoUrl: "",
+    bio: "",
+    location: "",
+    role: "USER",
+    status: "ACTIVE",
+    emailVerified: true,
+    phoneVerified: false,
+    publicProfile: true,
+    createdAt: supabaseUser.created_at || new Date().toISOString(),
+  };
+}
 
-  const [accessToken, setAccessToken] =
-    useState<string | null>(null);
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<UserResponse | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const [loading, setLoading] =
-    useState(true);
+  const supabase = createClient();
+
+  const syncBackendProfile = async (token: string, fallbackUser?: UserResponse) => {
+    try {
+      const profile = await getMe(token);
+      setUser(profile);
+      return profile;
+    } catch {
+      try {
+        const synced = await syncUser(token, fallbackUser ? {
+          email: fallbackUser.email,
+          firstName: fallbackUser.firstName,
+          lastName: fallbackUser.lastName,
+          phoneNumber: fallbackUser.phoneNumber,
+        } : undefined);
+        setUser(synced);
+        return synced;
+      } catch (err) {
+        console.warn("Backend profile sync notice:", err);
+        return null;
+      }
+    }
+  };
 
   useEffect(() => {
+    let isMounted = true;
 
-    const initialize = async () => {
-
+    const initializeAuth = async () => {
       try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
-        const token = getAccessToken();
+        if (!isMounted) return;
 
-        if (!token) {
-          return;
+        if (session?.user && session?.access_token) {
+          const fallback = mapSupabaseUserToUserResponse(session.user);
+          setAccessToken(session.access_token);
+          setUser(fallback);
+
+          // Sync in background with backend
+          void syncBackendProfile(session.access_token, fallback);
+        } else {
+          setAccessToken(null);
+          setUser(null);
         }
-
-        const currentUser =
-          await getMe(token);
-
-        setAccessToken(token);
-        setUser(currentUser);
-
-      } catch {
-
-        clearAuth();
-
+      } catch (err) {
+        console.error("Failed to initialize session:", err);
       } finally {
-
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
-    initialize();
+    void initializeAuth();
 
-  }, []);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!isMounted) return;
 
-  const login = async (
+      if (session?.user && session?.access_token) {
+        const fallback = mapSupabaseUserToUserResponse(session.user);
+        setAccessToken(session.access_token);
+        setUser(fallback);
+
+        void syncBackendProfile(session.access_token, fallback);
+      } else {
+        setAccessToken(null);
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [supabase.auth]);
+
+  const login = async (email: string, password: string) => {
+    setLoading(true);
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setLoading(false);
+      throw new Error(error.message);
+    }
+
+    if (data.session?.user && data.session?.access_token) {
+      const fallback = mapSupabaseUserToUserResponse(data.session.user);
+      setAccessToken(data.session.access_token);
+      setUser(fallback);
+      void syncBackendProfile(data.session.access_token, fallback);
+    }
+    setLoading(false);
+  };
+
+  const signUp = async (
     email: string,
-    password: string
+    password: string,
+    profile: { firstName: string; lastName?: string; phoneNumber?: string }
   ) => {
+    setLoading(true);
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          first_name: profile.firstName,
+          last_name: profile.lastName,
+          phone_number: profile.phoneNumber,
+        },
+      },
+    });
 
-    const auth =
-      await loginApi({
-        email,
-        password,
-      });
+    if (error) {
+      setLoading(false);
+      throw new Error(error.message);
+    }
 
-    saveAuth(auth);
-
-    setAccessToken(auth.accessToken);
-    setUser(auth.user);
+    if (data.session?.user && data.session?.access_token) {
+      const fallback = mapSupabaseUserToUserResponse(data.session.user);
+      setAccessToken(data.session.access_token);
+      setUser(fallback);
+      void syncBackendProfile(data.session.access_token, fallback);
+    }
+    setLoading(false);
   };
 
   const refreshSession = async () => {
-
-    const refreshToken =
-      getRefreshToken();
-
-    if (!refreshToken) {
-      throw new Error(
-        "No refresh token available."
-      );
+    const { data, error } = await supabase.auth.refreshSession();
+    if (error) {
+      throw new Error(error.message);
     }
-
-    const auth =
-      await refreshApi(refreshToken);
-
-    saveAuth(auth);
-
-    setAccessToken(auth.accessToken);
-    setUser(auth.user);
+    if (data.session?.access_token) {
+      setAccessToken(data.session.access_token);
+    }
   };
 
   const logout = async () => {
+    await supabase.auth.signOut();
+    setAccessToken(null);
+    setUser(null);
+  };
 
-    const token = getAccessToken();
-    const refreshToken =
-      getRefreshToken();
-
-    try {
-
-      if (token && refreshToken) {
-        await logoutApi(
-          token,
-          refreshToken
-        );
-      }
-
-    } finally {
-
-      clearAuth();
-
-      setAccessToken(null);
-      setUser(null);
+  const syncProfile = async () => {
+    if (accessToken && user) {
+      return await syncBackendProfile(accessToken, user);
     }
+    return null;
   };
 
   return (
@@ -156,8 +238,10 @@ export function AuthProvider({
         accessToken,
         loading,
         login,
+        signUp,
         logout,
         refreshSession,
+        syncProfile,
       }}
     >
       {children}
@@ -166,15 +250,9 @@ export function AuthProvider({
 }
 
 export function useAuth() {
-
-  const context =
-    useContext(AuthContext);
-
+  const context = useContext(AuthContext);
   if (!context) {
-    throw new Error(
-      "useAuth must be used inside AuthProvider."
-    );
+    throw new Error("useAuth must be used inside AuthProvider.");
   }
-
   return context;
 }
