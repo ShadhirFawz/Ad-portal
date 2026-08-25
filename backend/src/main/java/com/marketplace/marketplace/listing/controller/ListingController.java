@@ -29,6 +29,36 @@ public class ListingController {
                 listingService.create(request));
     }
 
+    @GetMapping("/mine")
+    public ApiResponse<Page<ListingResponse>> getMyListings(
+            Pageable pageable) {
+
+        return ApiResponse.success(
+                "Listings retrieved successfully.",
+                listingService.getMyListings(pageable));
+    }
+
+    @GetMapping
+    public ApiResponse<Page<ListingResponse>> getActiveListings(
+            Pageable pageable) {
+
+        return ApiResponse.success(
+                "Listings retrieved successfully.",
+                listingService.getActiveListings(pageable));
+    }
+
+    @GetMapping("/category/{categoryId}")
+    public ApiResponse<Page<ListingResponse>> getByCategory(
+            @PathVariable UUID categoryId,
+            Pageable pageable) {
+
+        return ApiResponse.success(
+                "Listings retrieved successfully.",
+                listingService.getByCategory(
+                        categoryId,
+                        pageable));
+    }
+
     @GetMapping("/{id}")
     public ApiResponse<ListingResponse> getById(
             @PathVariable UUID id) {
@@ -66,35 +96,5 @@ public class ListingController {
         return ApiResponse.success(
                 "Listing published successfully.",
                 listingService.publish(id));
-    }
-
-    @GetMapping("/mine")
-    public ApiResponse<Page<ListingResponse>> getMyListings(
-            Pageable pageable) {
-
-        return ApiResponse.success(
-                "Listings retrieved successfully.",
-                listingService.getMyListings(pageable));
-    }
-
-    @GetMapping
-    public ApiResponse<Page<ListingResponse>> getActiveListings(
-            Pageable pageable) {
-
-        return ApiResponse.success(
-                "Listings retrieved successfully.",
-                listingService.getActiveListings(pageable));
-    }
-
-    @GetMapping("/category/{categoryId}")
-    public ApiResponse<Page<ListingResponse>> getByCategory(
-            @PathVariable UUID categoryId,
-            Pageable pageable) {
-
-        return ApiResponse.success(
-                "Listings retrieved successfully.",
-                listingService.getByCategory(
-                        categoryId,
-                        pageable));
     }
 }

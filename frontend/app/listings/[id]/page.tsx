@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, use, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { useAuth } from "@/providers/AuthProvider";
 import { getListing } from "@/lib/api/listings";
 import ListingImageGallery from "@/components/listings/ListingImageGallery";
@@ -79,9 +80,14 @@ function SectionCard({
   );
 }
 
-export default function ListingDetailsPage({ params }: PageProps) {
-  const resolvedParams = use(params);
-  const listingId = resolvedParams.id;
+export default function ListingDetailsPage() {
+  const routeParams = useParams();
+  const listingId =
+    typeof routeParams?.id === "string"
+      ? routeParams.id
+      : Array.isArray(routeParams?.id)
+      ? routeParams.id[0]
+      : "";
 
   const { user, accessToken, loading: authLoading } = useAuth();
   const [listing, setListing] = useState<Listing | null>(null);
