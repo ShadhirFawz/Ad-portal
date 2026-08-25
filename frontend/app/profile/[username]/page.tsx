@@ -40,17 +40,39 @@ export default async function PublicProfilePage({ params }: PageProps) {
     <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="glass-panel overflow-hidden">
         
-        {/* Cover Header Banner */}
-        <div className="h-32 sm:h-48 bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-700 relative" />
+        {/* Cover Photo Banner */}
+        {user.coverPhotoUrl ? (
+          <div className="h-32 sm:h-48 relative overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={user.coverPhotoUrl}
+              alt="Cover photo"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        ) : (
+          <div className="h-32 sm:h-48 bg-linear-to-r from-emerald-600 via-teal-600 to-indigo-700" />
+        )}
 
         {/* Profile Card Body */}
         <div className="p-6 sm:p-8 relative pt-0">
           
           {/* Avatar Badge Overlapping Banner */}
           <div className="-mt-16 sm:-mt-20 mb-4 flex items-end justify-between flex-wrap gap-4">
-            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl bg-slate-900 text-white font-bold text-4xl sm:text-5xl flex items-center justify-center border-4 border-white dark:border-[#0b0f19] shadow-xl">
-              {user.firstName[0]?.toUpperCase()}
-            </div>
+            {user.avatarUrl ? (
+              <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl bg-slate-200 dark:bg-slate-700 text-white font-bold text-4xl sm:text-5xl flex items-center justify-center border-4 border-white dark:border-[#0b0f19] shadow-xl overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={user.avatarUrl}
+                  alt="Profile picture"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl bg-slate-900 text-white font-bold text-4xl sm:text-5xl flex items-center justify-center border-4 border-white dark:border-[#0b0f19] shadow-xl">
+                {user.firstName[0]?.toUpperCase()}
+              </div>
+            )}
 
             <span className="badge-emerald px-3 py-1 text-sm">
               Verified Seller
@@ -67,7 +89,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
             </p>
           </div>
 
-          {/* Location & Meta info */}
+          {/* Location & Meta info - No email or phone for guest users */}
           <div className="mt-4 flex flex-wrap items-center gap-4 text-xs font-medium text-slate-500 dark:text-slate-400">
             {user.location && (
               <span className="flex items-center gap-1">

@@ -117,6 +117,14 @@ public class UserServiceImpl implements UserService {
             user.setPublicProfile(request.publicProfile());
         }
 
+        if (request.avatarUrl() != null) {
+            user.setAvatarUrl(request.avatarUrl().isBlank() ? null : request.avatarUrl().trim());
+        }
+
+        if (request.coverPhotoUrl() != null) {
+            user.setCoverPhotoUrl(request.coverPhotoUrl().isBlank() ? null : request.coverPhotoUrl().trim());
+        }
+
         return userMapper.toResponse(userRepository.save(user));
     }
 
