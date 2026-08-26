@@ -1,7 +1,9 @@
 package com.marketplace.marketplace.listing.service.impl;
 
+import com.marketplace.marketplace.category.dto.response.CategoryBreadcrumbResponse;
 import com.marketplace.marketplace.category.entity.Category;
 import com.marketplace.marketplace.category.repository.CategoryRepository;
+import com.marketplace.marketplace.category.service.CategoryService;
 import com.marketplace.marketplace.common.exception.ConflictException;
 import com.marketplace.marketplace.common.exception.ResourceNotFoundException;
 import com.marketplace.marketplace.common.security.util.SecurityUtils;
@@ -29,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -39,6 +42,7 @@ public class ListingServiceImpl implements ListingService {
 
         private final ListingRepository listingRepository;
         private final CategoryRepository categoryRepository;
+        private final CategoryService categoryService;
         private final UserRepository userRepository;
         private final ListingImageRepository imageRepository;
         private final ListingImageMapper imageMapper;
@@ -356,9 +360,11 @@ public class ListingServiceImpl implements ListingService {
                         UUID categoryId,
                         Pageable pageable) {
 
+                List<UUID> categoryIds = categoryService.getSelfAndDescendantCategoryIds(categoryId);
+
                 return listingRepository
-                                .findAllByCategoryIdAndStatus(
-                                                categoryId,
+                                .findAllByCategoryIdInAndStatus(
+                                                categoryIds,
                                                 ListingStatus.ACTIVE,
                                                 pageable)
                                 .map(this::toResponse);
@@ -432,8 +438,8 @@ public class ListingServiceImpl implements ListingService {
                         if (price != null
                                         && price.compareTo(BigDecimal.ZERO) != 0) {
 
-                                throw new ConflictException(
-                                                "Free listings cannot have a price.");
+                                 throw new ConflictException(
+                                                 "Free listings cannot have a price.");
                         }
 
                         return;
@@ -444,8 +450,8 @@ public class ListingServiceImpl implements ListingService {
                         if (price != null
                                         && price.compareTo(BigDecimal.ZERO) != 0) {
 
-                                throw new ConflictException(
-                                                "Contact-for-price listings cannot have a price.");
+                                 throw new ConflictException(
+                                                 "Contact-for-price listings cannot have a price.");
                         }
 
                         return;
@@ -557,6 +563,23 @@ public class ListingServiceImpl implements ListingService {
                 }
         }
 
+        private List<CategoryBreadcrumbResponse> buildCategoryBreadcrumbs(Category category) {
+                if (category == null) {
+                        return List.of();
+                }
+                List<CategoryBreadcrumbResponse> breadcrumbs = new ArrayList<>();
+                Category current = category;
+                while (current != null) {
+                        breadcrumbs.add(0, new CategoryBreadcrumbResponse(
+                                        current.getId(),
+                                        current.getName(),
+                                        current.getSlug(),
+                                        current.getLevel()));
+                        current = current.getParent();
+                }
+                return breadcrumbs;
+        }
+
         private ListingResponse toResponse(Listing listing) {
                 return toResponse(listing, false);
         }
@@ -576,12 +599,15 @@ public class ListingServiceImpl implements ListingService {
                                 ? listing.getSeller().getPhoneNumber()
                                 : null;
 
+                List<CategoryBreadcrumbResponse> breadcrumbs = buildCategoryBreadcrumbs(listing.getCategory());
+
                 return new ListingResponse(
                                 listing.getId(),
                                 listing.getSeller().getId(),
                                 listing.getSeller().getUsername(),
                                 listing.getCategory().getId(),
                                 listing.getCategory().getName(),
+                                breadcrumbs,
                                 listing.getTitle(),
                                 listing.getDescription(),
                                 listing.getPrice(),

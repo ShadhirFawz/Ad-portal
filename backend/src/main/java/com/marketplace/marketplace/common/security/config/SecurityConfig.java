@@ -86,16 +86,7 @@ public class SecurityConfig {
                                 .authenticated()
 
                                 // ── Categories — all public (read-only) ───────
-                                .requestMatchers(HttpMethod.GET, "/api/v1/categories")
-                                .permitAll()
-
-                                .requestMatchers(HttpMethod.GET, "/api/v1/categories/root")
-                                .permitAll()
-
-                                .requestMatchers(HttpMethod.GET, "/api/v1/categories/slug/{slug}")
-                                .permitAll()
-
-                                .requestMatchers(HttpMethod.GET, "/api/v1/categories/{id}")
+                                .requestMatchers(HttpMethod.GET, "/api/v1/categories/**")
                                 .permitAll()
 
                                 // ── Listings — public reads ───────────────────

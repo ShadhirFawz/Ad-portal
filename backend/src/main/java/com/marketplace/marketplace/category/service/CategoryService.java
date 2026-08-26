@@ -1,5 +1,6 @@
 package com.marketplace.marketplace.category.service;
 
+import com.marketplace.marketplace.category.dto.response.CategoryBreadcrumbResponse;
 import com.marketplace.marketplace.category.dto.response.CategoryResponse;
 
 import java.util.List;
@@ -14,4 +15,10 @@ public interface CategoryService {
     CategoryResponse getBySlug(String slug);
 
     CategoryResponse getById(UUID id);
-}
+
+    List<CategoryBreadcrumbResponse> getBreadcrumbs(UUID categoryId);
+
+    List<CategoryBreadcrumbResponse> getBreadcrumbsBySlug(String slug);
+
+    List<UUID> getSelfAndDescendantCategoryIds(UUID categoryId);
+}

@@ -1,5 +1,6 @@
 package com.marketplace.marketplace.category.controller;
 
+import com.marketplace.marketplace.category.dto.response.CategoryBreadcrumbResponse;
 import com.marketplace.marketplace.category.dto.response.CategoryResponse;
 import com.marketplace.marketplace.category.service.CategoryService;
 import com.marketplace.marketplace.common.response.ApiResponse;
@@ -48,5 +49,23 @@ public class CategoryController {
         return ApiResponse.success(
                 "Category retrieved successfully.",
                 categoryService.getBySlug(slug));
+    }
+
+    @GetMapping("/{id}/breadcrumbs")
+    public ApiResponse<List<CategoryBreadcrumbResponse>> getBreadcrumbs(
+            @PathVariable UUID id) {
+
+        return ApiResponse.success(
+                "Category breadcrumbs retrieved successfully.",
+                categoryService.getBreadcrumbs(id));
+    }
+
+    @GetMapping("/slug/{slug}/breadcrumbs")
+    public ApiResponse<List<CategoryBreadcrumbResponse>> getBreadcrumbsBySlug(
+            @PathVariable String slug) {
+
+        return ApiResponse.success(
+                "Category breadcrumbs retrieved successfully.",
+                categoryService.getBreadcrumbsBySlug(slug));
     }
 }
