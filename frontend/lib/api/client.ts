@@ -51,3 +51,42 @@ export async function apiRequest<T>(
 
   return data as T;
 }
+
+/**
+ * Public API request — never attaches an Authorization header.
+ * Use for endpoints that are open (no JWT needed), to avoid 401s
+ * caused by an expired or invalid Supabase session being forwarded.
+ */
+export async function publicRequest<T>(
+  path: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const response = await fetch(`${API_URL}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+  const text = await response.text();
+
+  let data: unknown = null;
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      if (!response.ok) {
+        throw new Error(`Request failed: ${response.status} ${response.statusText} - ${text}`);
+      }
+      return (text as unknown) as T;
+    }
+  }
+
+  if (!response.ok) {
+    const msg = (data as { message?: string } | null)?.message;
+    throw new Error(msg ?? `Request failed: ${response.status} ${response.statusText}`);
+  }
+
+  return data as T;
+}
