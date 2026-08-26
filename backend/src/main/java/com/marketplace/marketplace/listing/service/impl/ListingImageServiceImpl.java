@@ -56,21 +56,34 @@ public class ListingImageServiceImpl
 
                 boolean firstImage = existingCount == 0;
 
+                boolean isExternalUrl = request.storagePath().startsWith("http://")
+                                || request.storagePath().startsWith("https://");
+
+                String mimeType = request.mimeType() != null && !request.mimeType().isBlank()
+                                ? request.mimeType()
+                                : "image/jpeg";
+
+                String fileName = request.fileName() != null && !request.fileName().isBlank()
+                                ? request.fileName()
+                                : (isExternalUrl ? "external-image" : request.storagePath());
+
+                Long fileSize = request.fileSize() != null ? request.fileSize() : 0L;
+
                 ListingImage image = new ListingImage();
 
                 image.setListing(listing);
 
                 image.setStoragePath(
-                                request.storagePath());
+                                request.storagePath().trim());
 
                 image.setFileName(
-                                request.fileName());
+                                fileName);
 
                 image.setMimeType(
-                                request.mimeType());
+                                mimeType);
 
                 image.setFileSize(
-                                request.fileSize());
+                                fileSize);
 
                 image.setWidth(
                                 request.width());
@@ -125,11 +138,19 @@ public class ListingImageServiceImpl
                 String storagePath = image.getStoragePath();
 
                 /*
-                 * Delete physical file.
+                 * Delete physical file only if stored in Supabase storage (not external URL).
                  */
-                storageService.delete(
-                                properties.getBucket(),
-                                storagePath);
+                if (storagePath != null
+                                && !storagePath.startsWith("http://")
+                                && !storagePath.startsWith("https://")) {
+                        try {
+                                storageService.delete(
+                                                properties.getBucket(),
+                                                storagePath);
+                        } catch (Exception ignored) {
+                                // Ignore cleanup failure
+                        }
+                }
 
                 /*
                  * Remove database record.
@@ -276,34 +297,54 @@ public class ListingImageServiceImpl
                         RegisterListingImageRequest request,
                         UUID listingId) {
 
-                if (!ListingImageMimeTypes.isAllowed(
-                                request.mimeType())) {
+                String path = request.storagePath().trim();
+                boolean isExternalUrl = path.startsWith("http://") || path.startsWith("https://");
 
-                        throw new ConflictException(
-                                        "Unsupported image type.");
-                }
+                if (isExternalUrl) {
+                        try {
+                                java.net.URI uri = java.net.URI.create(path);
+                                if (uri.getHost() == null || uri.getHost().isBlank()) {
+                                        throw new ConflictException("Invalid image URL host.");
+                                }
+                        } catch (Exception e) {
+                                throw new ConflictException("Invalid image URL format.");
+                        }
 
-                if (request.fileSize() > properties.getMaxFileSize()) {
+                        if (request.mimeType() != null && !request.mimeType().isBlank()) {
+                                if (!ListingImageMimeTypes.isAllowed(request.mimeType())
+                                                && !request.mimeType().startsWith("image/")) {
+                                        throw new ConflictException("Unsupported image type.");
+                                }
+                        }
 
-                        throw new ConflictException(
-                                        "Image exceeds the maximum allowed size.");
-                }
+                        if (request.fileSize() != null && request.fileSize() > properties.getMaxFileSize()) {
+                                throw new ConflictException("Image exceeds the maximum allowed size.");
+                        }
+                } else {
+                        if (request.mimeType() == null
+                                        || !ListingImageMimeTypes.isAllowed(request.mimeType())) {
 
-                String expectedPrefix = "listings/"
-                                + listingId
-                                + "/";
+                                throw new ConflictException("Unsupported image type.");
+                        }
 
-                if (!request.storagePath()
-                                .startsWith(expectedPrefix)) {
+                        if (request.fileSize() != null && request.fileSize() > properties.getMaxFileSize()) {
 
-                        throw new ConflictException(
-                                        "Invalid image storage path.");
-                }
+                                throw new ConflictException("Image exceeds the maximum allowed size.");
+                        }
 
-                if (request.storagePath().contains("..")) {
+                        String expectedPrefix = "listings/"
+                                        + listingId
+                                        + "/";
 
-                        throw new ConflictException(
-                                        "Invalid image storage path.");
+                        if (!path.startsWith(expectedPrefix)) {
+
+                                throw new ConflictException("Invalid image storage path.");
+                        }
+
+                        if (path.contains("..")) {
+
+                                throw new ConflictException("Invalid image storage path.");
+                        }
                 }
         }
 }
