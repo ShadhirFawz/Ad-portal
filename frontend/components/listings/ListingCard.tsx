@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import type { Listing, ListingCardData } from "@/types/listing";
 import type { ListingImage } from "@/types/listing-image";
 
@@ -83,12 +84,13 @@ export default function ListingCard({
     >
       <Link href={targetHref} className="flex flex-col h-full">
         {/* Media Thumbnail Container */}
-        <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
+        <div className="relative aspect-4/3 w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
           {resolvedPrimaryImage?.url ? (
-            <img
+            <Image
               src={resolvedPrimaryImage.url}
               alt={listing.title}
-              loading="lazy"
+              width={400}
+              height={300}
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
@@ -171,10 +173,10 @@ export default function ListingCard({
           {/* Metadata Footer */}
           <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-500 dark:border-slate-800/80 dark:text-slate-400">
             {locationText ? (
-              <span className="flex items-center gap-1 truncate max-w-[180px]">
+              <span className="flex items-center gap-1 truncate max-w-45">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="h-3.5 w-3.5 flex-shrink-0 text-slate-400"
+                  className="h-3.5 w-3.5 shrink-0 text-slate-400"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
+import Image from "next/image";
 import type { Category } from "@/types/category";
 import {
   Package,
@@ -185,9 +186,11 @@ export default function NestedCategorySelector({
           <div className="flex items-center gap-3.5">
             <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 shadow-xs flex items-center justify-center border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200">
               {selectedCategory.iconUrl ? (
-                <img
+                <Image
                   src={selectedCategory.iconUrl}
                   alt={selectedCategory.name}
+                  width={20}
+                  height={20}
                   className="w-5 h-5 object-contain"
                 />
               ) : (
@@ -253,9 +256,9 @@ export default function NestedCategorySelector({
           </div>
 
           {/* Cascading Columns Container */}
-          <div className="flex flex-col sm:flex-row overflow-x-auto custom-scrollbar divide-y sm:divide-y-0 sm:divide-x divide-slate-200 dark:divide-slate-800 min-h-[300px] max-h-[380px]">
+          <div className="flex flex-col sm:flex-row overflow-x-auto custom-scrollbar divide-y sm:divide-y-0 sm:divide-x divide-slate-200 dark:divide-slate-800 min-h-75 max-h-95">
             {/* Column 1: Parent / Level 1 */}
-            <div className="w-full sm:w-1/3 min-w-[220px] overflow-y-auto custom-scrollbar p-2 space-y-1">
+            <div className="w-full sm:w-1/3 min-w-55 overflow-y-auto custom-scrollbar p-2 space-y-1">
               <div className="px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                 Primary Category
               </div>
@@ -287,9 +290,9 @@ export default function NestedCategorySelector({
                         }`}
                     >
                       <div className="flex items-center gap-2.5 truncate">
-                        <span className="shrink-0 text-slate-500 dark:text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                        <span className="shrink-0 text-slate-500 dark:text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors flex items-center">
                           {cat.iconUrl ? (
-                            <img src={cat.iconUrl} alt={cat.name} className="w-4 h-4 object-contain inline" />
+                            <Image src={cat.iconUrl} alt={cat.name} width={16} height={16} className="w-4 h-4 object-contain inline" />
                           ) : (
                             <Icon className="w-4 h-4" />
                           )}
@@ -312,7 +315,7 @@ export default function NestedCategorySelector({
 
             {/* Column 2: Subcategories / Level 2 */}
             {level2Categories.length > 0 && (
-              <div className="w-full sm:w-1/3 min-w-[220px] overflow-y-auto custom-scrollbar p-2 space-y-1 bg-slate-50/40 dark:bg-slate-900/40 animate-fadeIn">
+              <div className="w-full sm:w-1/3 min-w-55 overflow-y-auto custom-scrollbar p-2 space-y-1 bg-slate-50/40 dark:bg-slate-900/40 animate-fadeIn">
                 <div className="px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                   Subcategory
                 </div>
@@ -355,7 +358,7 @@ export default function NestedCategorySelector({
 
             {/* Column 3: Leaf / Nested Subcategories (Level 3) */}
             {level3Categories.length > 0 && (
-              <div className="w-full sm:w-1/3 min-w-[220px] overflow-y-auto custom-scrollbar p-2 space-y-1 bg-slate-100/40 dark:bg-slate-800/30 animate-fadeIn">
+              <div className="w-full sm:w-1/3 min-w-55 overflow-y-auto custom-scrollbar p-2 space-y-1 bg-slate-100/40 dark:bg-slate-800/30 animate-fadeIn">
                 <div className="px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                   Specific Type
                 </div>
