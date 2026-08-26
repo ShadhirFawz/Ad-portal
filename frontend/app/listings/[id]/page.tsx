@@ -81,8 +81,8 @@ export default function ListingDetailsPage() {
     typeof routeParams?.id === "string"
       ? routeParams.id
       : Array.isArray(routeParams?.id)
-      ? routeParams.id[0]
-      : "";
+        ? routeParams.id[0]
+        : "";
 
   const { user, accessToken, loading: authLoading } = useAuth();
   const [listing, setListing] = useState<Listing | null>(null);
@@ -212,7 +212,7 @@ export default function ListingDetailsPage() {
           )}
         </div>
 
-        {/* Two-column layout: Image | Header + Seller Contact */}
+        {/* Two-column layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 items-start">
           {/* Left Column: Image Gallery (Sticky) */}
           <div className="w-full lg:sticky lg:top-18">
@@ -232,13 +232,12 @@ export default function ListingDetailsPage() {
                 </span>
                 {listing.status !== "ACTIVE" && (
                   <span
-                    className={`rounded-md px-2.5 py-1 text-xs font-bold uppercase tracking-wider ${
-                      listing.status === "DRAFT"
-                        ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
-                        : listing.status === "SOLD"
-                          ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
-                          : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                    }`}
+                    className={`rounded-md px-2.5 py-1 text-xs font-bold uppercase tracking-wider ${listing.status === "DRAFT"
+                      ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
+                      : listing.status === "SOLD"
+                        ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
+                        : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                      }`}
                   >
                     {formatListingStatus(listing.status)}
                   </span>
