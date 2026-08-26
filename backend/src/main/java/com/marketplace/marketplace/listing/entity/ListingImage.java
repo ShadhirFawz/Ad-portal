@@ -31,16 +31,16 @@ public class ListingImage {
     @JoinColumn(name = "listing_id", nullable = false)
     private Listing listing;
 
-    @Column(name = "storage_path", nullable = false, unique = true, length = 500)
+    @Column(name = "storage_path", nullable = false, unique = true, length = 2000)
     private String storagePath;
 
-    @Column(name = "file_name", length = 255)
+    @Column(name = "file_name", length = 500)
     private String fileName;
 
     @Column(name = "mime_type", nullable = false, length = 100)
     private String mimeType;
 
-    @Column(name = "file_size", nullable = false)
+    @Column(name = "file_size")
     private Long fileSize;
 
     @Column
