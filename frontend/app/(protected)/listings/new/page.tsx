@@ -18,7 +18,6 @@ import type {
   PricingType,
   UpdateListingRequest,
 } from "@/types/listing";
-import type { ListingImage } from "@/types/listing-image";
 import {
   Layers,
   ShoppingBag,
@@ -1147,7 +1146,7 @@ export default function NewListingPage() {
       {step === 2 && createdListing && (
         <div className="space-y-8 animate-fadeIn">
           {/* Draft Item Summary Card */}
-          <div className="glass-panel p-6 sm:p-7 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-emerald-500/20 bg-emerald-500/[0.03]">
+          <div className="glass-panel p-6 sm:p-7 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-emerald-500/20 bg-emerald-500/3">
             <div className="space-y-1.5 min-w-0">
               <div className="flex items-center gap-2.5 flex-wrap">
                 <span className="badge-emerald">Draft Created</span>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import Image from "next/image";
 import { useAuth } from "@/providers/AuthProvider";
 import {
     addListingImageFromUrl,
@@ -92,7 +93,7 @@ export default function ListingImageUploader({
         try {
             return await new Promise<{ width: number; height: number }>(
                 (resolve, reject) => {
-                    const image = new Image();
+                    const image = new window.Image();
                     image.onload = () => {
                         resolve({
                             width: image.naturalWidth,
@@ -220,7 +221,7 @@ export default function ListingImageUploader({
 
         setUrlPreviewStatus("loading");
 
-        const img = new Image();
+        const img = new window.Image();
         let active = true;
 
         img.onload = () => {
@@ -560,10 +561,13 @@ export default function ListingImageUploader({
 
                                 {urlPreviewStatus === "valid" && (
                                     <div className="flex items-center gap-4 p-3 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-500/20">
-                                        <div className="h-16 w-16 rounded-lg overflow-hidden border border-emerald-500/30 shrink-0 bg-slate-100 dark:bg-slate-800">
-                                            <img
+                                        <div className="relative h-16 w-16 rounded-lg overflow-hidden border border-emerald-500/30 shrink-0 bg-slate-100 dark:bg-slate-800">
+                                            <Image
                                                 src={urlInput.trim()}
                                                 alt="Preview"
+                                                width={64}
+                                                height={64}
+                                                unoptimized
                                                 className="h-full w-full object-cover"
                                             />
                                         </div>
@@ -599,14 +603,19 @@ export default function ListingImageUploader({
                             key={item.id}
                             className="flex items-center gap-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-sm"
                         >
-                            <img
-                                src={item.previewUrl}
-                                alt=""
-                                className="h-14 w-14 rounded-lg object-cover border border-slate-200 dark:border-slate-800 shrink-0"
-                            />
+                            <div className="relative h-14 w-14 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 shrink-0">
+                                <Image
+                                    src={item.previewUrl}
+                                    alt=""
+                                    width={56}
+                                    height={56}
+                                    unoptimized
+                                    className="h-full w-full object-cover"
+                                />
+                            </div>
                             <div className="flex-1 space-y-1.5 min-w-0">
                                 <div className="flex justify-between text-xs font-medium text-slate-700 dark:text-slate-300">
-                                    <span className="truncate max-w-[200px]">{item.file.name}</span>
+                                    <span className="truncate max-w-50">{item.file.name}</span>
                                     <span>{item.progress}%</span>
                                 </div>
                                 <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
@@ -659,9 +668,11 @@ export default function ListingImageUploader({
                                     }`}
                                 >
                                     <div className="relative aspect-square w-full">
-                                        <img
+                                        <Image
                                             src={image.url}
                                             alt={image.fileName ?? "Listing photo"}
+                                            width={300}
+                                            height={300}
                                             className="h-full w-full object-cover"
                                         />
                                         {image.primary && (

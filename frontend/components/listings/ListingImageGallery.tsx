@@ -19,7 +19,7 @@ export default function ListingImageGallery({ images = [], title }: Props) {
 
     if (orderedImages.length === 0) {
         return (
-            <div className="flex aspect-square w-full max-w-[400px] items-center justify-center rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex aspect-square w-full max-w-100 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900">
                 <span className="text-sm text-slate-500 dark:text-slate-400">
                     No images available
                 </span>
@@ -32,7 +32,7 @@ export default function ListingImageGallery({ images = [], title }: Props) {
     ];
 
     return (
-        <div className="space-y-3 max-w-[400px]">
+        <div className="space-y-3 max-w-100">
             {/* Main Image */}
             <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
                 <Image
