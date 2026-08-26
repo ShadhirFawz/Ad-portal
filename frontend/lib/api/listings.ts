@@ -160,3 +160,19 @@ export async function getListings(
 
   return response.data;
 }
+
+export async function getListingsByCategory(
+  categoryId: string,
+  page = 0,
+  size = 20
+): Promise<PageResponse<Listing>> {
+
+  const response =
+    await apiRequest<
+      ApiResponse<PageResponse<Listing>>
+    >(
+      `/listings/category/${categoryId}?page=${page}&size=${size}`
+    );
+
+  return response.data;
+}

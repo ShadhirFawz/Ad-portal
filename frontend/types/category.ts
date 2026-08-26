@@ -12,3 +12,10 @@ export interface Category {
   allowListings: boolean;
   metadata: Record<string, unknown>;
 }
+
+export interface CategoryBreadcrumb {
+  id: string;
+  name: string;
+  slug: string;
+  level: number;
+}

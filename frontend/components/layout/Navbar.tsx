@@ -28,7 +28,7 @@ export default function Navbar() {
         {/* Right Navigation */}
         <nav className="flex items-center gap-4">
           <Link
-            href="/"
+            href="/listings"
             className="text-sm font-medium text-slate-600 hover:text-emerald-600 dark:text-slate-300 dark:hover:text-emerald-400 transition-colors px-3 py-2 rounded-lg"
           >
             Explore
