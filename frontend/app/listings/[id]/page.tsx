@@ -32,12 +32,6 @@ import {
   User,
 } from "lucide-react";
 
-interface PageProps {
-  params: Promise<{
-    id: string;
-  }>;
-}
-
 function DetailRow({
   label,
   value,
@@ -306,7 +300,7 @@ export default function ListingDetailsPage() {
             {/* Seller Contact */}
             <div className="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 dark:border-slate-800 dark:bg-slate-900/90 shadow-sm space-y-4">
               <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-white font-bold text-lg flex items-center justify-center shadow-md shadow-emerald-500/20 shrink-0">
+                <div className="w-12 h-12 rounded-2xl bg-linear-to-tr from-emerald-500 to-teal-400 text-white font-bold text-lg flex items-center justify-center shadow-md shadow-emerald-500/20 shrink-0">
                   {listing.sellerUsername
                     ? listing.sellerUsername.charAt(0).toUpperCase()
                     : "U"}

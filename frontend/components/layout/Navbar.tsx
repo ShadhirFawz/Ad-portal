@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useAuth } from "@/providers/AuthProvider";
 
 export default function Navbar() {
@@ -41,9 +42,11 @@ export default function Navbar() {
                 className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 hover:border-emerald-500/50 transition-all group"
               >
                 {user.avatarUrl ? (
-                  <img
+                  <Image
                     src={user.avatarUrl}
                     alt="Avatar"
+                    width={28}
+                    height={28}
                     className="w-7 h-7 rounded-full object-cover border border-emerald-500/30"
                   />
                 ) : (

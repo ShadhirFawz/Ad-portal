@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { Upload, AlertTriangle, Loader } from "lucide-react";
 
 interface ProfileImageUploaderProps {
@@ -115,12 +116,14 @@ export function ProfileImageUploader({
 
       {type === "avatar" ? (
         <div className="flex flex-col items-center gap-4">
-          <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl bg-slate-200 dark:bg-slate-700 flex items-center justify-center overflow-hidden border-4 border-white dark:border-slate-800 shadow-lg">
+          <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl bg-slate-200 dark:bg-slate-700 flex items-center justify-center overflow-hidden border-4 border-white dark:border-slate-800 shadow-lg relative">
             {previewUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={previewUrl}
                 alt="Avatar preview"
+                width={128}
+                height={128}
+                unoptimized
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -162,12 +165,14 @@ export function ProfileImageUploader({
         </div>
       ) : (
         <div className="space-y-2">
-          <div className="h-32 sm:h-40 rounded-xl bg-slate-200 dark:bg-slate-700 flex items-center justify-center overflow-hidden border-2 border-dashed border-slate-300 dark:border-slate-600">
+          <div className="h-32 sm:h-40 rounded-xl bg-slate-200 dark:bg-slate-700 flex items-center justify-center overflow-hidden border-2 border-dashed border-slate-300 dark:border-slate-600 relative">
             {previewUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={previewUrl}
                 alt="Cover preview"
+                width={800}
+                height={200}
+                unoptimized
                 className="w-full h-full object-cover"
               />
             ) : (
