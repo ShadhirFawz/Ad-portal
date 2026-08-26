@@ -17,7 +17,6 @@ import type {
   PricingType,
   UpdateListingRequest,
 } from "@/types/listing";
-import type { ListingImage } from "@/types/listing-image";
 import {
   Layers,
   ShoppingBag,
@@ -38,8 +37,6 @@ import {
   Plus,
   X,
   AlertTriangle,
-  ArrowRight,
-  ArrowLeft,
   CheckCircle2,
   Camera,
   Eye,
@@ -500,7 +497,7 @@ export default function EditListingPage({ params }: PageProps) {
           <span>/</span>
           <Link
             href={`/listings/${listing.id}`}
-            className="hover:text-slate-800 dark:hover:text-slate-200 transition-colors truncate max-w-[200px]"
+            className="hover:text-slate-800 dark:hover:text-slate-200 transition-colors truncate max-w-50"
           >
             {listing.title}
           </Link>

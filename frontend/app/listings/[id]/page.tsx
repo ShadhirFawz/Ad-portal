@@ -32,12 +32,6 @@ import {
   User,
 } from "lucide-react";
 
-interface PageProps {
-  params: Promise<{
-    id: string;
-  }>;
-}
-
 function DetailRow({
   label,
   value,
@@ -87,8 +81,8 @@ export default function ListingDetailsPage() {
     typeof routeParams?.id === "string"
       ? routeParams.id
       : Array.isArray(routeParams?.id)
-      ? routeParams.id[0]
-      : "";
+        ? routeParams.id[0]
+        : "";
 
   const { user, accessToken, loading: authLoading } = useAuth();
   const [listing, setListing] = useState<Listing | null>(null);
@@ -218,16 +212,17 @@ export default function ListingDetailsPage() {
           )}
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-2 items-start">
-          {/* Left: gallery */}
-          <div className="w-full lg:sticky lg:top-8">
+        {/* Two-column layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 items-start">
+          {/* Left Column: Image Gallery (Sticky) */}
+          <div className="w-full lg:sticky lg:top-18">
             <ListingImageGallery images={listing.images} title={listing.title} />
           </div>
 
-          {/* Right: details */}
-          <div className="space-y-6">
+          {/* Right Column: Header and Seller Contact (Aligned with Image) */}
+          <div className="space-y-4">
             {/* Header */}
-            <div className="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 dark:border-slate-800 dark:bg-slate-900/90 shadow-sm space-y-4">
+            <div className="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 dark:border-slate-800 dark:bg-slate-900/90 shadow-sm space-y-3">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                   {formatListingCondition(listing.condition)}
@@ -237,13 +232,12 @@ export default function ListingDetailsPage() {
                 </span>
                 {listing.status !== "ACTIVE" && (
                   <span
-                    className={`rounded-md px-2.5 py-1 text-xs font-bold uppercase tracking-wider ${
-                      listing.status === "DRAFT"
-                        ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
-                        : listing.status === "SOLD"
-                          ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
-                          : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                    }`}
+                    className={`rounded-md px-2.5 py-1 text-xs font-bold uppercase tracking-wider ${listing.status === "DRAFT"
+                      ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
+                      : listing.status === "SOLD"
+                        ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
+                        : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                      }`}
                   >
                     {formatListingStatus(listing.status)}
                   </span>
@@ -302,10 +296,10 @@ export default function ListingDetailsPage() {
               </div>
             </div>
 
-            {/* Seller contact */}
-            <div className="rounded-3xl border border-slate-200/80 bg-white p-6 dark:border-slate-800 dark:bg-slate-900/90 shadow-sm space-y-4">
+            {/* Seller Contact */}
+            <div className="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 dark:border-slate-800 dark:bg-slate-900/90 shadow-sm space-y-4">
               <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-white font-bold text-lg flex items-center justify-center shadow-md shadow-emerald-500/20 shrink-0">
+                <div className="w-12 h-12 rounded-2xl bg-linear-to-tr from-emerald-500 to-teal-400 text-white font-bold text-lg flex items-center justify-center shadow-md shadow-emerald-500/20 shrink-0">
                   {listing.sellerUsername
                     ? listing.sellerUsername.charAt(0).toUpperCase()
                     : "U"}
@@ -356,106 +350,109 @@ export default function ListingDetailsPage() {
                 </div>
               )}
             </div>
-
-            {/* Description */}
-            <SectionCard title="Description" icon={Tag}>
-              <div className="prose prose-slate dark:prose-invert max-w-none text-sm leading-relaxed whitespace-pre-line text-slate-700 dark:text-slate-300">
-                {listing.description}
-              </div>
-            </SectionCard>
-
-            {/* Listing details */}
-            <SectionCard title="Listing Details" icon={Package}>
-              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
-                <DetailRow label="Category" value={listing.categoryName} />
-                <DetailRow
-                  label="Offering Type"
-                  value={formatListingType(listing.listingType)}
-                />
-                <DetailRow
-                  label="Condition"
-                  value={formatListingCondition(listing.condition)}
-                />
-                <DetailRow
-                  label="Pricing Type"
-                  value={formatPricingType(listing.pricingType)}
-                />
-                <DetailRow label="Currency" value={listing.currency} />
-                <DetailRow
-                  label="Total Quantity"
-                  value={listing.quantity?.toLocaleString()}
-                />
-                <DetailRow
-                  label="Available Quantity"
-                  value={(
-                    listing.availableQuantity ?? listing.quantity
-                  )?.toLocaleString()}
-                />
-                <DetailRow
-                  label="Listing Status"
-                  value={formatListingStatus(listing.status)}
-                />
-                {isOwner && (
-                  <DetailRow
-                    label="Moderation"
-                    value={formatModerationStatus(listing.moderationStatus)}
-                  />
-                )}
-              </dl>
-            </SectionCard>
-
-            {/* Location */}
-            <SectionCard title="Location" icon={MapPin}>
-              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
-                <DetailRow
-                  label="Coverage"
-                  value={formatLocationType(listing.locationType)}
-                />
-                {listing.locationType !== "ONLINE" && (
-                  <>
-                    <DetailRow label="City" value={listing.city} />
-                    <DetailRow label="District" value={listing.district} />
-                    <DetailRow label="Province" value={listing.province} />
-                    <DetailRow label="Postal Code" value={listing.postalCode} />
-                  </>
-                )}
-              </dl>
-            </SectionCard>
-
-            {/* Custom attributes */}
-            {customAttributeEntries.length > 0 && (
-              <SectionCard title="Additional Attributes" icon={Shield}>
-                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
-                  {customAttributeEntries.map(([key, value]) => (
-                    <DetailRow
-                      key={key}
-                      label={key}
-                      value={String(value)}
-                    />
-                  ))}
-                </dl>
-              </SectionCard>
-            )}
-
-            {/* Timestamps */}
-            <SectionCard title="Activity" icon={Clock}>
-              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
-                {listedAgo && (
-                  <DetailRow label="Listed" value={listedAgo} />
-                )}
-                {updatedAgo && updatedAgo !== listedAgo && (
-                  <DetailRow label="Last Updated" value={updatedAgo} />
-                )}
-                {publishedAgo && (
-                  <DetailRow label="Published" value={publishedAgo} />
-                )}
-                <DetailRow
-                  label="Photos"
-                  value={`${listing.images?.length ?? 0} uploaded`}
-                />
-              </dl>
-            </SectionCard>
           </div>
+        </div>
+
+        {/* Full-width sections below the two-column layout */}
+        <div className="space-y-4 mt-6 lg:mt-8">
+          {/* Description */}
+          <SectionCard title="Description" icon={Tag}>
+            <div className="prose prose-slate dark:prose-invert max-w-none text-sm leading-relaxed whitespace-pre-line text-slate-700 dark:text-slate-300">
+              {listing.description}
+            </div>
+          </SectionCard>
+
+          {/* Listing details */}
+          <SectionCard title="Listing Details" icon={Package}>
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+              <DetailRow label="Category" value={listing.categoryName} />
+              <DetailRow
+                label="Offering Type"
+                value={formatListingType(listing.listingType)}
+              />
+              <DetailRow
+                label="Condition"
+                value={formatListingCondition(listing.condition)}
+              />
+              <DetailRow
+                label="Pricing Type"
+                value={formatPricingType(listing.pricingType)}
+              />
+              <DetailRow label="Currency" value={listing.currency} />
+              <DetailRow
+                label="Total Quantity"
+                value={listing.quantity?.toLocaleString()}
+              />
+              <DetailRow
+                label="Available Quantity"
+                value={(
+                  listing.availableQuantity ?? listing.quantity
+                )?.toLocaleString()}
+              />
+              <DetailRow
+                label="Listing Status"
+                value={formatListingStatus(listing.status)}
+              />
+              {isOwner && (
+                <DetailRow
+                  label="Moderation"
+                  value={formatModerationStatus(listing.moderationStatus)}
+                />
+              )}
+            </dl>
+          </SectionCard>
+
+          {/* Location */}
+          <SectionCard title="Location" icon={MapPin}>
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+              <DetailRow
+                label="Coverage"
+                value={formatLocationType(listing.locationType)}
+              />
+              {listing.locationType !== "ONLINE" && (
+                <>
+                  <DetailRow label="City" value={listing.city} />
+                  <DetailRow label="District" value={listing.district} />
+                  <DetailRow label="Province" value={listing.province} />
+                  <DetailRow label="Postal Code" value={listing.postalCode} />
+                </>
+              )}
+            </dl>
+          </SectionCard>
+
+          {/* Custom attributes */}
+          {customAttributeEntries.length > 0 && (
+            <SectionCard title="Additional Attributes" icon={Shield}>
+              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                {customAttributeEntries.map(([key, value]) => (
+                  <DetailRow
+                    key={key}
+                    label={key}
+                    value={String(value)}
+                  />
+                ))}
+              </dl>
+            </SectionCard>
+          )}
+
+          {/* Timestamps */}
+          <SectionCard title="Activity" icon={Clock}>
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+              {listedAgo && (
+                <DetailRow label="Listed" value={listedAgo} />
+              )}
+              {updatedAgo && updatedAgo !== listedAgo && (
+                <DetailRow label="Last Updated" value={updatedAgo} />
+              )}
+              {publishedAgo && (
+                <DetailRow label="Published" value={publishedAgo} />
+              )}
+              <DetailRow
+                label="Photos"
+                value={`${listing.images?.length ?? 0} uploaded`}
+              />
+            </dl>
+          </SectionCard>
         </div>
       </main>
 

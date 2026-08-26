@@ -1,5 +1,6 @@
 import { getPublicProfile } from "@/lib/api/users";
 import Link from "next/link";
+import Image from "next/image";
 
 interface PageProps {
   params: Promise<{
@@ -43,10 +44,11 @@ export default async function PublicProfilePage({ params }: PageProps) {
         {/* Cover Photo Banner */}
         {user.coverPhotoUrl ? (
           <div className="h-32 sm:h-48 relative overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={user.coverPhotoUrl}
               alt="Cover photo"
+              width={900}
+              height={200}
               className="w-full h-full object-cover"
             />
           </div>
@@ -60,11 +62,12 @@ export default async function PublicProfilePage({ params }: PageProps) {
           {/* Avatar Badge Overlapping Banner */}
           <div className="-mt-16 sm:-mt-20 mb-4 flex items-end justify-between flex-wrap gap-4">
             {user.avatarUrl ? (
-              <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl bg-slate-200 dark:bg-slate-700 text-white font-bold text-4xl sm:text-5xl flex items-center justify-center border-4 border-white dark:border-[#0b0f19] shadow-xl overflow-hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+              <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl bg-slate-200 dark:bg-slate-700 text-white font-bold text-4xl sm:text-5xl flex items-center justify-center border-4 border-white dark:border-[#0b0f19] shadow-xl overflow-hidden relative">
+                <Image
                   src={user.avatarUrl}
                   alt="Profile picture"
+                  width={128}
+                  height={128}
                   className="w-full h-full object-cover"
                 />
               </div>

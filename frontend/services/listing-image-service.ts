@@ -99,6 +99,35 @@ export async function registerListingImage(
     return response.json();
 }
 
+export async function addListingImageFromUrl(
+    accessToken: string,
+    listingId: string,
+    imageUrl: string
+): Promise<ListingImage> {
+    const trimmedUrl = imageUrl.trim();
+    if (!trimmedUrl.startsWith("http://") && !trimmedUrl.startsWith("https://")) {
+        throw new Error("Please enter a valid URL starting with http:// or https://");
+    }
+
+    let fileName = "external-image";
+    try {
+        const parsed = new URL(trimmedUrl);
+        const segment = parsed.pathname.substring(parsed.pathname.lastIndexOf("/") + 1);
+        if (segment && segment.includes(".")) {
+            fileName = segment.split("?")[0];
+        }
+    } catch {
+        // default fileName
+    }
+
+    return registerListingImage(accessToken, listingId, {
+        storagePath: trimmedUrl,
+        fileName,
+        mimeType: "image/jpeg",
+        fileSize: 0,
+    });
+}
+
 export async function getListingImages(
     listingId: string
 ): Promise<ListingImage[]> {

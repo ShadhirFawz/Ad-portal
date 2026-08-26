@@ -6,13 +6,13 @@ import java.util.Map;
 
 public record RegisterListingImageRequest(
 
-        @NotBlank @Size(max = 500) String storagePath,
+        @NotBlank @Size(max = 2000) String storagePath,
 
-        @Size(max = 255) String fileName,
+        @Size(max = 500) String fileName,
 
-        @NotBlank @Size(max = 100) String mimeType,
+        @Size(max = 100) String mimeType,
 
-        @NotNull @Positive Long fileSize,
+        @PositiveOrZero Long fileSize,
 
         @Positive Integer width,
 
