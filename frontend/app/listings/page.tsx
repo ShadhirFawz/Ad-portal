@@ -1,34 +1,25 @@
 "use client";
 
 import { useEffect, useState, useCallback, Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { getListings, getListingsByCategory } from "@/lib/api/listings";
-import {
-  getCategories,
-  getCategory,
-  getCategoryBreadcrumbs,
-} from "@/lib/api/categories";
+import { getCategories, getCategory, getCategoryBreadcrumbs } from "@/lib/api/categories";
 import type { Listing } from "@/types/listing";
 import type { Category, CategoryBreadcrumb } from "@/types/category";
 import ListingCard from "@/components/listings/ListingCard";
 import ListingBreadcrumb from "@/components/listings/ListingBreadcrumb";
+import FilterSidebar from "@/components/listings/FilterSidebar";
 import {
-  Layers,
   Plus,
-  Filter,
-  ChevronLeft,
-  ChevronRight,
-  Search,
-  X,
   SlidersHorizontal,
   LayoutGrid,
   LayoutList,
-  ChevronDown,
-  ChevronRight as ChevronRightSm,
+  ChevronLeft,
+  ChevronRight,
+  X,
 } from "lucide-react";
 
-// ─── Filter state ──────────────────────────────────────────────────────────────
 interface Filters {
   search: string;
   condition: string;
@@ -51,60 +42,6 @@ const EMPTY_FILTERS: Filters = {
 
 const PAGE_SIZE = 8;
 
-// ─── Sidebar Accordion Section ─────────────────────────────────────────────────
-function FilterSection({
-  title,
-  children,
-  defaultOpen = true,
-}: {
-  title: string;
-  children: React.ReactNode;
-  defaultOpen?: boolean;
-}) {
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <div className="border-b border-slate-100 dark:border-slate-800 pb-4 last:border-0 last:pb-0">
-      <button
-        type="button"
-        onClick={() => setOpen((p) => !p)}
-        className="flex w-full items-center justify-between py-2 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
-      >
-        {title}
-        <ChevronDown
-          className={`w-4 h-4 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-        />
-      </button>
-      {open && <div className="mt-3 space-y-2">{children}</div>}
-    </div>
-  );
-}
-
-// ─── Radio/check filter pill ───────────────────────────────────────────────────
-function FilterPill({
-  label,
-  active,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-150 ${
-        active
-          ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-500/40"
-          : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60"
-      }`}
-    >
-      {label}
-    </button>
-  );
-}
-
-// ─── Pagination ────────────────────────────────────────────────────────────────
 function Pagination({
   current,
   total,
@@ -136,7 +73,9 @@ function Pagination({
 
       {pages[0] > 0 && (
         <>
-          <button type="button" onClick={() => onChange(0)} className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">1</button>
+          <button type="button" onClick={() => onChange(0)} className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+            1
+          </button>
           {pages[0] > 1 && <span className="text-slate-400 text-xs px-1">…</span>}
         </>
       )}
@@ -146,11 +85,10 @@ function Pagination({
           key={p}
           type="button"
           onClick={() => onChange(p)}
-          className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-            p === current
+          className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all ${p === current
               ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/25"
               : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-          }`}
+            }`}
         >
           {p + 1}
         </button>
@@ -159,7 +97,13 @@ function Pagination({
       {pages[pages.length - 1] < total - 1 && (
         <>
           {pages[pages.length - 1] < total - 2 && <span className="text-slate-400 text-xs px-1">…</span>}
-          <button type="button" onClick={() => onChange(total - 1)} className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">{total}</button>
+          <button
+            type="button"
+            onClick={() => onChange(total - 1)}
+            className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+          >
+            {total}
+          </button>
         </>
       )}
 
@@ -175,70 +119,7 @@ function Pagination({
   );
 }
 
-// ─── Category tree node ────────────────────────────────────────────────────────
-function CategoryTreeNode({
-  cat,
-  allCats,
-  depth = 0,
-  activeCategoryId,
-}: {
-  cat: Category;
-  allCats: Category[];
-  depth?: number;
-  activeCategoryId: string | null;
-}) {
-  const children = allCats.filter((c) => c.parentId === cat.id && c.active);
-  const [expanded, setExpanded] = useState(false);
-  const isActive = cat.id === activeCategoryId;
-
-  return (
-    <div>
-      <div className="flex items-center gap-1">
-        {children.length > 0 ? (
-          <button
-            type="button"
-            onClick={() => setExpanded((p) => !p)}
-            className="p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 shrink-0"
-          >
-            <ChevronRightSm
-              className={`w-3 h-3 transition-transform ${expanded ? "rotate-90" : ""}`}
-            />
-          </button>
-        ) : (
-          <span className="w-4 shrink-0" />
-        )}
-        <Link
-          href={`/listings?category=${cat.id}`}
-          className={`flex-1 truncate py-1.5 px-2 rounded-lg text-xs font-medium transition-all ${
-            isActive
-              ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60"
-          }`}
-          style={{ paddingLeft: `${depth * 10 + 8}px` }}
-        >
-          {cat.name}
-        </Link>
-      </div>
-      {expanded && children.length > 0 && (
-        <div className="ml-4 mt-0.5 border-l border-slate-200 dark:border-slate-800 pl-1.5 space-y-0.5">
-          {children.map((child) => (
-            <CategoryTreeNode
-              key={child.id}
-              cat={child}
-              allCats={allCats}
-              depth={depth + 1}
-              activeCategoryId={activeCategoryId}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Main Component ────────────────────────────────────────────────────────────
 function ListingsContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const categoryId = searchParams.get("category");
 
@@ -256,7 +137,6 @@ function ListingsContent() {
   const [viewLayout, setViewLayout] = useState<"row" | "grid">("row");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  // derived: client-side filtered + sorted subset of current page
   const filteredListings = allListings.filter((l) => {
     if (
       filters.search &&
@@ -274,10 +154,14 @@ function ListingsContent() {
 
   const sortedListings = [...filteredListings].sort((a, b) => {
     switch (filters.sortBy) {
-      case "price_asc": return a.price - b.price;
-      case "price_desc": return b.price - a.price;
-      case "oldest": return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-      default: return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      case "price_asc":
+        return a.price - b.price;
+      case "price_desc":
+        return b.price - a.price;
+      case "oldest":
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      default:
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     }
   });
 
@@ -289,6 +173,8 @@ function ListingsContent() {
     filters.minPrice,
     filters.maxPrice,
   ].filter(Boolean).length;
+
+  const rootCategories = allCategories.filter((c) => !c.parentId && c.active);
 
   // Fetch data from API
   useEffect(() => {
@@ -343,10 +229,11 @@ function ListingsContent() {
     }
 
     loadData();
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
   }, [categoryId]);
 
-  // Page navigation (API-paginated)
   const goToPage = useCallback(
     async (page: number) => {
       if (page < 0 || page >= totalPages) return;
@@ -369,183 +256,25 @@ function ListingsContent() {
     [categoryId, totalPages]
   );
 
-  // Commit search from input
   const commitSearch = () => setFilters((f) => ({ ...f, search: pendingSearch }));
 
-  const setFilter = <K extends keyof Filters>(key: K, value: Filters[K]) =>
-    setFilters((prev) => ({ ...prev, [key]: prev[key] === value ? "" : value }));
+  const handleFilterChange = <K extends keyof Omit<Filters, "search">>(
+    key: K,
+    value: Filters[K]
+  ) => {
+    setFilters((prev) => ({
+      ...prev,
+      [key]: prev[key] === value ? "" : value,
+    }));
+  };
 
   const clearFilters = () => {
     setFilters(EMPTY_FILTERS);
     setPendingSearch("");
   };
 
-  const rootCategories = allCategories.filter((c) => !c.parentId && c.active);
-
-  // ─── Sidebar content (shared between desktop and mobile) ──────────────────
-  const sidebarContent = (
-    <div className="space-y-5">
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-        <input
-          id="listing-search"
-          type="text"
-          placeholder="Search listings…"
-          value={pendingSearch}
-          onChange={(e) => setPendingSearch(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && commitSearch()}
-          className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition"
-        />
-        {pendingSearch && (
-          <button
-            type="button"
-            onClick={() => { setPendingSearch(""); setFilters((f) => ({ ...f, search: "" })); }}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        )}
-      </div>
-      {pendingSearch !== filters.search && (
-        <button
-          type="button"
-          onClick={commitSearch}
-          className="w-full py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition"
-        >
-          Apply Search
-        </button>
-      )}
-
-      {/* Sort */}
-      <FilterSection title="Sort By" defaultOpen>
-        {[
-          { label: "Newest First", value: "newest" },
-          { label: "Oldest First", value: "oldest" },
-          { label: "Price: Low → High", value: "price_asc" },
-          { label: "Price: High → Low", value: "price_desc" },
-        ].map(({ label, value }) => (
-          <FilterPill
-            key={value}
-            label={label}
-            active={filters.sortBy === value}
-            onClick={() => setFilters((f) => ({ ...f, sortBy: value }))}
-          />
-        ))}
-      </FilterSection>
-
-      {/* Condition */}
-      <FilterSection title="Condition" defaultOpen>
-        {[
-          { label: "Brand New", value: "NEW" },
-          { label: "Like New", value: "LIKE_NEW" },
-          { label: "Good", value: "GOOD" },
-          { label: "Fair", value: "FAIR" },
-          { label: "For Parts / Poor", value: "POOR" },
-        ].map(({ label, value }) => (
-          <FilterPill
-            key={value}
-            label={label}
-            active={filters.condition === value}
-            onClick={() => setFilter("condition", value)}
-          />
-        ))}
-      </FilterSection>
-
-      {/* Listing Type */}
-      <FilterSection title="Listing Type">
-        {[
-          { label: "Items / Products", value: "ITEM" },
-          { label: "Services", value: "SERVICE" },
-        ].map(({ label, value }) => (
-          <FilterPill
-            key={value}
-            label={label}
-            active={filters.listingType === value}
-            onClick={() => setFilter("listingType", value)}
-          />
-        ))}
-      </FilterSection>
-
-      {/* Pricing Type */}
-      <FilterSection title="Pricing">
-        {[
-          { label: "Fixed Price", value: "FIXED" },
-          { label: "Negotiable", value: "NEGOTIABLE" },
-          { label: "Free", value: "FREE" },
-          { label: "Contact for Price", value: "CONTACT_FOR_PRICE" },
-        ].map(({ label, value }) => (
-          <FilterPill
-            key={value}
-            label={label}
-            active={filters.pricingType === value}
-            onClick={() => setFilter("pricingType", value)}
-          />
-        ))}
-      </FilterSection>
-
-      {/* Price Range */}
-      <FilterSection title="Price Range">
-        <div className="flex items-center gap-2">
-          <input
-            type="number"
-            placeholder="Min"
-            value={filters.minPrice}
-            onChange={(e) => setFilters((f) => ({ ...f, minPrice: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition"
-          />
-          <span className="text-slate-400 text-xs shrink-0">to</span>
-          <input
-            type="number"
-            placeholder="Max"
-            value={filters.maxPrice}
-            onChange={(e) => setFilters((f) => ({ ...f, maxPrice: e.target.value }))}
-            className="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition"
-          />
-        </div>
-      </FilterSection>
-
-      {/* Category Tree */}
-      <FilterSection title="Categories" defaultOpen={false}>
-        <div className="space-y-0.5">
-          <Link
-            href="/listings"
-            className={`flex items-center py-1.5 px-2 rounded-lg text-xs font-medium transition-all ${
-              !categoryId
-                ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-                : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60"
-            }`}
-          >
-            All Categories
-          </Link>
-          {rootCategories.map((cat) => (
-            <CategoryTreeNode
-              key={cat.id}
-              cat={cat}
-              allCats={allCategories}
-              activeCategoryId={categoryId}
-            />
-          ))}
-        </div>
-      </FilterSection>
-
-      {/* Clear filters */}
-      {activeFilterCount > 0 && (
-        <button
-          type="button"
-          onClick={clearFilters}
-          className="w-full py-2 rounded-xl border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-50 dark:hover:bg-rose-950/30 transition flex items-center justify-center gap-1.5"
-        >
-          <X className="w-3.5 h-3.5" />
-          Clear All Filters {activeFilterCount > 0 && `(${activeFilterCount})`}
-        </button>
-      )}
-    </div>
-  );
-
   return (
-    <main className="max-w-[1440px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
-
+    <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
       {/* Breadcrumb */}
       <ListingBreadcrumb
         breadcrumbs={breadcrumbs}
@@ -576,7 +305,10 @@ function ListingsContent() {
               type="button"
               onClick={() => setViewLayout("row")}
               title="Row layout"
-              className={`p-2.5 transition-all ${viewLayout === "row" ? "bg-emerald-600 text-white" : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
+              className={`p-2.5 transition-all ${viewLayout === "row"
+                  ? "bg-emerald-600 text-white"
+                  : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`}
             >
               <LayoutList className="w-4 h-4" />
             </button>
@@ -584,7 +316,10 @@ function ListingsContent() {
               type="button"
               onClick={() => setViewLayout("grid")}
               title="Grid layout"
-              className={`p-2.5 transition-all ${viewLayout === "grid" ? "bg-emerald-600 text-white" : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
+              className={`p-2.5 transition-all ${viewLayout === "grid"
+                  ? "bg-emerald-600 text-white"
+                  : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`}
             >
               <LayoutGrid className="w-4 h-4" />
             </button>
@@ -617,46 +352,52 @@ function ListingsContent() {
 
       {/* Two-panel layout */}
       <div className="flex gap-6 items-start">
-
         {/* ─── Sidebar ──────────────────────────────────────────────────── */}
-        <aside className="hidden lg:block w-64 xl:w-72 shrink-0 sticky top-20">
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-4 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                <Filter className="w-3.5 h-3.5" />
-                Filters
-              </span>
-              {activeFilterCount > 0 && (
-                <span className="text-[10px] font-bold rounded-full bg-emerald-600 text-white px-2 py-0.5">
-                  {activeFilterCount} active
-                </span>
-              )}
-            </div>
-            {sidebarContent}
-          </div>
+        <aside className="hidden lg:block w-64 xl:w-72 shrink-0">
+          <FilterSidebar
+            searchQuery={pendingSearch}
+            onSearchChange={setPendingSearch}
+            onSearchSubmit={commitSearch}
+            filters={{
+              condition: filters.condition,
+              pricingType: filters.pricingType,
+              listingType: filters.listingType,
+              sortBy: filters.sortBy,
+              minPrice: filters.minPrice,
+              maxPrice: filters.maxPrice,
+            }}
+            onFilterChange={handleFilterChange}
+            activeFilterCount={activeFilterCount}
+            onClearFilters={clearFilters}
+            categories={allCategories}
+            currentCategoryId={categoryId}
+            rootCategories={rootCategories}
+          />
         </aside>
 
         {/* ─── Mobile Filters Drawer ────────────────────────────────────── */}
         {mobileFiltersOpen && (
-          <div className="fixed inset-0 z-50 lg:hidden">
-            <div
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-              onClick={() => setMobileFiltersOpen(false)}
-            />
-            <div className="absolute right-0 top-0 h-full w-80 max-w-[90vw] bg-white dark:bg-slate-900 shadow-2xl overflow-y-auto p-5">
-              <div className="flex items-center justify-between mb-5">
-                <span className="font-bold text-slate-900 dark:text-white text-sm">Filters</span>
-                <button
-                  type="button"
-                  onClick={() => setMobileFiltersOpen(false)}
-                  className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              {sidebarContent}
-            </div>
-          </div>
+          <FilterSidebar
+            isMobileOpen={mobileFiltersOpen}
+            onMobileClose={() => setMobileFiltersOpen(false)}
+            searchQuery={pendingSearch}
+            onSearchChange={setPendingSearch}
+            onSearchSubmit={commitSearch}
+            filters={{
+              condition: filters.condition,
+              pricingType: filters.pricingType,
+              listingType: filters.listingType,
+              sortBy: filters.sortBy,
+              minPrice: filters.minPrice,
+              maxPrice: filters.maxPrice,
+            }}
+            onFilterChange={handleFilterChange}
+            activeFilterCount={activeFilterCount}
+            onClearFilters={clearFilters}
+            categories={allCategories}
+            currentCategoryId={categoryId}
+            rootCategories={rootCategories}
+          />
         )}
 
         {/* ─── Listing Results ──────────────────────────────────────────── */}
@@ -664,7 +405,9 @@ function ListingsContent() {
           {loading ? (
             <div className="py-20 flex flex-col items-center gap-3">
               <div className="w-9 h-9 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Loading listings…</p>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                Loading listings…
+              </p>
             </div>
           ) : sortedListings.length > 0 ? (
             <>
@@ -699,15 +442,15 @@ function ListingsContent() {
                 {activeFilterCount > 0
                   ? "No listings match your current filters. Try adjusting or clearing them."
                   : currentCategory
-                  ? `No active listings in "${currentCategory.name}" or its subcategories.`
-                  : "No active listings are currently available."}
+                    ? `No active listings in "${currentCategory.name}" or its subcategories.`
+                    : "No active listings are currently available."}
               </p>
               <div className="pt-2 flex flex-wrap justify-center gap-3">
                 {activeFilterCount > 0 && (
                   <button
                     type="button"
                     onClick={clearFilters}
-                    className="btn-secondary text-xs px-4 py-2.5 inline-flex items-center gap-1.5"
+                    className="px-4 py-2.5 rounded-xl border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-50 dark:hover:bg-rose-950/30 transition inline-flex items-center gap-1.5"
                   >
                     <X className="w-4 h-4" />
                     Clear Filters
@@ -715,13 +458,16 @@ function ListingsContent() {
                 )}
                 <Link
                   href="/listings/new"
-                  className="btn-primary text-xs px-4 py-2.5 inline-flex items-center gap-1.5"
+                  className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition inline-flex items-center gap-1.5 shadow-md shadow-emerald-500/20"
                 >
                   <Plus className="w-4 h-4" />
                   Post the First Ad
                 </Link>
                 {currentCategory && (
-                  <Link href="/listings" className="btn-secondary text-xs px-4 py-2.5 inline-block">
+                  <Link
+                    href="/listings"
+                    className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-xs font-semibold hover:border-emerald-500 transition inline-block"
+                  >
                     Browse All
                   </Link>
                 )}
