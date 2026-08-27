@@ -10,5 +10,9 @@ public enum ListingCondition {
 
     FAIR,
 
-    POOR
+    POOR,
+
+    REFURBISHED,
+
+    NOT_APPLICABLE
 }
