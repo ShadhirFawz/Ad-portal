@@ -195,7 +195,7 @@ export default function FilterSidebar({
           </button>
         )}
       </div>
-      {searchQuery && searchQuery !== filters.search && (
+      {searchQuery && (
         <button
           type="button"
           onClick={onSearchSubmit}
@@ -230,6 +230,8 @@ export default function FilterSidebar({
           { label: "Good", value: "GOOD" },
           { label: "Fair", value: "FAIR" },
           { label: "For Parts / Poor", value: "POOR" },
+          { label: "Refurbished", value: "REFURBISHED" },
+          { label: "Not Applicable", value: "NOT_APPLICABLE" },
         ].map(({ label, value }) => (
           <FilterPill
             key={value}

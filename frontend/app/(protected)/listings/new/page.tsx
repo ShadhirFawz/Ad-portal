@@ -79,6 +79,16 @@ const CONDITION_OPTIONS: {
     label: "Poor / For Parts",
     description: "Needs repair or sold for replacement parts",
   },
+  {
+    value: "REFURBISHED",
+    label: "Refurbished",
+    description: "Inspected, tested, and restored to full working order",
+  },
+  {
+    value: "NOT_APPLICABLE",
+    label: "Not Applicable",
+    description: "For services, digital items, or non-physical offerings",
+  },
 ];
 
 const PRICING_TYPE_OPTIONS: {
