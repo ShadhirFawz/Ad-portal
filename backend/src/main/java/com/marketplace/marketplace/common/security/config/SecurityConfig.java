@@ -47,8 +47,11 @@ public class SecurityConfig {
 
                                 .authorizeHttpRequests(auth -> auth
 
-                                // ── Root ──────────────────────────────────────
+                                // ── Root & Error ──────────────────────────────
                                 .requestMatchers(HttpMethod.GET, "/")
+                                .permitAll()
+
+                                .requestMatchers("/error", "/error/**")
                                 .permitAll()
 
                                 // ── Swagger / OpenAPI ─────────────────────────
@@ -64,10 +67,6 @@ public class SecurityConfig {
 
                                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/sync")
                                 .authenticated()
-
-                                // ── Users — public ────────────────────────────
-                                .requestMatchers(HttpMethod.GET, "/api/v1/users/{username}")
-                                .permitAll()
 
                                 // ── Users — requires authentication ───────────
                                 .requestMatchers(HttpMethod.GET, "/api/v1/users/me")
@@ -85,43 +84,33 @@ public class SecurityConfig {
                                 .requestMatchers("/api/v1/users/me/images/**")
                                 .authenticated()
 
+                                // ── Users — public ────────────────────────────
+                                .requestMatchers(HttpMethod.GET, "/api/v1/users/{username}")
+                                .permitAll()
+
                                 // ── Categories — all public (read-only) ───────
-                                .requestMatchers(HttpMethod.GET, "/api/v1/categories/**")
-                                .permitAll()
-
-                                // ── Listings — public reads ───────────────────
-                                .requestMatchers(HttpMethod.GET, "/api/v1/listings")
-                                .permitAll()
-
-                                .requestMatchers(HttpMethod.GET, "/api/v1/listings/category/{categoryId}")
-                                .permitAll()
-
-                                .requestMatchers(HttpMethod.GET, "/api/v1/listings/{id}")
+                                .requestMatchers(HttpMethod.GET, "/api/v1/categories", "/api/v1/categories/**")
                                 .permitAll()
 
                                 // ── Listings — requires authentication ────────
                                 .requestMatchers(HttpMethod.GET, "/api/v1/listings/mine")
                                 .authenticated()
 
-                                .requestMatchers(HttpMethod.POST, "/api/v1/listings")
+                                .requestMatchers(HttpMethod.POST, "/api/v1/listings", "/api/v1/listings/**")
                                 .authenticated()
 
-                                .requestMatchers(HttpMethod.PATCH, "/api/v1/listings/{id}")
+                                .requestMatchers(HttpMethod.PATCH, "/api/v1/listings/**")
                                 .authenticated()
 
-                                .requestMatchers(HttpMethod.DELETE, "/api/v1/listings/{id}")
+                                .requestMatchers(HttpMethod.DELETE, "/api/v1/listings/**")
                                 .authenticated()
 
-                                .requestMatchers(HttpMethod.POST, "/api/v1/listings/{id}/publish")
+                                .requestMatchers(HttpMethod.PUT, "/api/v1/listings/**")
                                 .authenticated()
 
-                                // ── Listing Images — public reads ─────────────
-                                .requestMatchers(HttpMethod.GET, "/api/v1/listings/{listingId}/images")
+                                // ── Listings — public reads ───────────────────
+                                .requestMatchers(HttpMethod.GET, "/api/v1/listings", "/api/v1/listings/**")
                                 .permitAll()
-
-                                // ── Listing Images — requires authentication ───
-                                .requestMatchers("/api/v1/listings/{listingId}/images/**")
-                                .authenticated()
 
                                 // ── Deny everything else ──────────────────────
                                 .anyRequest()

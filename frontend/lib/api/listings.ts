@@ -1,5 +1,6 @@
 import {
   apiRequest,
+  publicRequest,
 } from "@/lib/api/client";
 
 import type {
@@ -152,7 +153,7 @@ export async function getListings(
 ): Promise<PageResponse<Listing>> {
 
   const response =
-    await apiRequest<
+    await publicRequest<
       ApiResponse<PageResponse<Listing>>
     >(
       `/listings?page=${page}&size=${size}`
@@ -168,7 +169,7 @@ export async function getListingsByCategory(
 ): Promise<PageResponse<Listing>> {
 
   const response =
-    await apiRequest<
+    await publicRequest<
       ApiResponse<PageResponse<Listing>>
     >(
       `/listings/category/${categoryId}?page=${page}&size=${size}`

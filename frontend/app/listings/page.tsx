@@ -1,55 +1,208 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { getListings, getListingsByCategory } from "@/lib/api/listings";
-import {
-  getCategories,
-  getCategory,
-  getCategoryBreadcrumbs,
-} from "@/lib/api/categories";
+import { getCategories, getCategory, getCategoryBreadcrumbs } from "@/lib/api/categories";
 import type { Listing } from "@/types/listing";
 import type { Category, CategoryBreadcrumb } from "@/types/category";
 import ListingCard from "@/components/listings/ListingCard";
 import ListingBreadcrumb from "@/components/listings/ListingBreadcrumb";
-import { Layers, Plus, Sparkles, Filter } from "lucide-react";
+import FilterSidebar from "@/components/listings/FilterSidebar";
+import {
+  Plus,
+  SlidersHorizontal,
+  LayoutGrid,
+  LayoutList,
+  ChevronLeft,
+  ChevronRight,
+  X,
+} from "lucide-react";
+
+interface Filters {
+  search: string;
+  condition: string;
+  pricingType: string;
+  listingType: string;
+  minPrice: string;
+  maxPrice: string;
+  sortBy: string;
+}
+
+const EMPTY_FILTERS: Filters = {
+  search: "",
+  condition: "",
+  pricingType: "",
+  listingType: "",
+  minPrice: "",
+  maxPrice: "",
+  sortBy: "newest",
+};
+
+const PAGE_SIZE = 8;
+
+function Pagination({
+  current,
+  total,
+  onChange,
+}: {
+  current: number;
+  total: number;
+  onChange: (page: number) => void;
+}) {
+  if (total <= 1) return null;
+
+  const pages = Array.from({ length: Math.min(total, 7) }, (_, i) => {
+    if (total <= 7) return i;
+    if (current <= 3) return i;
+    if (current >= total - 4) return total - 7 + i;
+    return current - 3 + i;
+  });
+
+  return (
+    <div className="flex items-center justify-center gap-1.5 pt-6">
+      <button
+        type="button"
+        onClick={() => onChange(current - 1)}
+        disabled={current === 0}
+        className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-500 hover:border-emerald-500 hover:text-emerald-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+      >
+        <ChevronLeft className="w-4 h-4" />
+      </button>
+
+      {pages[0] > 0 && (
+        <>
+          <button type="button" onClick={() => onChange(0)} className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+            1
+          </button>
+          {pages[0] > 1 && <span className="text-slate-400 text-xs px-1">…</span>}
+        </>
+      )}
+
+      {pages.map((p) => (
+        <button
+          key={p}
+          type="button"
+          onClick={() => onChange(p)}
+          className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all ${p === current
+              ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/25"
+              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+            }`}
+        >
+          {p + 1}
+        </button>
+      ))}
+
+      {pages[pages.length - 1] < total - 1 && (
+        <>
+          {pages[pages.length - 1] < total - 2 && <span className="text-slate-400 text-xs px-1">…</span>}
+          <button
+            type="button"
+            onClick={() => onChange(total - 1)}
+            className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+          >
+            {total}
+          </button>
+        </>
+      )}
+
+      <button
+        type="button"
+        onClick={() => onChange(current + 1)}
+        disabled={current === total - 1}
+        className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-500 hover:border-emerald-500 hover:text-emerald-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+      >
+        <ChevronRight className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
 
 function ListingsContent() {
   const searchParams = useSearchParams();
   const categoryId = searchParams.get("category");
 
-  const [listings, setListings] = useState<Listing[]>([]);
+  const [allListings, setAllListings] = useState<Listing[]>([]);
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [currentCategory, setCurrentCategory] = useState<Category | null>(null);
   const [breadcrumbs, setBreadcrumbs] = useState<CategoryBreadcrumb[]>([]);
-  const [subcategories, setSubcategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [totalCount, setTotalCount] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [currentPage, setCurrentPage] = useState(0);
 
+  const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+  const [pendingSearch, setPendingSearch] = useState("");
+  const [viewLayout, setViewLayout] = useState<"row" | "grid">("row");
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+
+  const filteredListings = allListings.filter((l) => {
+    if (
+      filters.search &&
+      !l.title.toLowerCase().includes(filters.search.toLowerCase()) &&
+      !(l.description ?? "").toLowerCase().includes(filters.search.toLowerCase())
+    )
+      return false;
+    if (filters.condition && l.condition !== filters.condition) return false;
+    if (filters.pricingType && l.pricingType !== filters.pricingType) return false;
+    if (filters.listingType && l.listingType !== filters.listingType) return false;
+    if (filters.minPrice && l.price < Number(filters.minPrice)) return false;
+    if (filters.maxPrice && l.price > Number(filters.maxPrice)) return false;
+    return true;
+  });
+
+  const sortedListings = [...filteredListings].sort((a, b) => {
+    switch (filters.sortBy) {
+      case "price_asc":
+        return a.price - b.price;
+      case "price_desc":
+        return b.price - a.price;
+      case "oldest":
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      default:
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    }
+  });
+
+  const activeFilterCount = [
+    filters.search,
+    filters.condition,
+    filters.pricingType,
+    filters.listingType,
+    filters.minPrice,
+    filters.maxPrice,
+  ].filter(Boolean).length;
+
+  const rootCategories = allCategories.filter((c) => !c.parentId && c.active);
+
+  // Fetch data from API
   useEffect(() => {
     let isMounted = true;
+    setCurrentPage(0);
 
     async function loadData() {
       setLoading(true);
       try {
-        const [allCats, listingsData] = await Promise.all([
+        const [allCats, listingsPage] = await Promise.all([
           getCategories(),
           categoryId
-            ? getListingsByCategory(categoryId, 0, 24)
-            : getListings(0, 24),
+            ? getListingsByCategory(categoryId, 0, PAGE_SIZE)
+            : getListings(0, PAGE_SIZE),
         ]);
 
         if (!isMounted) return;
 
-        setListings(listingsData.content ?? []);
-        setTotalCount(listingsData.totalElements ?? 0);
+        setAllCategories(allCats);
+        setAllListings(listingsPage.content ?? []);
+        setTotalElements(listingsPage.totalElements ?? 0);
+        setTotalPages(listingsPage.totalPages ?? 0);
 
         if (categoryId) {
-          // Find selected category
-          const found = allCats.find((c) => c.id === categoryId);
-          if (found) {
-            setCurrentCategory(found);
-          } else {
+          const found = allCats.find((c) => c.id === categoryId) ?? null;
+          setCurrentCategory(found);
+
+          if (!found) {
             try {
               const fetched = await getCategory(categoryId);
               if (isMounted) setCurrentCategory(fetched);
@@ -58,24 +211,15 @@ function ListingsContent() {
             }
           }
 
-          // Fetch breadcrumbs
           try {
             const crumbs = await getCategoryBreadcrumbs(categoryId);
             if (isMounted) setBreadcrumbs(crumbs);
           } catch {
-            if (isMounted) {
-              setBreadcrumbs(found ? [{ id: found.id, name: found.name, slug: found.slug, level: found.level }] : []);
-            }
+            if (isMounted) setBreadcrumbs([]);
           }
-
-          // Filter immediate subcategories
-          const subs = allCats.filter((c) => c.parentId === categoryId && c.active);
-          setSubcategories(subs);
         } else {
           setCurrentCategory(null);
           setBreadcrumbs([]);
-          // Show root categories as quick filter
-          setSubcategories(allCats.filter((c) => !c.parentId && c.active));
         }
       } catch (err) {
         console.error("Failed to load listings:", err);
@@ -85,125 +229,253 @@ function ListingsContent() {
     }
 
     loadData();
-
     return () => {
       isMounted = false;
     };
   }, [categoryId]);
 
+  const goToPage = useCallback(
+    async (page: number) => {
+      if (page < 0 || page >= totalPages) return;
+      setLoading(true);
+      setCurrentPage(page);
+      try {
+        const result = categoryId
+          ? await getListingsByCategory(categoryId, page, PAGE_SIZE)
+          : await getListings(page, PAGE_SIZE);
+        setAllListings(result.content ?? []);
+        setTotalElements(result.totalElements ?? 0);
+        setTotalPages(result.totalPages ?? 0);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } catch (err) {
+        console.error("Failed to load page:", err);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [categoryId, totalPages]
+  );
+
+  const commitSearch = () => setFilters((f) => ({ ...f, search: pendingSearch }));
+
+  const handleFilterChange = <K extends keyof Omit<Filters, "search">>(
+    key: K,
+    value: Filters[K]
+  ) => {
+    setFilters((prev) => ({
+      ...prev,
+      [key]: prev[key] === value ? "" : value,
+    }));
+  };
+
+  const clearFilters = () => {
+    setFilters(EMPTY_FILTERS);
+    setPendingSearch("");
+  };
+
   return (
-    <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
-      {/* Breadcrumb Navigation */}
+    <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+      {/* Breadcrumb */}
       <ListingBreadcrumb
         breadcrumbs={breadcrumbs}
-        currentTitle={currentCategory ? currentCategory.name : undefined}
+        currentTitle={currentCategory?.name}
       />
 
-      {/* Category Header Banner */}
-      <div className="rounded-3xl bg-linear-to-br from-slate-900 via-slate-800 to-emerald-950 p-6 sm:p-10 text-white shadow-xl border border-slate-800 relative overflow-hidden">
-        <div className="absolute -top-20 -right-20 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 space-y-3 max-w-3xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>
-              {currentCategory
-                ? `Category Level ${currentCategory.level + 1}`
-                : "Marketplace Catalog"}
-            </span>
-          </div>
-
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+      {/* Page Header */}
+      <div className="mt-4 mb-6 flex flex-col sm:flex-row sm:items-end gap-4 justify-between">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             {currentCategory ? currentCategory.name : "Explore All Listings"}
           </h1>
-
-          <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
-            {currentCategory?.description ||
-              "Discover great deals, services, and quality items posted by verified users across all categories."}
+          {currentCategory?.description && (
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              {currentCategory.description}
+            </p>
+          )}
+          <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+            {loading ? "Loading…" : `${totalElements} listing${totalElements !== 1 ? "s" : ""} found`}
+            {activeFilterCount > 0 && ` · ${sortedListings.length} after filters`}
           </p>
+        </div>
 
-          <div className="flex items-center gap-4 pt-2 text-xs font-medium text-slate-400">
-            <span className="flex items-center gap-1.5">
-              <Layers className="w-4 h-4 text-emerald-400" />
-              <span>{totalCount} {totalCount === 1 ? "Listing" : "Listings"} available</span>
-            </span>
-            {currentCategory && (
-              <Link
-                href="/listings"
-                className="text-emerald-400 hover:text-emerald-300 underline font-semibold transition"
-              >
-                Clear Category Filter
-              </Link>
-            )}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Layout toggle */}
+          <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setViewLayout("row")}
+              title="Row layout"
+              className={`p-2.5 transition-all ${viewLayout === "row"
+                  ? "bg-emerald-600 text-white"
+                  : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`}
+            >
+              <LayoutList className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewLayout("grid")}
+              title="Grid layout"
+              className={`p-2.5 transition-all ${viewLayout === "grid"
+                  ? "bg-emerald-600 text-white"
+                  : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`}
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
           </div>
+
+          {/* Mobile filter toggle */}
+          <button
+            type="button"
+            onClick={() => setMobileFiltersOpen(true)}
+            className="lg:hidden flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-xs font-semibold hover:border-emerald-500 transition"
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            Filters
+            {activeFilterCount > 0 && (
+              <span className="ml-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+
+          <Link
+            href="/listings/new"
+            className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-md shadow-emerald-500/20"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Post Listing</span>
+          </Link>
         </div>
       </div>
 
-      {/* Subcategories Filter Chips */}
-      {subcategories.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-            <Filter className="w-3.5 h-3.5" />
-            <span>{currentCategory ? "Subcategories" : "Popular Categories"}</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {subcategories.map((sub) => (
-              <Link
-                key={sub.id}
-                href={`/listings?category=${sub.id}`}
-                className="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:shadow-sm transition-all flex items-center gap-1.5"
-              >
-                <span>{sub.name}</span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Two-panel layout */}
+      <div className="flex gap-6 items-start">
+        {/* ─── Sidebar ──────────────────────────────────────────────────── */}
+        <aside className="hidden lg:block w-64 xl:w-72 shrink-0">
+          <FilterSidebar
+            searchQuery={pendingSearch}
+            onSearchChange={setPendingSearch}
+            onSearchSubmit={commitSearch}
+            filters={{
+              condition: filters.condition,
+              pricingType: filters.pricingType,
+              listingType: filters.listingType,
+              sortBy: filters.sortBy,
+              minPrice: filters.minPrice,
+              maxPrice: filters.maxPrice,
+            }}
+            onFilterChange={handleFilterChange}
+            activeFilterCount={activeFilterCount}
+            onClearFilters={clearFilters}
+            categories={allCategories}
+            currentCategoryId={categoryId}
+            rootCategories={rootCategories}
+          />
+        </aside>
 
-      {/* Listings Grid */}
-      {loading ? (
-        <div className="py-20 flex flex-col items-center justify-center gap-3">
-          <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-            Loading listings...
-          </p>
+        {/* ─── Mobile Filters Drawer ────────────────────────────────────── */}
+        {mobileFiltersOpen && (
+          <FilterSidebar
+            isMobileOpen={mobileFiltersOpen}
+            onMobileClose={() => setMobileFiltersOpen(false)}
+            searchQuery={pendingSearch}
+            onSearchChange={setPendingSearch}
+            onSearchSubmit={commitSearch}
+            filters={{
+              condition: filters.condition,
+              pricingType: filters.pricingType,
+              listingType: filters.listingType,
+              sortBy: filters.sortBy,
+              minPrice: filters.minPrice,
+              maxPrice: filters.maxPrice,
+            }}
+            onFilterChange={handleFilterChange}
+            activeFilterCount={activeFilterCount}
+            onClearFilters={clearFilters}
+            categories={allCategories}
+            currentCategoryId={categoryId}
+            rootCategories={rootCategories}
+          />
+        )}
+
+        {/* ─── Listing Results ──────────────────────────────────────────── */}
+        <div className="flex-1 min-w-0">
+          {loading ? (
+            <div className="py-20 flex flex-col items-center gap-3">
+              <div className="w-9 h-9 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                Loading listings…
+              </p>
+            </div>
+          ) : sortedListings.length > 0 ? (
+            <>
+              {viewLayout === "row" ? (
+                <div className="space-y-3">
+                  {sortedListings.map((listing) => (
+                    <ListingCard key={listing.id} listing={listing} layout="row" />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {sortedListings.map((listing) => (
+                    <ListingCard key={listing.id} listing={listing} layout="grid" />
+                  ))}
+                </div>
+              )}
+
+              {/* Pagination */}
+              <Pagination
+                current={currentPage}
+                total={totalPages}
+                onChange={goToPage}
+              />
+            </>
+          ) : (
+            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-12 text-center shadow-sm space-y-4 max-w-lg mx-auto">
+              <div className="text-5xl">📦</div>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                {activeFilterCount > 0 ? "No Matches Found" : "No Listings Found"}
+              </h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                {activeFilterCount > 0
+                  ? "No listings match your current filters. Try adjusting or clearing them."
+                  : currentCategory
+                    ? `No active listings in "${currentCategory.name}" or its subcategories.`
+                    : "No active listings are currently available."}
+              </p>
+              <div className="pt-2 flex flex-wrap justify-center gap-3">
+                {activeFilterCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="px-4 py-2.5 rounded-xl border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-50 dark:hover:bg-rose-950/30 transition inline-flex items-center gap-1.5"
+                  >
+                    <X className="w-4 h-4" />
+                    Clear Filters
+                  </button>
+                )}
+                <Link
+                  href="/listings/new"
+                  className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition inline-flex items-center gap-1.5 shadow-md shadow-emerald-500/20"
+                >
+                  <Plus className="w-4 h-4" />
+                  Post the First Ad
+                </Link>
+                {currentCategory && (
+                  <Link
+                    href="/listings"
+                    className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-xs font-semibold hover:border-emerald-500 transition inline-block"
+                  >
+                    Browse All
+                  </Link>
+                )}
+              </div>
+            </div>
+          )}
         </div>
-      ) : listings.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {listings.map((listing) => (
-            <ListingCard key={listing.id} listing={listing} />
-          ))}
-        </div>
-      ) : (
-        <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-12 text-center shadow-sm space-y-4 max-w-lg mx-auto">
-          <div className="text-5xl">📦</div>
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-            No Listings Found
-          </h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            {currentCategory
-              ? `There are currently no active listings in "${currentCategory.name}" or its subcategories.`
-              : "No active listings are currently available in the marketplace."}
-          </p>
-          <div className="pt-2 flex flex-wrap justify-center gap-3">
-            <Link
-              href="/listings/new"
-              className="btn-primary text-xs px-4 py-2.5 inline-flex items-center gap-1.5"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Post the First Ad</span>
-            </Link>
-            {currentCategory && (
-              <Link
-                href="/listings"
-                className="btn-secondary text-xs px-4 py-2.5 inline-block"
-              >
-                Browse All Listings
-              </Link>
-            )}
-          </div>
-        </div>
-      )}
+      </div>
     </main>
   );
 }

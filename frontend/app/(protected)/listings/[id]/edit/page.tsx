@@ -80,6 +80,16 @@ const CONDITION_OPTIONS: {
     label: "For Parts / Repair",
     description: "Non-functional or heavy defect",
   },
+  {
+    value: "REFURBISHED",
+    label: "Refurbished",
+    description: "Professionally restored and tested to full working order",
+  },
+  {
+    value: "NOT_APPLICABLE",
+    label: "Not Applicable",
+    description: "For services, digital goods, or non-physical items",
+  },
 ];
 
 const PRICING_TYPE_OPTIONS: {
