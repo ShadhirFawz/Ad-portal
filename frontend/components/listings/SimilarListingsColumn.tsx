@@ -86,9 +86,9 @@ export default function SimilarListingsColumn({
           Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
-              className="flex items-center gap-3 p-2 rounded-2xl border border-slate-100 dark:border-slate-800 animate-pulse"
+              className="flex items-center gap-3 p-2.5 rounded-2xl border border-slate-100 dark:border-slate-800 animate-pulse"
             >
-              <div className="w-20 h-20 rounded-xl bg-slate-200 dark:bg-slate-800 shrink-0" />
+              <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-xl bg-slate-200 dark:bg-slate-800 shrink-0" />
               <div className="flex-1 space-y-2 py-1">
                 <div className="h-3.5 bg-slate-200 dark:bg-slate-800 rounded w-3/4" />
                 <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/2" />
@@ -104,43 +104,44 @@ export default function SimilarListingsColumn({
               item.images?.[0]?.url;
 
             const locationText = [item.city, item.district].filter(Boolean).join(", ");
+            const conditionLabel = formatListingCondition(item.condition);
 
             return (
               <Link
                 key={item.id}
                 href={`/listings/${item.id}`}
-                className="group flex items-center gap-3 p-2.5 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-800/30 hover:border-emerald-500/40 hover:bg-white dark:hover:bg-slate-800/80 hover:shadow-md transition-all duration-200"
+                className="group flex items-center gap-3 p-2.5 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-800/30 hover:border-emerald-500/40 hover:bg-white dark:hover:bg-slate-800/80 hover:shadow-md transition-all duration-200 min-h-[96px] w-full"
               >
-                {/* Thumbnail */}
+                {/* Definite Thumbnail with Fill & Sizing Safety */}
                 <div className="relative w-20 h-20 sm:w-22 sm:h-22 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0 border border-slate-200/50 dark:border-slate-700/50">
                   {primaryImage ? (
                     <Image
                       src={primaryImage}
                       alt={item.title}
-                      width={100}
-                      height={100}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      fill
+                      sizes="88px"
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">
+                    <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs text-center p-1 font-medium">
                       No Photo
                     </div>
                   )}
 
-                  {item.condition && item.condition !== "NOT_APPLICABLE" && (
-                    <span className="absolute bottom-1 left-1 rounded bg-slate-900/80 px-1 py-0.5 text-[9px] font-semibold text-white backdrop-blur-xs">
-                      {formatListingCondition(item.condition)}
+                  {item.condition && item.condition !== "NOT_APPLICABLE" && conditionLabel && (
+                    <span className="absolute bottom-1 left-1 rounded bg-slate-900/85 px-1 py-0.5 text-[9px] font-semibold text-white backdrop-blur-xs shadow-2xs">
+                      {conditionLabel}
                     </span>
                   )}
                 </div>
 
-                {/* Details */}
-                <div className="flex-1 min-w-0 space-y-1">
-                  <h3 className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 line-clamp-2 leading-snug transition-colors">
+                {/* Details Container with Structured Slots */}
+                <div className="flex-1 min-w-0 space-y-1 py-0.5">
+                  <h3 className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 line-clamp-2 min-h-[2rem] leading-snug break-words transition-colors">
                     {item.title}
                   </h3>
 
-                  <div className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                  <div className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 truncate">
                     {formatListingPrice(item)}
                   </div>
 
