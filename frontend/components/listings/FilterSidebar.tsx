@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Filter, X, ChevronDown, ChevronRight as ChevronRightSm, Search } from "lucide-react";
 import type { Category } from "@/types/category";
 
-// ─── Filter Section Accordion ─────────────────────────────────────────────────
 function FilterSection({
   title,
   children,
@@ -33,7 +32,6 @@ function FilterSection({
   );
 }
 
-// ─── Filter Pill ──────────────────────────────────────────────────────────────
 function FilterPill({
   label,
   active,
@@ -58,7 +56,6 @@ function FilterPill({
   );
 }
 
-// ─── Category Tree Node ────────────────────────────────────────────────────────
 function CategoryTreeNode({
   cat,
   allCats,
@@ -119,7 +116,6 @@ function CategoryTreeNode({
   );
 }
 
-// ─── Filter Sidebar Props ─────────────────────────────────────────────────────
 interface FilterSidebarProps {
   // Search
   searchQuery: string;
@@ -152,7 +148,6 @@ interface FilterSidebarProps {
   onMobileClose?: () => void;
 }
 
-// ─── Main Component ──────────────────────────────────────────────────────────
 export default function FilterSidebar({
   searchQuery,
   onSearchChange,
@@ -206,7 +201,7 @@ export default function FilterSidebar({
       )}
 
       {/* Sort */}
-      <FilterSection title="Sort By" defaultOpen>
+      <FilterSection title="Sort By" defaultOpen={true}>
         {[
           { label: "Newest First", value: "newest" },
           { label: "Oldest First", value: "oldest" },
@@ -223,7 +218,7 @@ export default function FilterSidebar({
       </FilterSection>
 
       {/* Condition */}
-      <FilterSection title="Condition" defaultOpen>
+      <FilterSection title="Condition" defaultOpen={false}>
         {[
           { label: "Brand New", value: "NEW" },
           { label: "Like New", value: "LIKE_NEW" },
@@ -243,7 +238,7 @@ export default function FilterSidebar({
       </FilterSection>
 
       {/* Listing Type */}
-      <FilterSection title="Listing Type">
+      <FilterSection title="Listing Type" defaultOpen={false}>
         {[
           { label: "Items / Products", value: "ITEM" },
           { label: "Services", value: "SERVICE" },
@@ -257,8 +252,8 @@ export default function FilterSidebar({
         ))}
       </FilterSection>
 
-      {/* Pricing Type */}
-      <FilterSection title="Pricing">
+      {/* Pricing */}
+      <FilterSection title="Pricing" defaultOpen={false}>
         {[
           { label: "Fixed Price", value: "FIXED" },
           { label: "Negotiable", value: "NEGOTIABLE" },
@@ -275,7 +270,7 @@ export default function FilterSidebar({
       </FilterSection>
 
       {/* Price Range */}
-      <FilterSection title="Price Range">
+      <FilterSection title="Price Range" defaultOpen={true}>
         <div className="flex items-center gap-2">
           <input
             type="number"
@@ -295,7 +290,7 @@ export default function FilterSidebar({
         </div>
       </FilterSection>
 
-      {/* Category Tree */}
+      {/* Categories */}
       <FilterSection title="Categories" defaultOpen={false}>
         <div className="space-y-0.5">
           <Link
