@@ -595,18 +595,22 @@ public class ListingServiceImpl implements ListingService {
                                 .map(imageMapper::toResponse)
                                 .toList();
 
-                String sellerPhoneNumber = includeSellerContact
+                UUID sellerId = listing.getSeller() != null ? listing.getSeller().getId() : null;
+                String sellerUsername = listing.getSeller() != null ? listing.getSeller().getUsername() : "seller";
+                String sellerPhoneNumber = (includeSellerContact && listing.getSeller() != null)
                                 ? listing.getSeller().getPhoneNumber()
                                 : null;
 
+                UUID categoryId = listing.getCategory() != null ? listing.getCategory().getId() : null;
+                String categoryName = listing.getCategory() != null ? listing.getCategory().getName() : "Uncategorized";
                 List<CategoryBreadcrumbResponse> breadcrumbs = buildCategoryBreadcrumbs(listing.getCategory());
 
                 return new ListingResponse(
                                 listing.getId(),
-                                listing.getSeller().getId(),
-                                listing.getSeller().getUsername(),
-                                listing.getCategory().getId(),
-                                listing.getCategory().getName(),
+                                sellerId,
+                                sellerUsername,
+                                categoryId,
+                                categoryName,
                                 breadcrumbs,
                                 listing.getTitle(),
                                 listing.getDescription(),

@@ -64,6 +64,8 @@ export default function ListingCard({
       case "GOOD": return "Good";
       case "FAIR": return "Fair";
       case "POOR": return "For Parts";
+      case "REFURBISHED": return "Refurbished";
+      case "NOT_APPLICABLE": return null;
       default: return condition ?? null;
     }
   };
