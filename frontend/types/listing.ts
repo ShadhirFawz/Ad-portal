@@ -15,7 +15,9 @@ export type ListingCondition =
   | "LIKE_NEW"
   | "GOOD"
   | "FAIR"
-  | "POOR";
+  | "POOR"
+  | "REFURBISHED"
+  | "NOT_APPLICABLE";
 
 export type ListingType =
   | "ITEM"

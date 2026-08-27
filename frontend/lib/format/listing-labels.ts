@@ -21,6 +21,10 @@ export function formatListingCondition(
       return "Fair";
     case "POOR":
       return "For Parts / Poor";
+    case "REFURBISHED":
+      return "Refurbished";
+    case "NOT_APPLICABLE":
+      return "Not Applicable";
     default:
       return condition;
   }

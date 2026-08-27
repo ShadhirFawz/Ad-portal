@@ -1,5 +1,5 @@
 import {
-  apiRequest,
+  publicRequest,
 } from "@/lib/api/client";
 
 import type {
@@ -13,7 +13,7 @@ import type {
 
 export async function getCategories(): Promise<Category[]> {
   const response =
-    await apiRequest<ApiResponse<Category[]>>(
+    await publicRequest<ApiResponse<Category[]>>(
       "/categories"
     );
 
@@ -22,7 +22,7 @@ export async function getCategories(): Promise<Category[]> {
 
 export async function getRootCategories(): Promise<Category[]> {
   const response =
-    await apiRequest<ApiResponse<Category[]>>(
+    await publicRequest<ApiResponse<Category[]>>(
       "/categories/root"
     );
 
@@ -31,7 +31,7 @@ export async function getRootCategories(): Promise<Category[]> {
 
 export async function getCategory(id: string): Promise<Category> {
   const response =
-    await apiRequest<ApiResponse<Category>>(
+    await publicRequest<ApiResponse<Category>>(
       `/categories/${id}`
     );
 
@@ -40,7 +40,7 @@ export async function getCategory(id: string): Promise<Category> {
 
 export async function getCategoryBySlug(slug: string): Promise<Category> {
   const response =
-    await apiRequest<ApiResponse<Category>>(
+    await publicRequest<ApiResponse<Category>>(
       `/categories/slug/${encodeURIComponent(slug)}`
     );
 
@@ -49,7 +49,7 @@ export async function getCategoryBySlug(slug: string): Promise<Category> {
 
 export async function getCategoryBreadcrumbs(id: string): Promise<CategoryBreadcrumb[]> {
   const response =
-    await apiRequest<ApiResponse<CategoryBreadcrumb[]>>(
+    await publicRequest<ApiResponse<CategoryBreadcrumb[]>>(
       `/categories/${id}/breadcrumbs`
     );
 
@@ -58,7 +58,7 @@ export async function getCategoryBreadcrumbs(id: string): Promise<CategoryBreadc
 
 export async function getCategoryBreadcrumbsBySlug(slug: string): Promise<CategoryBreadcrumb[]> {
   const response =
-    await apiRequest<ApiResponse<CategoryBreadcrumb[]>>(
+    await publicRequest<ApiResponse<CategoryBreadcrumb[]>>(
       `/categories/slug/${encodeURIComponent(slug)}/breadcrumbs`
     );
 
