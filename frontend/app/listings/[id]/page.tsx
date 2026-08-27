@@ -7,6 +7,8 @@ import { useAuth } from "@/providers/AuthProvider";
 import { getListing } from "@/lib/api/listings";
 import ListingImageGallery from "@/components/listings/ListingImageGallery";
 import ListingBreadcrumb from "@/components/listings/ListingBreadcrumb";
+import SimilarListingsColumn from "@/components/listings/SimilarListingsColumn";
+import RelatedCategoryListings from "@/components/listings/RelatedCategoryListings";
 import LoginModal from "@/components/auth/LoginModal";
 import { formatTimeAgo } from "@/lib/format/time-ago";
 import {
@@ -212,15 +214,15 @@ export default function ListingDetailsPage() {
           )}
         </div>
 
-        {/* Two-column layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 items-start">
-          {/* Left Column: Image Gallery (Sticky) */}
-          <div className="w-full lg:sticky lg:top-18">
+        {/* Three-column layout on XL screens: Image Gallery | Header & Seller Contact | Similar in Category */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Column 1: Image Gallery (Sticky) */}
+          <div className="w-full lg:col-span-5 xl:col-span-4 lg:sticky lg:top-18">
             <ListingImageGallery images={listing.images} title={listing.title} />
           </div>
 
-          {/* Right Column: Header and Seller Contact (Aligned with Image) */}
-          <div className="space-y-4">
+          {/* Column 2: Header and Seller Contact */}
+          <div className="w-full lg:col-span-7 xl:col-span-5 space-y-4">
             {/* Header */}
             <div className="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 dark:border-slate-800 dark:bg-slate-900/90 shadow-sm space-y-3">
               <div className="flex flex-wrap items-center gap-2">
@@ -353,10 +355,19 @@ export default function ListingDetailsPage() {
               )}
             </div>
           </div>
+
+          {/* Column 3: Similar Items (Same Exact Category - Scrollable horizontal cards) */}
+          <div className="w-full lg:col-span-12 xl:col-span-3 xl:sticky xl:top-18">
+            <SimilarListingsColumn
+              categoryId={listing.categoryId}
+              categoryName={listing.categoryName}
+              currentListingId={listing.id}
+            />
+          </div>
         </div>
 
-        {/* Full-width sections below the two-column layout */}
-        <div className="space-y-4 mt-6 lg:mt-8">
+        {/* Full-width sections below the top grid */}
+        <div className="space-y-6 mt-6 lg:mt-8">
           {/* Description */}
           <SectionCard title="Description" icon={Tag}>
             <div className="prose prose-slate dark:prose-invert max-w-none text-sm leading-relaxed whitespace-pre-line text-slate-700 dark:text-slate-300">
@@ -455,6 +466,15 @@ export default function ListingDetailsPage() {
               />
             </dl>
           </SectionCard>
+
+          {/* Related Listings across all 3 levels of the category hierarchy */}
+          <RelatedCategoryListings
+            rootCategory={listing.categoryBreadcrumbs?.[0]}
+            categoryBreadcrumbs={listing.categoryBreadcrumbs}
+            currentListingId={listing.id}
+            fallbackCategoryId={listing.categoryId}
+            fallbackCategoryName={listing.categoryName}
+          />
         </div>
       </main>
 
