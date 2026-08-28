@@ -33,4 +33,10 @@ public interface ListingRepository
         Optional<Listing> findByIdAndSellerId(
                         UUID id,
                         UUID sellerId);
+
+        Optional<Listing> findBySlug(
+                        String slug);
+
+        boolean existsBySlug(
+                        String slug);
 }

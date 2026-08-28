@@ -16,6 +16,12 @@ public interface ListingService {
     ListingResponse getById(
             UUID id);
 
+    ListingResponse getBySlug(
+            String slug);
+
+    ListingResponse getByIdOrSlug(
+            String idOrSlug);
+
     ListingResponse update(
             UUID id,
             UpdateListingRequest request);
@@ -34,5 +40,9 @@ public interface ListingService {
 
     Page<ListingResponse> getByCategory(
             UUID categoryId,
+            Pageable pageable);
+
+    Page<ListingResponse> getByCategory(
+            String categoryIdOrSlug,
             Pageable pageable);
 }
