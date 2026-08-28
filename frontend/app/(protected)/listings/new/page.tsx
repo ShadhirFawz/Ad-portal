@@ -189,6 +189,7 @@ export default function NewListingPage() {
     }
 
     if (!user) return;
+    if (categories.length > 0) return;
 
     let isMounted = true;
     getCategories()

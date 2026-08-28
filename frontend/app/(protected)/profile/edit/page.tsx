@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/providers/AuthProvider";
@@ -40,8 +40,11 @@ export default function EditProfilePage() {
     }
   }, [loading, user, router]);
 
+  const initializedRef = useRef(false);
+
   useEffect(() => {
-    if (user) {
+    if (user && !initializedRef.current) {
+      initializedRef.current = true;
       setFirstName(user.firstName);
       setLastName(user.lastName ?? "");
       setUsername(user.username ?? "");

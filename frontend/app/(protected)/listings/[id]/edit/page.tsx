@@ -55,42 +55,42 @@ const CONDITION_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  {
-    value: "NEW",
-    label: "Brand New",
-    description: "Unopened, unused, in original packaging",
-  },
-  {
-    value: "LIKE_NEW",
-    label: "Like New",
-    description: "Used once or twice, flawless appearance",
-  },
-  {
-    value: "GOOD",
-    label: "Good",
-    description: "Minor cosmetic wear, fully functional",
-  },
-  {
-    value: "FAIR",
-    label: "Fair",
-    description: "Noticeable wear, functional with minor flaws",
-  },
-  {
-    value: "POOR",
-    label: "For Parts / Repair",
-    description: "Non-functional or heavy defect",
-  },
-  {
-    value: "REFURBISHED",
-    label: "Refurbished",
-    description: "Professionally restored and tested to full working order",
-  },
-  {
-    value: "NOT_APPLICABLE",
-    label: "Not Applicable",
-    description: "For services, digital goods, or non-physical items",
-  },
-];
+    {
+      value: "NEW",
+      label: "Brand New",
+      description: "Unopened, unused, in original packaging",
+    },
+    {
+      value: "LIKE_NEW",
+      label: "Like New",
+      description: "Used once or twice, flawless appearance",
+    },
+    {
+      value: "GOOD",
+      label: "Good",
+      description: "Minor cosmetic wear, fully functional",
+    },
+    {
+      value: "FAIR",
+      label: "Fair",
+      description: "Noticeable wear, functional with minor flaws",
+    },
+    {
+      value: "POOR",
+      label: "For Parts / Repair",
+      description: "Non-functional or heavy defect",
+    },
+    {
+      value: "REFURBISHED",
+      label: "Refurbished",
+      description: "Professionally restored and tested to full working order",
+    },
+    {
+      value: "NOT_APPLICABLE",
+      label: "Not Applicable",
+      description: "For services, digital goods, or non-physical items",
+    },
+  ];
 
 const PRICING_TYPE_OPTIONS: {
   value: PricingType;
@@ -98,31 +98,31 @@ const PRICING_TYPE_OPTIONS: {
   description: string;
   icon: React.ComponentType<{ className?: string }>;
 }[] = [
-  {
-    value: "FIXED",
-    label: "Fixed Price",
-    description: "Set a firm price for immediate sale",
-    icon: Tag,
-  },
-  {
-    value: "NEGOTIABLE",
-    label: "Negotiable",
-    description: "Open to reasonable buyer offers",
-    icon: Handshake,
-  },
-  {
-    value: "FREE",
-    label: "Free / Give Away",
-    description: "No charge (item donation or free service)",
-    icon: Gift,
-  },
-  {
-    value: "CONTACT_FOR_PRICE",
-    label: "Contact For Price",
-    description: "Custom quotes or high-value consultation",
-    icon: PhoneCall,
-  },
-];
+    {
+      value: "FIXED",
+      label: "Fixed Price",
+      description: "Set a firm price for immediate sale",
+      icon: Tag,
+    },
+    {
+      value: "NEGOTIABLE",
+      label: "Negotiable",
+      description: "Open to reasonable buyer offers",
+      icon: Handshake,
+    },
+    {
+      value: "FREE",
+      label: "Free / Give Away",
+      description: "No charge (item donation or free service)",
+      icon: Gift,
+    },
+    {
+      value: "CONTACT_FOR_PRICE",
+      label: "Contact For Price",
+      description: "Custom quotes or high-value consultation",
+      icon: PhoneCall,
+    },
+  ];
 
 const LOCATION_TYPES: {
   value: ListingLocationType;
@@ -130,37 +130,37 @@ const LOCATION_TYPES: {
   description: string;
   icon: React.ComponentType<{ className?: string }>;
 }[] = [
-  {
-    value: "CITY",
-    label: "Specific City",
-    description: "Local neighborhood pickup or direct deal",
-    icon: MapPin,
-  },
-  {
-    value: "DISTRICT",
-    label: "District-Wide",
-    description: "Available across your district",
-    icon: Map,
-  },
-  {
-    value: "PROVINCE",
-    label: "Province-Wide",
-    description: "Regional availability within province",
-    icon: Landmark,
-  },
-  {
-    value: "NATIONWIDE",
-    label: "Island-Wide Delivery",
-    description: "Ships or delivered across Sri Lanka",
-    icon: Truck,
-  },
-  {
-    value: "ONLINE",
-    label: "Digital / Remote",
-    description: "No physical location required",
-    icon: Globe,
-  },
-];
+    {
+      value: "CITY",
+      label: "Specific City",
+      description: "Local neighborhood pickup or direct deal",
+      icon: MapPin,
+    },
+    {
+      value: "DISTRICT",
+      label: "District-Wide",
+      description: "Available across your district",
+      icon: Map,
+    },
+    {
+      value: "PROVINCE",
+      label: "Province-Wide",
+      description: "Regional availability within province",
+      icon: Landmark,
+    },
+    {
+      value: "NATIONWIDE",
+      label: "Island-Wide Delivery",
+      description: "Ships or delivered across Sri Lanka",
+      icon: Truck,
+    },
+    {
+      value: "ONLINE",
+      label: "Digital / Remote",
+      description: "No physical location required",
+      icon: Globe,
+    },
+  ];
 
 export default function EditListingPage({ params }: PageProps) {
   const resolvedParams = use(params);
@@ -212,6 +212,7 @@ export default function EditListingPage({ params }: PageProps) {
     }
 
     if (!listingId || !user) return;
+    if (listing) return;
 
     let isMounted = true;
 
@@ -398,8 +399,8 @@ export default function EditListingPage({ params }: PageProps) {
         pricingType === "NEGOTIABLE"
           ? true
           : pricingType === "FIXED"
-          ? negotiable
-          : false,
+            ? negotiable
+            : false,
       minimumOfferPrice:
         negotiable && minimumOfferPrice !== ""
           ? Number(minimumOfferPrice)
@@ -422,6 +423,7 @@ export default function EditListingPage({ params }: PageProps) {
       setListing(updated);
       setSuccessMessage("Listing details updated successfully!");
       window.scrollTo({ top: 0, behavior: "smooth" });
+      router.push(`/listings/${listing.id}`);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to update listing."
@@ -526,10 +528,9 @@ export default function EditListingPage({ params }: PageProps) {
               <span
                 className={`
                   px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider
-                  ${
-                    isDraft
-                      ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-800"
-                      : listing.status === "ACTIVE"
+                  ${isDraft
+                    ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-800"
+                    : listing.status === "ACTIVE"
                       ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
                       : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                   }
@@ -646,11 +647,10 @@ export default function EditListingPage({ params }: PageProps) {
               <button
                 type="button"
                 onClick={() => setListingType("ITEM")}
-                className={`flex items-center justify-center gap-2.5 p-3 rounded-xl border text-sm font-semibold transition-all ${
-                  listingType === "ITEM"
-                    ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-sm"
-                    : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300"
-                }`}
+                className={`flex items-center justify-center gap-2.5 p-3 rounded-xl border text-sm font-semibold transition-all ${listingType === "ITEM"
+                  ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-sm"
+                  : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300"
+                  }`}
               >
                 <ShoppingBag className="w-4 h-4" />
                 <span>Physical Item</span>
@@ -659,11 +659,10 @@ export default function EditListingPage({ params }: PageProps) {
               <button
                 type="button"
                 onClick={() => setListingType("SERVICE")}
-                className={`flex items-center justify-center gap-2.5 p-3 rounded-xl border text-sm font-semibold transition-all ${
-                  listingType === "SERVICE"
-                    ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-sm"
-                    : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300"
-                }`}
+                className={`flex items-center justify-center gap-2.5 p-3 rounded-xl border text-sm font-semibold transition-all ${listingType === "SERVICE"
+                  ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-sm"
+                  : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300"
+                  }`}
               >
                 <Wrench className="w-4 h-4" />
                 <span>Service / Skill</span>
@@ -727,9 +726,8 @@ export default function EditListingPage({ params }: PageProps) {
                 setTitle(e.target.value);
                 setFieldErrors((prev) => ({ ...prev, title: "" }));
               }}
-              className={`input-field font-medium ${
-                fieldErrors.title ? "border-rose-500" : ""
-              }`}
+              className={`input-field font-medium ${fieldErrors.title ? "border-rose-500" : ""
+                }`}
               required
             />
             {fieldErrors.title && (
@@ -750,11 +748,10 @@ export default function EditListingPage({ params }: PageProps) {
                       type="button"
                       key={opt.value}
                       onClick={() => setCondition(opt.value)}
-                      className={`p-3.5 rounded-xl border text-left transition-all ${
-                        isSelected
-                          ? "border-emerald-500 bg-emerald-500/10 text-slate-900 dark:text-white shadow-sm ring-1 ring-emerald-500/30"
-                          : "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300"
-                      }`}
+                      className={`p-3.5 rounded-xl border text-left transition-all ${isSelected
+                        ? "border-emerald-500 bg-emerald-500/10 text-slate-900 dark:text-white shadow-sm ring-1 ring-emerald-500/30"
+                        : "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300"
+                        }`}
                     >
                       <div className="font-semibold text-sm">{opt.label}</div>
                       <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -792,9 +789,8 @@ export default function EditListingPage({ params }: PageProps) {
                   setQuantity(Math.max(1, parseInt(e.target.value) || 1));
                   setFieldErrors((prev) => ({ ...prev, quantity: "" }));
                 }}
-                className={`input-field text-center font-bold ${
-                  fieldErrors.quantity ? "border-rose-500" : ""
-                }`}
+                className={`input-field text-center font-bold ${fieldErrors.quantity ? "border-rose-500" : ""
+                  }`}
                 required
               />
               <button
@@ -836,11 +832,10 @@ export default function EditListingPage({ params }: PageProps) {
                   type="button"
                   key={opt.value}
                   onClick={() => handlePricingTypeChange(opt.value)}
-                  className={`p-4 rounded-xl border text-left flex flex-col justify-between transition-all ${
-                    isSelected
-                      ? "border-emerald-500 bg-emerald-500/10 text-slate-900 dark:text-white shadow-sm ring-1 ring-emerald-500/30"
-                      : "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/40"
-                  }`}
+                  className={`p-4 rounded-xl border text-left flex flex-col justify-between transition-all ${isSelected
+                    ? "border-emerald-500 bg-emerald-500/10 text-slate-900 dark:text-white shadow-sm ring-1 ring-emerald-500/30"
+                    : "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                    }`}
                 >
                   <div>
                     <span className="w-8 h-8 rounded-lg bg-white dark:bg-slate-800 flex items-center justify-center mb-2.5 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
@@ -868,11 +863,10 @@ export default function EditListingPage({ params }: PageProps) {
                     Price (LKR) *
                   </label>
                   <div
-                    className={`flex items-center rounded-xl border bg-white dark:bg-slate-900 transition-colors focus-within:ring-2 focus-within:ring-emerald-500/40 focus-within:border-emerald-500 ${
-                      fieldErrors.price
-                        ? "border-rose-500"
-                        : "border-slate-200 dark:border-slate-800"
-                    }`}
+                    className={`flex items-center rounded-xl border bg-white dark:bg-slate-900 transition-colors focus-within:ring-2 focus-within:ring-emerald-500/40 focus-within:border-emerald-500 ${fieldErrors.price
+                      ? "border-rose-500"
+                      : "border-slate-200 dark:border-slate-800"
+                      }`}
                   >
                     <span className="px-3.5 text-sm font-bold text-slate-500 dark:text-slate-400 select-none border-r border-slate-200 dark:border-slate-800 h-full flex items-center py-3 shrink-0">
                       Rs.
@@ -912,11 +906,10 @@ export default function EditListingPage({ params }: PageProps) {
                       </span>
                     </label>
                     <div
-                      className={`flex items-center rounded-xl border bg-white dark:bg-slate-900 transition-colors focus-within:ring-2 focus-within:ring-emerald-500/40 focus-within:border-emerald-500 ${
-                        fieldErrors.minimumOfferPrice
-                          ? "border-rose-500"
-                          : "border-slate-200 dark:border-slate-800"
-                      }`}
+                      className={`flex items-center rounded-xl border bg-white dark:bg-slate-900 transition-colors focus-within:ring-2 focus-within:ring-emerald-500/40 focus-within:border-emerald-500 ${fieldErrors.minimumOfferPrice
+                        ? "border-rose-500"
+                        : "border-slate-200 dark:border-slate-800"
+                        }`}
                     >
                       <span className="px-3.5 text-sm font-bold text-slate-500 dark:text-slate-400 select-none border-r border-slate-200 dark:border-slate-800 h-full flex items-center py-3 shrink-0">
                         Rs.
@@ -977,11 +970,10 @@ export default function EditListingPage({ params }: PageProps) {
                     type="button"
                     key={loc.value}
                     onClick={() => setLocationType(loc.value)}
-                    className={`p-3.5 rounded-xl border text-left flex flex-col justify-between transition-all ${
-                      isSelected
-                        ? "border-emerald-500 bg-emerald-500/10 text-slate-900 dark:text-white shadow-sm ring-1 ring-emerald-500/30"
-                        : "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300"
-                    }`}
+                    className={`p-3.5 rounded-xl border text-left flex flex-col justify-between transition-all ${isSelected
+                      ? "border-emerald-500 bg-emerald-500/10 text-slate-900 dark:text-white shadow-sm ring-1 ring-emerald-500/30"
+                      : "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300"
+                      }`}
                   >
                     <div>
                       <Icon className="w-4 h-4 mb-2 text-slate-600 dark:text-slate-400" />
@@ -1073,9 +1065,8 @@ export default function EditListingPage({ params }: PageProps) {
                 setDescription(e.target.value);
                 setFieldErrors((prev) => ({ ...prev, description: "" }));
               }}
-              className={`input-field font-normal leading-relaxed ${
-                fieldErrors.description ? "border-rose-500" : ""
-              }`}
+              className={`input-field font-normal leading-relaxed ${fieldErrors.description ? "border-rose-500" : ""
+                }`}
               required
             />
             <div className="flex items-center justify-between text-xs text-slate-400">
