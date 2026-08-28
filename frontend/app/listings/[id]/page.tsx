@@ -360,6 +360,7 @@ export default function ListingDetailsPage() {
           <div className="w-full lg:col-span-12 xl:col-span-3 xl:sticky xl:top-18">
             <SimilarListingsColumn
               categoryId={listing.categoryId}
+              categorySlug={listing.categoryBreadcrumbs?.[listing.categoryBreadcrumbs.length - 1]?.slug}
               categoryName={listing.categoryName}
               currentListingId={listing.id}
             />

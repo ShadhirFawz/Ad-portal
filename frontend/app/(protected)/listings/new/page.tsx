@@ -47,7 +47,9 @@ import {
   Eye,
   Rocket,
   LucideIcon,
+  Link2,
 } from "lucide-react";
+import { generateSlug } from "@/lib/format/slug";
 
 const CONDITION_OPTIONS: {
   value: ListingCondition;
@@ -380,7 +382,7 @@ export default function NewListingPage() {
       setCreatedListing(updated);
       setPublishSuccess(true);
       setTimeout(() => {
-        router.push(`/listings/${createdListing.id}`);
+        router.push(`/listings/${updated.slug || createdListing.slug || createdListing.id}`);
       }, 1200);
     } catch (err) {
       setError(
@@ -633,6 +635,20 @@ export default function NewListingPage() {
             {fieldErrors.title && (
               <p className="text-xs text-rose-500 mt-1">{fieldErrors.title}</p>
             )}
+
+            {/* Real-time Slug Preview (Immutable / Read-Only Information) */}
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 text-xs text-slate-500 dark:text-slate-400 select-none">
+              <Link2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+              <span className="text-slate-400 dark:text-slate-500 font-mono text-[11px] shrink-0">
+                /listings/
+              </span>
+              <span className="font-mono font-medium text-emerald-600 dark:text-emerald-400 truncate">
+                {generateSlug(title) || "your-listing-slug"}
+              </span>
+              <span className="ml-auto text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-slate-200/70 dark:bg-slate-700/70 text-slate-500 dark:text-slate-400 shrink-0">
+                URL Preview
+              </span>
+            </div>
           </div>
 
           {/* Condition Selector (Segmented Radio) */}
@@ -1224,7 +1240,7 @@ export default function NewListingPage() {
 
             <div className="flex items-center gap-3 w-full sm:w-auto">
               <Link
-                href={`/listings/${createdListing.id}`}
+                href={`/listings/${createdListing.slug || createdListing.id}`}
                 className="btn-outline w-full sm:w-auto text-center text-sm py-3 px-5 flex items-center justify-center gap-1.5"
               >
                 <Eye className="w-4 h-4" />

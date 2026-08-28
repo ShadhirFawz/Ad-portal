@@ -73,9 +73,9 @@ export default function ListingBreadcrumb({
           return (
             <li key={item.id ?? index} className="flex items-center gap-1.5">
               <ChevronRight className="w-3.5 h-3.5 text-slate-400 dark:text-slate-600 shrink-0" />
-              {item.id && !isLastCategory ? (
+              {(item.slug || item.id) && !isLastCategory ? (
                 <Link
-                  href={`/listings?category=${item.id}`}
+                  href={`/listings?category=${item.slug || item.id}`}
                   className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors font-medium"
                 >
                   {item.name}
