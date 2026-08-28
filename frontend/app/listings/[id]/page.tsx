@@ -125,7 +125,7 @@ export default function ListingDetailsPage() {
     return () => {
       isMounted = false;
     };
-  }, [listingId, accessToken]);
+  }, [listingId]);
 
   const refetchListing = async () => {
     if (!listingId) return;
@@ -137,7 +137,7 @@ export default function ListingDetailsPage() {
     }
   };
 
-  if (loading || authLoading) {
+  if (loading && !listing) {
     return (
       <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12 flex justify-center items-center min-h-[60vh]">
         <div className="flex flex-col items-center gap-3">

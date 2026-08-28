@@ -4,6 +4,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -74,7 +75,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const supabase = createClient();
+  // Keep a ref of the latest user to avoid overwriting rich profile on token refresh
+  const userRef = useRef<UserResponse | null>(null);
+  userRef.current = user;
 
   const syncBackendProfile = async (token: string, fallbackUser?: UserResponse) => {
     try {
@@ -100,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let isMounted = true;
+    const supabase = createClient();
 
     const initializeAuth = async () => {
       try {
@@ -114,7 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setAccessToken(session.access_token);
           setUser(fallback);
 
-          // Sync in background with backend
+          // Sync full profile with backend
           void syncBackendProfile(session.access_token, fallback);
         } else {
           setAccessToken(null);
@@ -136,15 +140,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMounted) return;
 
-      if (session?.user && session?.access_token) {
-        const fallback = mapSupabaseUserToUserResponse(session.user);
-        setAccessToken(session.access_token);
-        setUser(fallback);
-
-        void syncBackendProfile(session.access_token, fallback);
-      } else {
+      if (event === "SIGNED_OUT" || !session) {
         setAccessToken(null);
         setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      if (session.user && session.access_token) {
+        setAccessToken(session.access_token);
+
+        if (event === "TOKEN_REFRESHED" && userRef.current?.id === session.user.id) {
+          setLoading(false);
+          return;
+        }
+
+        if (!userRef.current || userRef.current.id !== session.user.id) {
+          const fallback = mapSupabaseUserToUserResponse(session.user);
+          setUser(fallback);
+          void syncBackendProfile(session.access_token, fallback);
+        }
       }
       setLoading(false);
     });
@@ -153,10 +168,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [supabase.auth]);
+  }, []);
 
   const login = async (email: string, password: string) => {
     setLoading(true);
+    const supabase = createClient();
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -182,6 +198,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     profile: { firstName: string; lastName?: string; phoneNumber?: string }
   ) => {
     setLoading(true);
+    const supabase = createClient();
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -209,6 +226,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshSession = async () => {
+    const supabase = createClient();
     const { data, error } = await supabase.auth.refreshSession();
     if (error) {
       throw new Error(error.message);
@@ -219,6 +237,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
+    const supabase = createClient();
     await supabase.auth.signOut();
     setAccessToken(null);
     setUser(null);
