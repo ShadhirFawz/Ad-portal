@@ -109,6 +109,29 @@ public class CategoryServiceImpl implements CategoryService {
                 return result;
         }
 
+        @Override
+        public UUID resolveCategoryId(String idOrSlug) {
+                if (idOrSlug == null || idOrSlug.isBlank()) {
+                        throw new ResourceNotFoundException("Category identifier is required.");
+                }
+
+                try {
+                        UUID id = UUID.fromString(idOrSlug);
+                        if (categoryRepository.existsById(id)) {
+                                return id;
+                        }
+                } catch (IllegalArgumentException ignored) {
+                        // idOrSlug is a slug, not a UUID
+                }
+
+                return categoryRepository
+                                .findBySlug(idOrSlug)
+                                .filter(Category::isActive)
+                                .map(Category::getId)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Category not found: " + idOrSlug));
+        }
+
         private List<CategoryBreadcrumbResponse> buildBreadcrumbs(Category category) {
 
                 List<CategoryBreadcrumbResponse> breadcrumbs = new java.util.ArrayList<>();
