@@ -423,7 +423,7 @@ export default function EditListingPage({ params }: PageProps) {
       setListing(updated);
       setSuccessMessage("Listing details updated successfully!");
       window.scrollTo({ top: 0, behavior: "smooth" });
-      router.push(`/listings/${listing.id}`);
+      router.push(`/listings/${updated.slug || listing.slug || listing.id}`);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to update listing."
@@ -446,7 +446,7 @@ export default function EditListingPage({ params }: PageProps) {
       setListing(updated);
       setSuccessMessage("Listing published successfully!");
       setTimeout(() => {
-        router.push(`/listings/${listing.id}`);
+        router.push(`/listings/${updated.slug || listing.slug || listing.id}`);
       }, 1200);
     } catch (err) {
       setError(
@@ -508,7 +508,7 @@ export default function EditListingPage({ params }: PageProps) {
           </Link>
           <span>/</span>
           <Link
-            href={`/listings/${listing.id}`}
+            href={`/listings/${listing.slug || listing.id}`}
             className="hover:text-slate-800 dark:hover:text-slate-200 transition-colors truncate max-w-50"
           >
             {listing.title}
@@ -546,7 +546,7 @@ export default function EditListingPage({ params }: PageProps) {
 
           <div className="flex items-center gap-2.5">
             <Link
-              href={`/listings/${listing.id}`}
+              href={`/listings/${listing.slug || listing.id}`}
               className="btn-outline text-xs px-4 py-2 flex items-center gap-1.5"
             >
               <Eye className="w-3.5 h-3.5" />
@@ -1155,7 +1155,7 @@ export default function EditListingPage({ params }: PageProps) {
         {/* Submit Bar */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-200 dark:border-slate-800">
           <Link
-            href={`/listings/${listing.id}`}
+            href={`/listings/${listing.slug || listing.id}`}
             className="btn-outline w-full sm:w-auto text-center text-sm py-3 px-6"
           >
             Cancel

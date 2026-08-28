@@ -18,6 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  Package,
 } from "lucide-react";
 
 interface Filters {
@@ -86,8 +87,8 @@ function Pagination({
           type="button"
           onClick={() => onChange(p)}
           className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all ${p === current
-              ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/25"
-              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+            ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/25"
+            : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
             }`}
         >
           {p + 1}
@@ -199,7 +200,7 @@ function ListingsContent() {
         setTotalPages(listingsPage.totalPages ?? 0);
 
         if (categoryId) {
-          const found = allCats.find((c) => c.id === categoryId) ?? null;
+          const found = allCats.find((c) => c.id === categoryId || c.slug === categoryId) ?? null;
           setCurrentCategory(found);
 
           if (!found) {
@@ -306,8 +307,8 @@ function ListingsContent() {
               onClick={() => setViewLayout("row")}
               title="Row layout"
               className={`p-2.5 transition-all ${viewLayout === "row"
-                  ? "bg-emerald-600 text-white"
-                  : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                ? "bg-emerald-600 text-white"
+                : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
                 }`}
             >
               <LayoutList className="w-4 h-4" />
@@ -317,8 +318,8 @@ function ListingsContent() {
               onClick={() => setViewLayout("grid")}
               title="Grid layout"
               className={`p-2.5 transition-all ${viewLayout === "grid"
-                  ? "bg-emerald-600 text-white"
-                  : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                ? "bg-emerald-600 text-white"
+                : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
                 }`}
             >
               <LayoutGrid className="w-4 h-4" />
@@ -434,7 +435,7 @@ function ListingsContent() {
             </>
           ) : (
             <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-12 text-center shadow-sm space-y-4 max-w-lg mx-auto">
-              <div className="text-5xl">📦</div>
+              <Package className="w-12 h-12 mx-auto text-slate-400 dark:text-slate-500" />
               <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                 {activeFilterCount > 0 ? "No Matches Found" : "No Listings Found"}
               </h3>
@@ -442,7 +443,7 @@ function ListingsContent() {
                 {activeFilterCount > 0
                   ? "No listings match your current filters. Try adjusting or clearing them."
                   : currentCategory
-                    ? `No active listings in "${currentCategory.name}" or its subcategories.`
+                    ? `No active listings in found for "${currentCategory.name}"`
                     : "No active listings are currently available."}
               </p>
               <div className="pt-2 flex flex-wrap justify-center gap-3">
@@ -461,7 +462,7 @@ function ListingsContent() {
                   className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition inline-flex items-center gap-1.5 shadow-md shadow-emerald-500/20"
                 >
                   <Plus className="w-4 h-4" />
-                  Post the First Ad
+                  Post an Ad
                 </Link>
                 {currentCategory && (
                   <Link

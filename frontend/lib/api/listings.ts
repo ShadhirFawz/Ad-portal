@@ -47,12 +47,12 @@ export async function createListing(
 }
 
 export async function getListing(
-  id: string
+  idOrSlug: string
 ): Promise<Listing> {
 
   const response =
-    await apiRequest<ApiResponse<Listing>>(
-      `/listings/${id}`
+    await publicRequest<ApiResponse<Listing>>(
+      `/listings/${encodeURIComponent(idOrSlug)}`
     );
 
   return response.data;

@@ -11,12 +11,14 @@ import { Sparkles, ArrowRight, MapPin } from "lucide-react";
 
 interface SimilarListingsColumnProps {
   categoryId: string;
+  categorySlug?: string;
   categoryName: string;
   currentListingId: string;
 }
 
 export default function SimilarListingsColumn({
   categoryId,
+  categorySlug,
   categoryName,
   currentListingId,
 }: SimilarListingsColumnProps) {
@@ -29,7 +31,7 @@ export default function SimilarListingsColumn({
       if (!categoryId) return;
       setLoading(true);
       try {
-        const response = await getListingsByCategory(categoryId, 0, 10);
+        const response = await getListingsByCategory(categorySlug || categoryId, 0, 10);
         if (isMounted) {
           const filtered = (response.content ?? []).filter(
             (item) => item.id !== currentListingId
@@ -47,7 +49,7 @@ export default function SimilarListingsColumn({
     return () => {
       isMounted = false;
     };
-  }, [categoryId, currentListingId]);
+  }, [categoryId, categorySlug, currentListingId]);
 
   if (!loading && listings.length === 0) {
     return null;
@@ -72,7 +74,7 @@ export default function SimilarListingsColumn({
         </div>
 
         <Link
-          href={`/listings?category=${categoryId}`}
+          href={`/listings?category=${categorySlug || categoryId}`}
           className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition flex items-center gap-0.5 shrink-0"
         >
           <span>View all</span>
@@ -109,7 +111,7 @@ export default function SimilarListingsColumn({
             return (
               <Link
                 key={item.id}
-                href={`/listings/${item.id}`}
+                href={`/listings/${item.slug || item.id}`}
                 className="group flex items-center gap-3 p-2.5 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-800/30 hover:border-emerald-500/40 hover:bg-white dark:hover:bg-slate-800/80 hover:shadow-md transition-all duration-200 min-h-[96px] w-full"
               >
                 {/* Definite Thumbnail with Fill & Sizing Safety */}
