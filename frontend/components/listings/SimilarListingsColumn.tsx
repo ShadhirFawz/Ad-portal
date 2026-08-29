@@ -110,7 +110,7 @@ export default function SimilarListingsColumn({
               item.images?.find((img: ListingImage) => img.primary)?.url ??
               item.images?.[0]?.url;
 
-            const locationText = [item.city, item.district].filter(Boolean).join(", ");
+            const locationText = item.city || item.district || "";
             const conditionLabel = formatListingCondition(item.condition);
 
             return (

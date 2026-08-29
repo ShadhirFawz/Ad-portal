@@ -353,7 +353,7 @@ function ListingsContent() {
 
       {/* Two-panel layout */}
       <div className="flex gap-6 items-start">
-        {/* ─── Sidebar ──────────────────────────────────────────────────── */}
+        {/* Sidebar */}
         <aside className="hidden lg:block w-64 xl:w-72 shrink-0">
           <FilterSidebar
             searchQuery={pendingSearch}
@@ -376,7 +376,7 @@ function ListingsContent() {
           />
         </aside>
 
-        {/* ─── Mobile Filters Drawer ────────────────────────────────────── */}
+        {/* Mobile Filters Drawer */}
         {mobileFiltersOpen && (
           <FilterSidebar
             isMobileOpen={mobileFiltersOpen}
@@ -401,7 +401,7 @@ function ListingsContent() {
           />
         )}
 
-        {/* ─── Listing Results ──────────────────────────────────────────── */}
+        {/* Listing Results */}
         <div className="flex-1 min-w-0">
           {loading ? (
             <div className="py-20 flex flex-col items-center gap-3">
@@ -413,13 +413,13 @@ function ListingsContent() {
           ) : sortedListings.length > 0 ? (
             <>
               {viewLayout === "row" ? (
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-3.5">
                   {sortedListings.map((listing) => (
                     <ListingCard key={listing.id} listing={listing} layout="row" />
                   ))}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                   {sortedListings.map((listing) => (
                     <ListingCard key={listing.id} listing={listing} layout="grid" />
                   ))}
