@@ -215,14 +215,14 @@ export default function ListingDetailsPage() {
           )}
         </div>
 
-        {/* Three-column layout on XL screens: Image Gallery | Header & Seller Contact | Similar in Category */}
+        {/* Header & Seller Contact */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Column 1: Image Gallery (Sticky) */}
+          {/* Image Gallery */}
           <div className="w-full lg:col-span-5 xl:col-span-4 lg:sticky lg:top-18">
             <ListingImageGallery images={listing.images} title={listing.title} />
           </div>
 
-          {/* Column 2: Header and Seller Contact */}
+          {/* Header and Seller Contact */}
           <div className="w-full lg:col-span-7 xl:col-span-5 space-y-4">
             {/* Header */}
             <div className="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 dark:border-slate-800 dark:bg-slate-900/90 shadow-sm space-y-3">
@@ -264,19 +264,6 @@ export default function ListingDetailsPage() {
                 )}
               </div>
 
-              {listing.negotiable &&
-                listing.minimumOfferPrice != null &&
-                listing.pricingType !== "FREE" &&
-                listing.pricingType !== "CONTACT_FOR_PRICE" && (
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Minimum offer:{" "}
-                    <span className="font-semibold text-slate-700 dark:text-slate-300">
-                      {listing.currency ?? "LKR"}{" "}
-                      {Number(listing.minimumOfferPrice).toLocaleString()}
-                    </span>
-                  </p>
-                )}
-
               <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-500 dark:text-slate-400 pt-1">
                 {locationString && (
                   <div className="flex items-center gap-1.5">
@@ -284,12 +271,22 @@ export default function ListingDetailsPage() {
                     <span>{locationString}</span>
                   </div>
                 )}
-                {publishedAgo && (
+                {updatedAgo ? (
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                    <span>Updated {updatedAgo}</span>
+                  </div>
+                ) : publishedAgo ? (
                   <div className="flex items-center gap-1.5">
                     <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                     <span>Published {publishedAgo}</span>
                   </div>
-                )}
+                ) : listedAgo ? (
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                    <span>Listed {listedAgo}</span>
+                  </div>
+                ) : null}
                 <div className="flex items-center gap-1.5">
                   <Eye className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                   <span>{listing.viewCount.toLocaleString()} views</span>
@@ -357,7 +354,7 @@ export default function ListingDetailsPage() {
             </div>
           </div>
 
-          {/* Column 3: Similar Items (Same Exact Category - Scrollable horizontal cards) */}
+          {/* Similar Items */}
           <div className="w-full lg:col-span-12 xl:col-span-3 xl:sticky xl:top-18">
             <SimilarListingsColumn
               categoryId={listing.categoryId}
@@ -368,108 +365,92 @@ export default function ListingDetailsPage() {
           </div>
         </div>
 
-        {/* Full-width sections below the top grid */}
         <div className="space-y-6 mt-6 lg:mt-8">
-          {/* Description */}
+          {/* Full Screen Width Description */}
           <SectionCard title="Description" icon={Tag}>
             <div className="prose prose-slate dark:prose-invert max-w-none text-sm leading-relaxed whitespace-pre-line text-slate-700 dark:text-slate-300">
               {listing.description}
             </div>
           </SectionCard>
 
-          {/* Listing details */}
-          <SectionCard title="Listing Details" icon={Package}>
-            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
-              <DetailRow label="Category" value={listing.categoryName} />
-              <DetailRow
-                label="Offering Type"
-                value={formatListingType(listing.listingType)}
-              />
-              <DetailRow
-                label="Condition"
-                value={formatListingCondition(listing.condition)}
-              />
-              <DetailRow
-                label="Pricing Type"
-                value={formatPricingType(listing.pricingType)}
-              />
-              <DetailRow label="Currency" value={listing.currency} />
-              <DetailRow
-                label="Total Quantity"
-                value={listing.quantity?.toLocaleString()}
-              />
-              <DetailRow
-                label="Available Quantity"
-                value={(
-                  listing.availableQuantity ?? listing.quantity
-                )?.toLocaleString()}
-              />
-              <DetailRow
-                label="Listing Status"
-                value={formatListingStatus(listing.status)}
-              />
-              {isOwner && (
-                <DetailRow
-                  label="Moderation"
-                  value={formatModerationStatus(listing.moderationStatus)}
-                />
-              )}
-            </dl>
-          </SectionCard>
-
-          {/* Location */}
-          <SectionCard title="Location" icon={MapPin}>
-            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
-              <DetailRow
-                label="Coverage"
-                value={formatLocationType(listing.locationType)}
-              />
-              {listing.locationType !== "ONLINE" && (
-                <>
-                  <DetailRow label="City" value={listing.city} />
-                  <DetailRow label="District" value={listing.district} />
-                  <DetailRow label="Province" value={listing.province} />
-                  <DetailRow label="Postal Code" value={listing.postalCode} />
-                </>
-              )}
-            </dl>
-          </SectionCard>
-
-          {/* Custom attributes */}
-          {customAttributeEntries.length > 0 && (
-            <SectionCard title="Additional Attributes" icon={Shield}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            {/* Listing details */}
+            <SectionCard title="Listing Details" icon={Package}>
               <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
-                {customAttributeEntries.map(([key, value]) => (
+                <DetailRow label="Category" value={listing.categoryName} />
+                <DetailRow
+                  label="Offering Type"
+                  value={formatListingType(listing.listingType)}
+                />
+                <DetailRow
+                  label="Condition"
+                  value={formatListingCondition(listing.condition)}
+                />
+                <DetailRow
+                  label="Pricing Type"
+                  value={formatPricingType(listing.pricingType)}
+                />
+                <DetailRow label="Currency" value={listing.currency} />
+                <DetailRow
+                  label="Total Quantity"
+                  value={listing.quantity?.toLocaleString()}
+                />
+                <DetailRow
+                  label="Available Quantity"
+                  value={(
+                    listing.availableQuantity ?? listing.quantity
+                  )?.toLocaleString()}
+                />
+                <DetailRow
+                  label="Listing Status"
+                  value={formatListingStatus(listing.status)}
+                />
+                {isOwner && (
                   <DetailRow
-                    key={key}
-                    label={key}
-                    value={String(value)}
+                    label="Moderation"
+                    value={formatModerationStatus(listing.moderationStatus)}
                   />
-                ))}
+                )}
               </dl>
             </SectionCard>
-          )}
 
-          {/* Timestamps */}
-          <SectionCard title="Activity" icon={Clock}>
-            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
-              {listedAgo && (
-                <DetailRow label="Listed" value={listedAgo} />
-              )}
-              {updatedAgo && updatedAgo !== listedAgo && (
-                <DetailRow label="Last Updated" value={updatedAgo} />
-              )}
-              {publishedAgo && (
-                <DetailRow label="Published" value={publishedAgo} />
-              )}
-              <DetailRow
-                label="Photos"
-                value={`${listing.images?.length ?? 0} uploaded`}
-              />
-            </dl>
-          </SectionCard>
+            {/* Location */}
+            <SectionCard title="Location &amp; Delivery" icon={MapPin}>
+              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                <DetailRow
+                  label="Coverage"
+                  value={formatLocationType(listing.locationType)}
+                />
+                {listing.locationType !== "ONLINE" && (
+                  <>
+                    <DetailRow label="City" value={listing.city} />
+                    <DetailRow label="District" value={listing.district} />
+                    <DetailRow label="Province" value={listing.province} />
+                    <DetailRow label="Postal Code" value={listing.postalCode} />
+                  </>
+                )}
+              </dl>
+            </SectionCard>
 
-          {/* Related Listings across all 3 levels of the category hierarchy */}
+            {/* Custom attributes */}
+            {customAttributeEntries.length > 0 && (
+              <div className="md:col-span-2">
+                <SectionCard title="Additional information" icon={Shield}>
+                  <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
+                    {customAttributeEntries.map(([key, value]) => (
+                      <DetailRow
+                        key={key}
+                        label={key}
+                        value={String(value)}
+                      />
+                    ))}
+                  </dl>
+                </SectionCard>
+              </div>
+            )}
+          </div>
+
+          {/* Related Listings */}
           <RelatedCategoryListings
             rootCategory={listing.categoryBreadcrumbs?.[0]}
             categoryBreadcrumbs={listing.categoryBreadcrumbs}
