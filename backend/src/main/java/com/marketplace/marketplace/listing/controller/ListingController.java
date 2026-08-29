@@ -59,6 +59,20 @@ public class ListingController {
                         pageable));
     }
 
+    @GetMapping("/category/{categoryIdOrSlug}/similar")
+    public ApiResponse<Page<ListingResponse>> getSimilarListings(
+            @PathVariable String categoryIdOrSlug,
+            @RequestParam(required = false) String exclude,
+            Pageable pageable) {
+
+        return ApiResponse.success(
+                "Similar listings retrieved successfully.",
+                listingService.getSimilarListings(
+                        categoryIdOrSlug,
+                        exclude,
+                        pageable));
+    }
+
     @GetMapping("/slug/{slug}")
     public ApiResponse<ListingResponse> getBySlug(
             @PathVariable String slug) {

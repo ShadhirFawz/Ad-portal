@@ -94,6 +94,7 @@ export default function ListingDetailsPage() {
 
   useEffect(() => {
     if (!listingId) return;
+    if (authLoading) return;
 
     let isMounted = true;
 
@@ -101,7 +102,7 @@ export default function ListingDetailsPage() {
       try {
         setLoading(true);
         setError(null);
-        const data = await getListing(listingId);
+        const data = await getListing(listingId, accessToken);
         if (isMounted) {
           setListing(data);
         }
@@ -125,12 +126,12 @@ export default function ListingDetailsPage() {
     return () => {
       isMounted = false;
     };
-  }, [listingId]);
+  }, [listingId, accessToken, authLoading]);
 
   const refetchListing = async () => {
     if (!listingId) return;
     try {
-      const data = await getListing(listingId);
+      const data = await getListing(listingId, accessToken);
       setListing(data);
     } catch {
       // keep existing listing on refresh failure
