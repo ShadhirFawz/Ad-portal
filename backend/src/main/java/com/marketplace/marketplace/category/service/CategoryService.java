@@ -21,4 +21,6 @@ public interface CategoryService {
     List<CategoryBreadcrumbResponse> getBreadcrumbsBySlug(String slug);
 
     List<UUID> getSelfAndDescendantCategoryIds(UUID categoryId);
+
+    UUID resolveCategoryId(String idOrSlug);
 }

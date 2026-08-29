@@ -3,20 +3,22 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { getListingsByCategory } from "@/lib/api/listings";
+import { getSimilarListings } from "@/lib/api/listings";
 import type { Listing } from "@/types/listing";
 import type { ListingImage } from "@/types/listing-image";
 import { formatListingPrice, formatListingCondition } from "@/lib/format/listing-labels";
-import { Sparkles, ArrowRight, MapPin } from "lucide-react";
+import { ArrowRight, MapPin, Tags } from "lucide-react";
 
 interface SimilarListingsColumnProps {
   categoryId: string;
+  categorySlug?: string;
   categoryName: string;
   currentListingId: string;
 }
 
 export default function SimilarListingsColumn({
   categoryId,
+  categorySlug,
   categoryName,
   currentListingId,
 }: SimilarListingsColumnProps) {
@@ -29,7 +31,12 @@ export default function SimilarListingsColumn({
       if (!categoryId) return;
       setLoading(true);
       try {
-        const response = await getListingsByCategory(categoryId, 0, 10);
+        const response = await getSimilarListings(
+          categorySlug || categoryId,
+          currentListingId,
+          0,
+          10
+        );
         if (isMounted) {
           const filtered = (response.content ?? []).filter(
             (item) => item.id !== currentListingId
@@ -47,7 +54,7 @@ export default function SimilarListingsColumn({
     return () => {
       isMounted = false;
     };
-  }, [categoryId, currentListingId]);
+  }, [categoryId, categorySlug, currentListingId]);
 
   if (!loading && listings.length === 0) {
     return null;
@@ -59,7 +66,7 @@ export default function SimilarListingsColumn({
       <div className="flex items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-2 min-w-0">
           <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
-            <Sparkles className="w-4 h-4" />
+            <Tags className="w-4 h-4" />
           </div>
           <div className="min-w-0">
             <h2 className="text-sm font-bold text-slate-900 dark:text-white truncate">
@@ -72,7 +79,7 @@ export default function SimilarListingsColumn({
         </div>
 
         <Link
-          href={`/listings?category=${categoryId}`}
+          href={`/listings?category=${categorySlug || categoryId}`}
           className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition flex items-center gap-0.5 shrink-0"
         >
           <span>View all</span>
@@ -81,7 +88,7 @@ export default function SimilarListingsColumn({
       </div>
 
       {/* Scrollable Container with Horizontal Cards */}
-      <div className="max-h-[580px] overflow-y-auto space-y-2.5 pr-1 no-scrollbar">
+      <div className="max-h-145 overflow-y-auto space-y-2.5 pr-1 no-scrollbar">
         {loading ? (
           Array.from({ length: 4 }).map((_, i) => (
             <div
@@ -109,8 +116,8 @@ export default function SimilarListingsColumn({
             return (
               <Link
                 key={item.id}
-                href={`/listings/${item.id}`}
-                className="group flex items-center gap-3 p-2.5 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-800/30 hover:border-emerald-500/40 hover:bg-white dark:hover:bg-slate-800/80 hover:shadow-md transition-all duration-200 min-h-[96px] w-full"
+                href={`/listings/${item.slug || item.id}`}
+                className="group flex items-center gap-3 p-2.5 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-800/30 hover:border-emerald-500/40 hover:bg-white dark:hover:bg-slate-800/80 hover:shadow-md transition-all duration-200 min-h-24 w-full"
               >
                 {/* Definite Thumbnail with Fill & Sizing Safety */}
                 <div className="relative w-20 h-20 sm:w-22 sm:h-22 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0 border border-slate-200/50 dark:border-slate-700/50">
@@ -137,7 +144,7 @@ export default function SimilarListingsColumn({
 
                 {/* Details Container with Structured Slots */}
                 <div className="flex-1 min-w-0 space-y-1 py-0.5">
-                  <h3 className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 line-clamp-2 min-h-[2rem] leading-snug break-words transition-colors">
+                  <h3 className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 line-clamp-2 min-h-8 leading-snug wrap-break-word transition-colors">
                     {item.title}
                   </h3>
 

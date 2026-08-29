@@ -69,7 +69,7 @@ function CategoryTreeNode({
 }) {
   const children = allCats.filter((c) => c.parentId === cat.id && c.active);
   const [expanded, setExpanded] = useState(false);
-  const isActive = cat.id === activeCategoryId;
+  const isActive = cat.id === activeCategoryId || (cat.slug && cat.slug === activeCategoryId);
 
   return (
     <div>
@@ -88,7 +88,7 @@ function CategoryTreeNode({
           <span className="w-4 shrink-0" />
         )}
         <Link
-          href={`/listings?category=${cat.id}`}
+          href={`/listings?category=${cat.slug || cat.id}`}
           className={`flex-1 truncate py-1.5 px-2 rounded-lg text-xs font-medium transition-all ${
             isActive
               ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"

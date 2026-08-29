@@ -29,10 +29,12 @@ export async function getRootCategories(): Promise<Category[]> {
   return response.data;
 }
 
-export async function getCategory(id: string): Promise<Category> {
+export async function getCategory(idOrSlug: string): Promise<Category> {
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
+  const endpoint = isUuid ? `/categories/${idOrSlug}` : `/categories/slug/${encodeURIComponent(idOrSlug)}`;
   const response =
     await publicRequest<ApiResponse<Category>>(
-      `/categories/${id}`
+      endpoint
     );
 
   return response.data;
@@ -47,10 +49,12 @@ export async function getCategoryBySlug(slug: string): Promise<Category> {
   return response.data;
 }
 
-export async function getCategoryBreadcrumbs(id: string): Promise<CategoryBreadcrumb[]> {
+export async function getCategoryBreadcrumbs(idOrSlug: string): Promise<CategoryBreadcrumb[]> {
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
+  const endpoint = isUuid ? `/categories/${idOrSlug}/breadcrumbs` : `/categories/slug/${encodeURIComponent(idOrSlug)}/breadcrumbs`;
   const response =
     await publicRequest<ApiResponse<CategoryBreadcrumb[]>>(
-      `/categories/${id}/breadcrumbs`
+      endpoint
     );
 
   return response.data;

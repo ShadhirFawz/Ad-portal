@@ -10,29 +10,44 @@ import java.util.UUID;
 
 public interface ListingService {
 
-    ListingResponse create(
-            CreateListingRequest request);
+        ListingResponse create(
+                        CreateListingRequest request);
 
-    ListingResponse getById(
-            UUID id);
+        ListingResponse getById(
+                        UUID id);
 
-    ListingResponse update(
-            UUID id,
-            UpdateListingRequest request);
+        ListingResponse getBySlug(
+                        String slug);
 
-    void delete(
-            UUID id);
+        ListingResponse getByIdOrSlug(
+                        String idOrSlug);
 
-    ListingResponse publish(
-            UUID id);
+        ListingResponse update(
+                        UUID id,
+                        UpdateListingRequest request);
 
-    Page<ListingResponse> getMyListings(
-            Pageable pageable);
+        void delete(
+                        UUID id);
 
-    Page<ListingResponse> getActiveListings(
-            Pageable pageable);
+        ListingResponse publish(
+                        UUID id);
 
-    Page<ListingResponse> getByCategory(
-            UUID categoryId,
-            Pageable pageable);
+        Page<ListingResponse> getMyListings(
+                        Pageable pageable);
+
+        Page<ListingResponse> getActiveListings(
+                        Pageable pageable);
+
+        Page<ListingResponse> getByCategory(
+                        UUID categoryId,
+                        Pageable pageable);
+
+        Page<ListingResponse> getByCategory(
+                        String categoryIdOrSlug,
+                        Pageable pageable);
+
+        Page<ListingResponse> getSimilarListings(
+                        String categoryIdOrSlug,
+                        String excludeId,
+                        Pageable pageable);
 }

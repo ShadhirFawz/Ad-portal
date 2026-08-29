@@ -25,6 +25,12 @@ public interface ListingRepository
                         ListingStatus status,
                         Pageable pageable);
 
+        Page<Listing> findAllByCategoryIdAndStatusAndIdNot(
+                        UUID categoryId,
+                        ListingStatus status,
+                        UUID excludeId,
+                        Pageable pageable);
+
         Page<Listing> findAllByCategoryIdInAndStatus(
                         java.util.Collection<UUID> categoryIds,
                         ListingStatus status,
@@ -33,4 +39,10 @@ public interface ListingRepository
         Optional<Listing> findByIdAndSellerId(
                         UUID id,
                         UUID sellerId);
+
+        Optional<Listing> findBySlug(
+                        String slug);
+
+        boolean existsBySlug(
+                        String slug);
 }
