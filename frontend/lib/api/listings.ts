@@ -47,8 +47,20 @@ export async function createListing(
 }
 
 export async function getListing(
-  idOrSlug: string
+  idOrSlug: string,
+  accessToken?: string | null
 ): Promise<Listing> {
+
+  if (accessToken) {
+    const response =
+      await apiRequest<ApiResponse<Listing>>(
+        `/listings/${encodeURIComponent(idOrSlug)}`,
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+    return response.data;
+  }
 
   const response =
     await publicRequest<ApiResponse<Listing>>(
@@ -173,6 +185,27 @@ export async function getListingsByCategory(
       ApiResponse<PageResponse<Listing>>
     >(
       `/listings/category/${categoryId}?page=${page}&size=${size}`
+    );
+
+  return response.data;
+}
+
+export async function getSimilarListings(
+  categoryIdOrSlug: string,
+  excludeIdOrSlug?: string,
+  page = 0,
+  size = 10
+): Promise<PageResponse<Listing>> {
+
+  const excludeParam = excludeIdOrSlug
+    ? `&exclude=${encodeURIComponent(excludeIdOrSlug)}`
+    : "";
+
+  const response =
+    await publicRequest<
+      ApiResponse<PageResponse<Listing>>
+    >(
+      `/listings/category/${encodeURIComponent(categoryIdOrSlug)}/similar?page=${page}&size=${size}${excludeParam}`
     );
 
   return response.data;

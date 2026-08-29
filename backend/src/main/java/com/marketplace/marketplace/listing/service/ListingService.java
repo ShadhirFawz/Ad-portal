@@ -10,39 +10,44 @@ import java.util.UUID;
 
 public interface ListingService {
 
-    ListingResponse create(
-            CreateListingRequest request);
+        ListingResponse create(
+                        CreateListingRequest request);
 
-    ListingResponse getById(
-            UUID id);
+        ListingResponse getById(
+                        UUID id);
 
-    ListingResponse getBySlug(
-            String slug);
+        ListingResponse getBySlug(
+                        String slug);
 
-    ListingResponse getByIdOrSlug(
-            String idOrSlug);
+        ListingResponse getByIdOrSlug(
+                        String idOrSlug);
 
-    ListingResponse update(
-            UUID id,
-            UpdateListingRequest request);
+        ListingResponse update(
+                        UUID id,
+                        UpdateListingRequest request);
 
-    void delete(
-            UUID id);
+        void delete(
+                        UUID id);
 
-    ListingResponse publish(
-            UUID id);
+        ListingResponse publish(
+                        UUID id);
 
-    Page<ListingResponse> getMyListings(
-            Pageable pageable);
+        Page<ListingResponse> getMyListings(
+                        Pageable pageable);
 
-    Page<ListingResponse> getActiveListings(
-            Pageable pageable);
+        Page<ListingResponse> getActiveListings(
+                        Pageable pageable);
 
-    Page<ListingResponse> getByCategory(
-            UUID categoryId,
-            Pageable pageable);
+        Page<ListingResponse> getByCategory(
+                        UUID categoryId,
+                        Pageable pageable);
 
-    Page<ListingResponse> getByCategory(
-            String categoryIdOrSlug,
-            Pageable pageable);
+        Page<ListingResponse> getByCategory(
+                        String categoryIdOrSlug,
+                        Pageable pageable);
+
+        Page<ListingResponse> getSimilarListings(
+                        String categoryIdOrSlug,
+                        String excludeId,
+                        Pageable pageable);
 }

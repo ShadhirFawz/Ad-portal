@@ -430,6 +430,41 @@ public class ListingServiceImpl implements ListingService {
                 return getByCategory(categoryId, pageable);
         }
 
+        @Override
+        @Transactional(readOnly = true)
+        public Page<ListingResponse> getSimilarListings(
+                        String categoryIdOrSlug,
+                        String excludeId,
+                        Pageable pageable) {
+
+                UUID categoryId = categoryService.resolveCategoryId(categoryIdOrSlug);
+
+                UUID excludeUuid = null;
+                if (excludeId != null && !excludeId.isBlank()) {
+                        try {
+                                excludeUuid = UUID.fromString(excludeId);
+                        } catch (IllegalArgumentException ignored) {
+                                // excludeId is a slug — resolve to UUID
+                                excludeUuid = listingRepository.findBySlug(excludeId)
+                                                .map(Listing::getId)
+                                                .orElse(null);
+                        }
+                }
+
+                Page<Listing> page = (excludeUuid != null)
+                                ? listingRepository.findAllByCategoryIdAndStatusAndIdNot(
+                                                categoryId,
+                                                ListingStatus.ACTIVE,
+                                                excludeUuid,
+                                                pageable)
+                                : listingRepository.findAllByCategoryIdAndStatus(
+                                                categoryId,
+                                                ListingStatus.ACTIVE,
+                                                pageable);
+
+                return page.map(this::toResponse);
+        }
+
         private Listing getOwnedListing(UUID id) {
 
                 UUID userId = SecurityUtils.getCurrentUserId();
