@@ -41,7 +41,7 @@ export default function ListingCard({
             )[0]
           : null);
 
-  const targetHref = href ?? `/listings/${listing.id}`;
+  const targetHref = href ?? `/listings/${listing.slug || listing.id}`;
 
   const formatPrice = () => {
     if (listing.pricingType === "FREE") return "Free";

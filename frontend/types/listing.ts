@@ -55,6 +55,7 @@ export interface Listing {
   categoryBreadcrumbs?: CategoryBreadcrumb[];
 
   title: string;
+  slug?: string;
   description: string;
 
   price: number;
@@ -149,6 +150,7 @@ export interface ListingCardData {
   categoryId?: string;
   categoryName?: string;
   title: string;
+  slug?: string;
   description?: string;
   price: number;
   currency?: string;

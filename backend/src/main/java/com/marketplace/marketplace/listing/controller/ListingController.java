@@ -47,25 +47,48 @@ public class ListingController {
                 listingService.getActiveListings(pageable));
     }
 
-    @GetMapping("/category/{categoryId}")
+    @GetMapping("/category/{categoryIdOrSlug}")
     public ApiResponse<Page<ListingResponse>> getByCategory(
-            @PathVariable UUID categoryId,
+            @PathVariable String categoryIdOrSlug,
             Pageable pageable) {
 
         return ApiResponse.success(
                 "Listings retrieved successfully.",
                 listingService.getByCategory(
-                        categoryId,
+                        categoryIdOrSlug,
                         pageable));
     }
 
-    @GetMapping("/{id}")
-    public ApiResponse<ListingResponse> getById(
-            @PathVariable UUID id) {
+    @GetMapping("/category/{categoryIdOrSlug}/similar")
+    public ApiResponse<Page<ListingResponse>> getSimilarListings(
+            @PathVariable String categoryIdOrSlug,
+            @RequestParam(required = false) String exclude,
+            Pageable pageable) {
+
+        return ApiResponse.success(
+                "Similar listings retrieved successfully.",
+                listingService.getSimilarListings(
+                        categoryIdOrSlug,
+                        exclude,
+                        pageable));
+    }
+
+    @GetMapping("/slug/{slug}")
+    public ApiResponse<ListingResponse> getBySlug(
+            @PathVariable String slug) {
 
         return ApiResponse.success(
                 "Listing retrieved successfully.",
-                listingService.getById(id));
+                listingService.getBySlug(slug));
+    }
+
+    @GetMapping("/{idOrSlug}")
+    public ApiResponse<ListingResponse> getByIdOrSlug(
+            @PathVariable String idOrSlug) {
+
+        return ApiResponse.success(
+                "Listing retrieved successfully.",
+                listingService.getByIdOrSlug(idOrSlug));
     }
 
     @PatchMapping("/{id}")

@@ -27,19 +27,19 @@ export default function RelatedCategoryListings({
   const [loading, setLoading] = useState(true);
 
   // Target the top-level parent category to fetch all 3 levels, or fallback to current category
-  const targetCategoryId =
-    rootCategory?.id ?? categoryBreadcrumbs[0]?.id ?? fallbackCategoryId;
+  const targetCategoryIdentifier =
+    rootCategory?.slug ?? categoryBreadcrumbs[0]?.slug ?? rootCategory?.id ?? categoryBreadcrumbs[0]?.id ?? fallbackCategoryId;
   const targetCategoryName =
     rootCategory?.name ?? categoryBreadcrumbs[0]?.name ?? fallbackCategoryName ?? "Category";
 
   useEffect(() => {
     let isMounted = true;
     async function fetchRelated() {
-      if (!targetCategoryId) return;
+      if (!targetCategoryIdentifier) return;
       setLoading(true);
       try {
         // Fetch listings from top-level category (includes all 3 levels recursively)
-        const response = await getListingsByCategory(targetCategoryId, 0, 12);
+        const response = await getListingsByCategory(targetCategoryIdentifier, 0, 12);
         if (isMounted) {
           const filtered = (response.content ?? []).filter(
             (item) => item.id !== currentListingId
@@ -57,7 +57,7 @@ export default function RelatedCategoryListings({
     return () => {
       isMounted = false;
     };
-  }, [targetCategoryId, currentListingId]);
+  }, [targetCategoryIdentifier, currentListingId]);
 
   if (!loading && listings.length === 0) {
     return null;
@@ -82,9 +82,9 @@ export default function RelatedCategoryListings({
           </p>
         </div>
 
-        {targetCategoryId && (
+        {targetCategoryIdentifier && (
           <Link
-            href={`/listings?category=${targetCategoryId}`}
+            href={`/listings?category=${targetCategoryIdentifier}`}
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition shadow-xs"
           >
             <Layers className="w-3.5 h-3.5 text-emerald-500" />

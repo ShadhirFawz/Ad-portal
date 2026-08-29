@@ -30,6 +30,8 @@ public record ListingResponse(
 
         String title,
 
+        String slug,
+
         String description,
 
         BigDecimal price,

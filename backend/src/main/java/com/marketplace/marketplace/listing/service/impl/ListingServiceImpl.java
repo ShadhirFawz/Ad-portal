@@ -69,6 +69,9 @@ public class ListingServiceImpl implements ListingService {
                 listing.setTitle(
                                 request.title().trim());
 
+                listing.setSlug(
+                                generateUniqueSlug(request.title(), null));
+
                 listing.setDescription(
                                 request.description().trim());
 
@@ -152,6 +155,50 @@ public class ListingServiceImpl implements ListingService {
         }
 
         @Override
+        @Transactional(readOnly = true)
+        public ListingResponse getBySlug(String slug) {
+
+                Listing listing = listingRepository.findBySlug(slug)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Listing not found: " + slug));
+
+                boolean includeSellerContact = com.marketplace.marketplace.common.security.util.SecurityUtils
+                                .getCurrentUserOptional()
+                                .isPresent();
+
+                return toResponse(listing, includeSellerContact);
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public ListingResponse getByIdOrSlug(String idOrSlug) {
+
+                if (idOrSlug == null || idOrSlug.isBlank()) {
+                        throw new ResourceNotFoundException("Listing identifier is required.");
+                }
+
+                Listing listing = null;
+                try {
+                        UUID id = UUID.fromString(idOrSlug);
+                        listing = listingRepository.findById(id).orElse(null);
+                } catch (IllegalArgumentException ignored) {
+                        // idOrSlug is a slug, not a UUID
+                }
+
+                if (listing == null) {
+                        listing = listingRepository.findBySlug(idOrSlug)
+                                        .orElseThrow(() -> new ResourceNotFoundException(
+                                                        "Listing not found: " + idOrSlug));
+                }
+
+                boolean includeSellerContact = com.marketplace.marketplace.common.security.util.SecurityUtils
+                                .getCurrentUserOptional()
+                                .isPresent();
+
+                return toResponse(listing, includeSellerContact);
+        }
+
+        @Override
         @Transactional
         public ListingResponse update(
                         UUID id,
@@ -173,8 +220,11 @@ public class ListingServiceImpl implements ListingService {
                 }
 
                 if (request.title() != null) {
-                        listing.setTitle(
-                                        request.title().trim());
+                        String newTitle = request.title().trim();
+                        if (!newTitle.equals(listing.getTitle()) || listing.getSlug() == null) {
+                                listing.setSlug(generateUniqueSlug(newTitle, listing.getId()));
+                        }
+                        listing.setTitle(newTitle);
                 }
 
                 if (request.description() != null) {
@@ -370,6 +420,51 @@ public class ListingServiceImpl implements ListingService {
                                 .map(this::toResponse);
         }
 
+        @Override
+        @Transactional(readOnly = true)
+        public Page<ListingResponse> getByCategory(
+                        String categoryIdOrSlug,
+                        Pageable pageable) {
+
+                UUID categoryId = categoryService.resolveCategoryId(categoryIdOrSlug);
+                return getByCategory(categoryId, pageable);
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public Page<ListingResponse> getSimilarListings(
+                        String categoryIdOrSlug,
+                        String excludeId,
+                        Pageable pageable) {
+
+                UUID categoryId = categoryService.resolveCategoryId(categoryIdOrSlug);
+
+                UUID excludeUuid = null;
+                if (excludeId != null && !excludeId.isBlank()) {
+                        try {
+                                excludeUuid = UUID.fromString(excludeId);
+                        } catch (IllegalArgumentException ignored) {
+                                // excludeId is a slug — resolve to UUID
+                                excludeUuid = listingRepository.findBySlug(excludeId)
+                                                .map(Listing::getId)
+                                                .orElse(null);
+                        }
+                }
+
+                Page<Listing> page = (excludeUuid != null)
+                                ? listingRepository.findAllByCategoryIdAndStatusAndIdNot(
+                                                categoryId,
+                                                ListingStatus.ACTIVE,
+                                                excludeUuid,
+                                                pageable)
+                                : listingRepository.findAllByCategoryIdAndStatus(
+                                                categoryId,
+                                                ListingStatus.ACTIVE,
+                                                pageable);
+
+                return page.map(this::toResponse);
+        }
+
         private Listing getOwnedListing(UUID id) {
 
                 UUID userId = SecurityUtils.getCurrentUserId();
@@ -438,8 +533,8 @@ public class ListingServiceImpl implements ListingService {
                         if (price != null
                                         && price.compareTo(BigDecimal.ZERO) != 0) {
 
-                                 throw new ConflictException(
-                                                 "Free listings cannot have a price.");
+                                throw new ConflictException(
+                                                "Free listings cannot have a price.");
                         }
 
                         return;
@@ -450,8 +545,8 @@ public class ListingServiceImpl implements ListingService {
                         if (price != null
                                         && price.compareTo(BigDecimal.ZERO) != 0) {
 
-                                 throw new ConflictException(
-                                                 "Contact-for-price listings cannot have a price.");
+                                throw new ConflictException(
+                                                "Contact-for-price listings cannot have a price.");
                         }
 
                         return;
@@ -613,6 +708,7 @@ public class ListingServiceImpl implements ListingService {
                                 categoryName,
                                 breadcrumbs,
                                 listing.getTitle(),
+                                listing.getSlug(),
                                 listing.getDescription(),
                                 listing.getPrice(),
                                 listing.getCurrency(),
@@ -638,6 +734,44 @@ public class ListingServiceImpl implements ListingService {
                                 listing.getCreatedAt(),
                                 listing.getUpdatedAt(),
                                 sellerPhoneNumber);
+        }
+
+        private String generateUniqueSlug(String title, UUID listingId) {
+                if (title == null || title.isBlank()) {
+                        title = "listing";
+                }
+
+                // Normalize using special chars with hyphens, trim hyphens
+                String normalized = title.toLowerCase(java.util.Locale.ROOT)
+                                .replaceAll("[^a-z0-9]+", "-")
+                                .replaceAll("^-+|-+$", "");
+
+                if (normalized.isBlank()) {
+                        normalized = "listing";
+                }
+
+                if (normalized.length() > 140) {
+                        normalized = normalized.substring(0, 140).replaceAll("-+$", "");
+                }
+
+                // Check if base slug is available
+                if (listingId != null) {
+                        java.util.Optional<Listing> existing = listingRepository.findBySlug(normalized);
+                        if (existing.isEmpty() || existing.get().getId().equals(listingId)) {
+                                return normalized;
+                        }
+                } else if (!listingRepository.existsBySlug(normalized)) {
+                        return normalized;
+                }
+
+                // Append unique suffix if duplicate
+                String suffix = UUID.randomUUID().toString().substring(0, 8);
+                String uniqueSlug = normalized + "-" + suffix;
+                while (listingRepository.existsBySlug(uniqueSlug)) {
+                        suffix = UUID.randomUUID().toString().substring(0, 8);
+                        uniqueSlug = normalized + "-" + suffix;
+                }
+                return uniqueSlug;
         }
 
         private String trimToNull(String value) {
