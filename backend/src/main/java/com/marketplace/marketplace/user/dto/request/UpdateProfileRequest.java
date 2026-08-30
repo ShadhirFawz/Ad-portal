@@ -3,7 +3,9 @@ package com.marketplace.marketplace.user.dto.request;
 import com.marketplace.marketplace.common.validation.annotation.PersonName;
 import com.marketplace.marketplace.common.validation.annotation.UserName;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
+import java.util.List;
 
 public record UpdateProfileRequest(
 
@@ -21,7 +23,10 @@ public record UpdateProfileRequest(
 
         String avatarUrl,
 
-        String coverPhotoUrl
+        String coverPhotoUrl,
+
+        @Size(max = 3, message = "You can add a maximum of 3 phone numbers")
+        List<@Valid UserPhoneNumberRequest> phoneNumbers
 
 ) {
 }

@@ -42,6 +42,11 @@ public class User extends BaseUuidEntity {
     @Column(name = "phone_number", length = 20, unique = true)
     private String phoneNumber;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OrderBy("createdAt ASC")
+    @Builder.Default
+    private java.util.List<UserPhoneNumber> phoneNumbers = new java.util.ArrayList<>();
+
     @Column(name = "avatar_url")
     private String avatarUrl;
 
