@@ -4,7 +4,8 @@ import { FormEvent, useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/providers/AuthProvider";
-import { updateMyProfile } from "@/lib/api/users";
+import { updateMyProfile, UserPhoneNumberPayload } from "@/lib/api/users";
+import { PHONE_E164_REGEX } from "@/lib/validation/authValidation";
 import {
   uploadProfileImage,
   registerProfileImage,
@@ -16,6 +17,10 @@ import {
   CheckCircle2,
   AlertTriangle,
   ArrowLeft,
+  Phone,
+  Plus,
+  Trash2,
+  Star,
 } from "lucide-react";
 
 export default function EditProfilePage() {
@@ -30,6 +35,7 @@ export default function EditProfilePage() {
   const [publicProfile, setPublicProfile] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState("");
   const [coverPhotoUrl, setCoverPhotoUrl] = useState("");
+  const [phoneNumbers, setPhoneNumbers] = useState<UserPhoneNumberPayload[]>([]);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -53,6 +59,20 @@ export default function EditProfilePage() {
       setPublicProfile(user.publicProfile);
       setAvatarUrl(user.avatarUrl ?? "");
       setCoverPhotoUrl(user.coverPhotoUrl ?? "");
+
+      if (user.phoneNumbers && user.phoneNumbers.length > 0) {
+        setPhoneNumbers(
+          user.phoneNumbers.map((p) => ({
+            id: p.id,
+            phoneNumber: p.phoneNumber,
+            isPrimary: p.isPrimary,
+          }))
+        );
+      } else if (user.phoneNumber) {
+        setPhoneNumbers([{ phoneNumber: user.phoneNumber, isPrimary: true }]);
+      } else {
+        setPhoneNumbers([]);
+      }
     }
   }, [user]);
 
@@ -71,10 +91,7 @@ export default function EditProfilePage() {
     if (!user || !accessToken) return "";
 
     try {
-      // 1. Upload to Supabase Storage
       const storagePath = await uploadProfileImage(user.id, file, "avatar");
-
-      // 2. Register with backend API
       const result = await registerProfileImage(accessToken, "avatar", {
         storagePath,
         fileName: file.name,
@@ -84,7 +101,6 @@ export default function EditProfilePage() {
 
       setAvatarUrl(result.url);
       await syncProfile();
-
       return result.url;
     } catch (err) {
       throw err;
@@ -106,10 +122,7 @@ export default function EditProfilePage() {
     if (!user || !accessToken) return "";
 
     try {
-      // 1. Upload to Supabase Storage
       const storagePath = await uploadProfileImage(user.id, file, "cover");
-
-      // 2. Register with backend API
       const result = await registerProfileImage(accessToken, "cover", {
         storagePath,
         fileName: file.name,
@@ -119,7 +132,6 @@ export default function EditProfilePage() {
 
       setCoverPhotoUrl(result.url);
       await syncProfile();
-
       return result.url;
     } catch (err) {
       throw err;
@@ -137,6 +149,43 @@ export default function EditProfilePage() {
     }
   };
 
+  const handleAddPhoneNumber = () => {
+    if (phoneNumbers.length >= 3) return;
+    const isFirst = phoneNumbers.length === 0;
+    setPhoneNumbers((prev) => [
+      ...prev,
+      { phoneNumber: "", isPrimary: isFirst },
+    ]);
+  };
+
+  const handleRemovePhoneNumber = (index: number) => {
+    setPhoneNumbers((prev) => {
+      const updated = prev.filter((_, i) => i !== index);
+      // If we removed the primary number and there are remaining numbers, make the first one primary
+      if (prev[index]?.isPrimary && updated.length > 0) {
+        updated[0].isPrimary = true;
+      }
+      return updated;
+    });
+  };
+
+  const handleSetPrimaryPhoneNumber = (index: number) => {
+    setPhoneNumbers((prev) =>
+      prev.map((item, i) => ({
+        ...item,
+        isPrimary: i === index,
+      }))
+    );
+  };
+
+  const handlePhoneNumberChange = (index: number, value: string) => {
+    setPhoneNumbers((prev) =>
+      prev.map((item, i) =>
+        i === index ? { ...item, phoneNumber: value } : item
+      )
+    );
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -148,6 +197,41 @@ export default function EditProfilePage() {
     setMessage(null);
     setError(null);
 
+    // Validate phone numbers
+    const validPhoneNumbers = phoneNumbers
+      .map((p) => ({
+        ...p,
+        phoneNumber: p.phoneNumber.trim(),
+      }))
+      .filter((p) => p.phoneNumber.length > 0);
+
+    if (validPhoneNumbers.length > 3) {
+      setError("Maximum 3 phone numbers allowed.");
+      setSaving(false);
+      return;
+    }
+
+    for (const p of validPhoneNumbers) {
+      if (!PHONE_E164_REGEX.test(p.phoneNumber)) {
+        setError(
+          `Invalid phone number format: "${p.phoneNumber}". Please use E.164 international format (e.g. +94771234567).`
+        );
+        setSaving(false);
+        return;
+      }
+    }
+
+    const numSet = new Set(validPhoneNumbers.map((p) => p.phoneNumber));
+    if (numSet.size < validPhoneNumbers.length) {
+      setError("Duplicate phone numbers are not allowed.");
+      setSaving(false);
+      return;
+    }
+
+    if (validPhoneNumbers.length > 0 && !validPhoneNumbers.some((p) => p.isPrimary)) {
+      validPhoneNumbers[0].isPrimary = true;
+    }
+
     try {
       const updated = await updateMyProfile(accessToken, {
         firstName,
@@ -156,6 +240,7 @@ export default function EditProfilePage() {
         bio,
         location,
         publicProfile,
+        phoneNumbers: validPhoneNumbers,
       });
 
       if (updated) {
@@ -165,9 +250,19 @@ export default function EditProfilePage() {
         setBio(updated.bio ?? "");
         setLocation(updated.location ?? "");
         setPublicProfile(updated.publicProfile ?? true);
+        if (updated.phoneNumbers) {
+          setPhoneNumbers(
+            updated.phoneNumbers.map((p) => ({
+              id: p.id,
+              phoneNumber: p.phoneNumber,
+              isPrimary: p.isPrimary,
+            }))
+          );
+        }
       }
 
       await syncProfile();
+      router.push(user.username ? `/profile/${user.username}` : "/profile");
       setMessage("Profile updated successfully!");
     } catch (err) {
       setError(
@@ -182,9 +277,7 @@ export default function EditProfilePage() {
     <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       {/* Back Button */}
       <Link
-        href={
-          user.username ? `/profile/${user.username}` : "/profile"
-        }
+        href={user.username ? `/profile/${user.username}` : "/profile"}
         className="inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
@@ -197,7 +290,7 @@ export default function EditProfilePage() {
           Edit Your Profile
         </h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
-          Personalize your profile with images and information
+          Personalize your profile with images, contact info, and personal details
         </p>
       </div>
 
@@ -269,14 +362,15 @@ export default function EditProfilePage() {
         </div>
       </div>
 
-      {/* Profile Details Section */}
-      <div className="glass-panel p-6 sm:p-8">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2.5">
-          <UserCog className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-          <span>Personal Details</span>
-        </h2>
+      {/* Profile Details & Phone Numbers Form */}
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Personal Details Section */}
+        <div className="glass-panel p-6 sm:p-8 space-y-6">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
+            <UserCog className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <span>Personal Details</span>
+          </h2>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
@@ -348,30 +442,140 @@ export default function EditProfilePage() {
               {bio.length}/500 characters
             </div>
           </div>
+        </div>
 
-          <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between flex-wrap gap-4">
-            <label className="flex items-center gap-3 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={publicProfile}
-                onChange={(e) => setPublicProfile(e.target.checked)}
-                className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300"
-              />
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                Publicly visible profile page
-              </span>
-            </label>
-
-            <button
-              type="submit"
-              disabled={saving}
-              className="btn-primary text-sm px-6 py-2.5"
-            >
-              {saving ? "Saving..." : "Save Changes"}
-            </button>
+        {/* Phone Numbers Section */}
+        <div className="glass-panel p-6 sm:p-8 space-y-6">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
+                <Phone className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                <span>Phone Numbers</span>
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Add up to 3 contact numbers. Set one as primary for buyers to reach you.
+              </p>
+            </div>
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+              {phoneNumbers.length}/3 Numbers
+            </span>
           </div>
-        </form>
-      </div>
+
+          {phoneNumbers.length === 0 ? (
+            <div className="p-6 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-3">
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                No phone numbers added yet. Add a phone number so buyers can reach you.
+              </p>
+              <button
+                type="button"
+                onClick={handleAddPhoneNumber}
+                className="btn-outline text-xs px-4 py-2 inline-flex items-center gap-1.5"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add Phone Number</span>
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {phoneNumbers.map((phoneItem, index) => (
+                <div
+                  key={index}
+                  className={`p-4 rounded-xl border transition-all ${phoneItem.isPrimary
+                    ? "bg-emerald-500/5 border-emerald-500/30 dark:bg-emerald-500/10"
+                    : "bg-slate-50/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800"
+                    }`}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center justify-between sm:justify-start gap-2">
+                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                          Phone Number {index + 1}
+                        </label>
+                        {phoneItem.isPrimary && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                            <Star className="w-3 h-3 fill-emerald-500 text-emerald-500" />
+                            Primary
+                          </span>
+                        )}
+                      </div>
+                      <input
+                        type="tel"
+                        value={phoneItem.phoneNumber}
+                        onChange={(e) =>
+                          handlePhoneNumberChange(index, e.target.value)
+                        }
+                        placeholder="+94771234567"
+                        className="input-field text-sm"
+                        autoComplete="tel"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2 self-end sm:self-center sm:pt-4">
+                      {!phoneItem.isPrimary && (
+                        <button
+                          type="button"
+                          onClick={() => handleSetPrimaryPhoneNumber(index)}
+                          className="text-xs font-semibold px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors flex items-center gap-1.5"
+                        >
+                          <Star className="w-3.5 h-3.5" />
+                          <span>Set Primary</span>
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePhoneNumber(index)}
+                        className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 rounded-xl transition-colors"
+                        title="Delete phone number"
+                        aria-label="Delete phone number"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {phoneNumbers.length < 3 && (
+                <button
+                  type="button"
+                  onClick={handleAddPhoneNumber}
+                  className="w-full py-2.5 border border-dashed border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-500/50 transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Another Phone Number ({phoneNumbers.length}/3)</span>
+                </button>
+              )}
+            </div>
+          )}
+          <p className="text-[11px] text-slate-400">
+            Numbers must be in E.164 international format, e.g. <span className="font-mono text-slate-500 dark:text-slate-300">+94771234567</span>.
+          </p>
+        </div>
+
+        {/* Save Bar */}
+        <div className="glass-panel p-6 flex items-center justify-between flex-wrap gap-4">
+          <label className="flex items-center gap-3 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={publicProfile}
+              onChange={(e) => setPublicProfile(e.target.checked)}
+              className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300"
+            />
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              Publicly visible profile page
+            </span>
+          </label>
+
+          <button
+            type="submit"
+            disabled={saving}
+            className="btn-primary text-sm px-6 py-2.5"
+          >
+            {saving ? "Saving..." : "Save Changes"}
+          </button>
+        </div>
+      </form>
     </main>
   );
 }

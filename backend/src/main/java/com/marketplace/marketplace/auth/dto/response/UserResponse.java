@@ -2,8 +2,10 @@ package com.marketplace.marketplace.auth.dto.response;
 
 import com.marketplace.marketplace.common.enums.Role;
 import com.marketplace.marketplace.common.enums.UserStatus;
+import com.marketplace.marketplace.user.dto.response.UserPhoneNumberResponse;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public record UserResponse(
@@ -19,6 +21,8 @@ public record UserResponse(
         String email,
 
         String phoneNumber,
+
+        List<UserPhoneNumberResponse> phoneNumbers,
 
         String avatarUrl,
 
