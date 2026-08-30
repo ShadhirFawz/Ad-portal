@@ -21,13 +21,34 @@ public class UserMapper {
         String avatarUrl = resolveImageUrl(user.getAvatarUrl());
         String coverPhotoUrl = resolveImageUrl(user.getCoverPhotoUrl());
 
+        java.util.List<com.marketplace.marketplace.user.dto.response.UserPhoneNumberResponse> phoneResponses =
+                (user.getPhoneNumbers() == null)
+                        ? java.util.Collections.emptyList()
+                        : user.getPhoneNumbers().stream()
+                                .map(pn -> new com.marketplace.marketplace.user.dto.response.UserPhoneNumberResponse(
+                                        pn.getId(),
+                                        pn.getPhoneNumber(),
+                                        Boolean.TRUE.equals(pn.getIsPrimary())
+                                ))
+                                .toList();
+
+        String primaryPhone = user.getPhoneNumber();
+        if (primaryPhone == null && !phoneResponses.isEmpty()) {
+            primaryPhone = phoneResponses.stream()
+                    .filter(p -> Boolean.TRUE.equals(p.isPrimary()))
+                    .map(com.marketplace.marketplace.user.dto.response.UserPhoneNumberResponse::phoneNumber)
+                    .findFirst()
+                    .orElse(phoneResponses.get(0).phoneNumber());
+        }
+
         return new UserResponse(
                 user.getId(),
                 user.getFirstName(),
                 user.getLastName(),
                 user.getUsername(),
                 user.getEmail(),
-                user.getPhoneNumber(),
+                primaryPhone,
+                phoneResponses,
                 avatarUrl,
                 coverPhotoUrl,
                 user.getBio(),

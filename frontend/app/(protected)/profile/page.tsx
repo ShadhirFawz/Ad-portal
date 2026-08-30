@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/providers/AuthProvider";
-import { ExternalLink, Edit3 } from "lucide-react";
+import { ExternalLink, Edit3, Phone, Star, MapPin, Calendar } from "lucide-react";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -31,7 +31,7 @@ export default function ProfilePage() {
 
   return (
     <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-      
+
       {/* Cover Photo Section */}
       <div className="glass-panel overflow-hidden">
         {/* Cover Photo Banner */}
@@ -51,7 +51,7 @@ export default function ProfilePage() {
 
         {/* Profile Card Body */}
         <div className="p-6 sm:p-8 relative pt-0">
-          
+
           {/* Avatar Badge Overlapping Banner */}
           <div className="-mt-16 sm:-mt-20 mb-4 flex items-end justify-between flex-wrap gap-4">
             {user.avatarUrl ? (
@@ -91,13 +91,49 @@ export default function ProfilePage() {
           <div className="mt-4 flex flex-wrap items-center gap-4 text-xs font-medium text-slate-500 dark:text-slate-400">
             {user.location && (
               <span className="flex items-center gap-1">
-                📍 {user.location}
+                <MapPin className="w-3.5 h-3.5 text-emerald-500" /> {user.location}
               </span>
             )}
             <span className="flex items-center gap-1">
-              📅 Joined {new Date(user.createdAt).toLocaleDateString()}
+              <Calendar className="w-3.5 h-3.5 text-emerald-500" /> Joined {new Date(user.createdAt).toLocaleDateString()}
             </span>
           </div>
+
+          {/* Contact Phone Numbers */}
+          {((user.phoneNumbers && user.phoneNumbers.length > 0) || user.phoneNumber) && (
+            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <Phone className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Contact Phone Numbers</span>
+              </h3>
+              <div className="flex flex-wrap gap-2.5">
+                {user.phoneNumbers && user.phoneNumbers.length > 0 ? (
+                  user.phoneNumbers.map((phone, idx) => (
+                    <div
+                      key={phone.id || idx}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-200"
+                    >
+                      <span className="font-mono">{phone.phoneNumber}</span>
+                      {phone.isPrimary && (
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                          <Star className="w-2.5 h-2.5 fill-emerald-500 text-emerald-500" />
+                          Primary
+                        </span>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-200">
+                    <span className="font-mono">{user.phoneNumber}</span>
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                      <Star className="w-2.5 h-2.5 fill-emerald-500 text-emerald-500" />
+                      Primary
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Bio */}
           {user.bio && (

@@ -7,6 +7,12 @@ import type {
   UserResponse,
 } from "@/types/auth";
 
+export interface UserPhoneNumberPayload {
+  id?: string;
+  phoneNumber: string;
+  isPrimary: boolean;
+}
+
 export interface UpdateProfileRequest {
   firstName?: string;
   lastName?: string;
@@ -16,6 +22,7 @@ export interface UpdateProfileRequest {
   publicProfile?: boolean;
   avatarUrl?: string;
   coverPhotoUrl?: string;
+  phoneNumbers?: UserPhoneNumberPayload[];
 }
 
 export interface ChangePasswordRequest {

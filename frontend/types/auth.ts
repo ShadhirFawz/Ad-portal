@@ -9,6 +9,12 @@ export type UserStatus =
   | "BANNED"
   | "DELETED";
 
+export interface UserPhoneNumber {
+  id?: string;
+  phoneNumber: string;
+  isPrimary: boolean;
+}
+
 export interface UserResponse {
   id: string;
   firstName: string;
@@ -16,6 +22,7 @@ export interface UserResponse {
   username: string | null;
   email: string;
   phoneNumber: string | null;
+  phoneNumbers?: UserPhoneNumber[];
   avatarUrl: string | null;
   coverPhotoUrl: string | null;
   bio: string | null;

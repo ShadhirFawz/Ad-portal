@@ -11,8 +11,10 @@ import com.marketplace.marketplace.common.security.util.SecurityUtils;
 import com.marketplace.marketplace.user.dto.request.ChangePasswordRequest;
 import com.marketplace.marketplace.user.dto.request.UpdateProfileRequest;
 import com.marketplace.marketplace.user.entity.User;
+import com.marketplace.marketplace.user.entity.UserPhoneNumber;
 import com.marketplace.marketplace.user.mapper.UserMapper;
 import com.marketplace.marketplace.user.repository.UserRepository;
+import com.marketplace.marketplace.user.repository.UserPhoneNumberRepository;
 import com.marketplace.marketplace.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,7 +23,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -29,6 +34,7 @@ import java.util.UUID;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final UserPhoneNumberRepository userPhoneNumberRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
 
@@ -46,7 +52,8 @@ public class UserServiceImpl implements UserService {
     public boolean existsByPhoneNumber(String phoneNumber) {
         return phoneNumber != null
                 && !phoneNumber.isBlank()
-                && userRepository.existsByPhoneNumber(phoneNumber);
+                && (userPhoneNumberRepository.existsByPhoneNumber(phoneNumber)
+                        || userRepository.existsByPhoneNumber(phoneNumber));
     }
 
     @Override
@@ -123,6 +130,85 @@ public class UserServiceImpl implements UserService {
 
         if (request.coverPhotoUrl() != null) {
             user.setCoverPhotoUrl(request.coverPhotoUrl().isBlank() ? null : request.coverPhotoUrl().trim());
+        }
+
+        if (request.phoneNumbers() != null) {
+            if (request.phoneNumbers().size() > 3) {
+                throw new ConflictException("You can add a maximum of 3 phone numbers.");
+            }
+
+            List<String> trimmedNumbers = request.phoneNumbers().stream()
+                    .map(p -> p.phoneNumber() != null ? p.phoneNumber().trim() : "")
+                    .filter(s -> !s.isEmpty())
+                    .toList();
+
+            Set<String> uniqueNumbers = new HashSet<>(trimmedNumbers);
+            if (uniqueNumbers.size() < trimmedNumbers.size()) {
+                throw new ConflictException("Duplicate phone numbers are not allowed.");
+            }
+
+            for (String num : trimmedNumbers) {
+                if (userPhoneNumberRepository.existsByPhoneNumberAndUserIdNot(num, user.getId())) {
+                    throw new ConflictException("Phone number " + num + " is already in use by another account.");
+                }
+            }
+
+            if (!request.phoneNumbers().isEmpty()) {
+                boolean hasExplicitPrimary = request.phoneNumbers().stream()
+                        .anyMatch(p -> Boolean.TRUE.equals(p.isPrimary()));
+
+                String primaryPhone = null;
+                boolean primaryAssigned = false;
+                java.util.Map<String, Boolean> requestedNumberPrimaryMap = new java.util.LinkedHashMap<>();
+
+                for (int i = 0; i < request.phoneNumbers().size(); i++) {
+                    var phoneReq = request.phoneNumbers().get(i);
+                    String cleanNum = phoneReq.phoneNumber().trim();
+                    boolean isPrimary;
+                    if (hasExplicitPrimary) {
+                        isPrimary = Boolean.TRUE.equals(phoneReq.isPrimary()) && !primaryAssigned;
+                        if (isPrimary) {
+                            primaryAssigned = true;
+                        }
+                    } else {
+                        isPrimary = (i == 0);
+                    }
+
+                    if (isPrimary) {
+                        primaryPhone = cleanNum;
+                    }
+                    requestedNumberPrimaryMap.put(cleanNum, isPrimary);
+                }
+
+                // 1. Remove phone numbers that are no longer present in the request
+                user.getPhoneNumbers().removeIf(existing -> !requestedNumberPrimaryMap.containsKey(existing.getPhoneNumber()));
+
+                // 2. Update existing entries or add new ones
+                for (java.util.Map.Entry<String, Boolean> entry : requestedNumberPrimaryMap.entrySet()) {
+                    String num = entry.getKey();
+                    Boolean isPrimary = entry.getValue();
+
+                    Optional<UserPhoneNumber> existingOpt = user.getPhoneNumbers().stream()
+                            .filter(p -> p.getPhoneNumber().equals(num))
+                            .findFirst();
+
+                    if (existingOpt.isPresent()) {
+                        existingOpt.get().setIsPrimary(isPrimary);
+                    } else {
+                        UserPhoneNumber upn = UserPhoneNumber.builder()
+                                .user(user)
+                                .phoneNumber(num)
+                                .isPrimary(isPrimary)
+                                .build();
+                        user.getPhoneNumbers().add(upn);
+                    }
+                }
+
+                user.setPhoneNumber(primaryPhone);
+            } else {
+                user.getPhoneNumbers().clear();
+                user.setPhoneNumber(null);
+            }
         }
 
         return userMapper.toResponse(userRepository.save(user));
@@ -210,8 +296,22 @@ public class UserServiceImpl implements UserService {
                                 if (request.lastName() != null) {
                                     existingUser.setLastName(trimToNull(request.lastName()));
                                 }
-                                if (request.phoneNumber() != null) {
-                                    existingUser.setPhoneNumber(trimToNull(request.phoneNumber()));
+                                if (request.phoneNumber() != null && !request.phoneNumber().isBlank()) {
+                                    String cleanPhone = request.phoneNumber().trim();
+                                    boolean alreadyExists = existingUser.getPhoneNumbers().stream()
+                                            .anyMatch(p -> p.getPhoneNumber().equalsIgnoreCase(cleanPhone));
+                                    if (!alreadyExists && existingUser.getPhoneNumbers().size() < 3) {
+                                        boolean isFirst = existingUser.getPhoneNumbers().isEmpty() || existingUser.getPhoneNumber() == null;
+                                        UserPhoneNumber upn = UserPhoneNumber.builder()
+                                                .user(existingUser)
+                                                .phoneNumber(cleanPhone)
+                                                .isPrimary(isFirst)
+                                                .build();
+                                        existingUser.getPhoneNumbers().add(upn);
+                                        if (isFirst) {
+                                            existingUser.setPhoneNumber(cleanPhone);
+                                        }
+                                    }
                                 }
                                 if (request.username() != null && !request.username().isBlank()) {
                                     String uname = request.username().trim().toLowerCase();
@@ -249,6 +349,15 @@ public class UserServiceImpl implements UserService {
                                     .build();
                             newUser.setId(userId);
                             newUser.setIsNew(true);
+
+                            if (phoneNumber != null) {
+                                UserPhoneNumber upn = UserPhoneNumber.builder()
+                                        .user(newUser)
+                                        .phoneNumber(phoneNumber)
+                                        .isPrimary(true)
+                                        .build();
+                                newUser.getPhoneNumbers().add(upn);
+                            }
 
                             return userRepository.save(newUser);
                         }));
