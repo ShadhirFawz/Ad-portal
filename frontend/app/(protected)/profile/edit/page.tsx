@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/providers/AuthProvider";
 import { updateMyProfile, UserPhoneNumberPayload } from "@/lib/api/users";
-import { PHONE_E164_REGEX } from "@/lib/validation/authValidation";
+import { validateEditProfileForm } from "@/lib/validation/profileValidation";
 import {
   uploadProfileImage,
   registerProfileImage,
@@ -36,9 +36,13 @@ export default function EditProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState("");
   const [coverPhotoUrl, setCoverPhotoUrl] = useState("");
   const [phoneNumbers, setPhoneNumbers] = useState<UserPhoneNumberPayload[]>([]);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const fieldClass = (key: string) =>
+    `input-field ${fieldErrors[key] ? "border-rose-500 focus:border-rose-500 focus:ring-rose-500/20" : ""}`;
 
   useEffect(() => {
     if (!loading && !user) {
@@ -152,6 +156,7 @@ export default function EditProfilePage() {
   const handleAddPhoneNumber = () => {
     if (phoneNumbers.length >= 3) return;
     const isFirst = phoneNumbers.length === 0;
+    setFieldErrors((p) => ({ ...p, phoneNumbers: "" }));
     setPhoneNumbers((prev) => [
       ...prev,
       { phoneNumber: "", isPrimary: isFirst },
@@ -159,9 +164,9 @@ export default function EditProfilePage() {
   };
 
   const handleRemovePhoneNumber = (index: number) => {
+    setFieldErrors((p) => ({ ...p, phoneNumbers: "" }));
     setPhoneNumbers((prev) => {
       const updated = prev.filter((_, i) => i !== index);
-      // If we removed the primary number and there are remaining numbers, make the first one primary
       if (prev[index]?.isPrimary && updated.length > 0) {
         updated[0].isPrimary = true;
       }
@@ -179,6 +184,7 @@ export default function EditProfilePage() {
   };
 
   const handlePhoneNumberChange = (index: number, value: string) => {
+    setFieldErrors((p) => ({ ...p, phoneNumbers: "" }));
     setPhoneNumbers((prev) =>
       prev.map((item, i) =>
         i === index ? { ...item, phoneNumber: value } : item
@@ -196,51 +202,33 @@ export default function EditProfilePage() {
     setSaving(true);
     setMessage(null);
     setError(null);
+    setFieldErrors({});
 
-    // Validate phone numbers
-    const validPhoneNumbers = phoneNumbers
-      .map((p) => ({
-        ...p,
-        phoneNumber: p.phoneNumber.trim(),
-      }))
-      .filter((p) => p.phoneNumber.length > 0);
+    const validation = validateEditProfileForm({
+      firstName,
+      lastName: lastName || undefined,
+      username: username || undefined,
+      bio: bio || undefined,
+      location: location || undefined,
+      phoneNumbers,
+    });
 
-    if (validPhoneNumbers.length > 3) {
-      setError("Maximum 3 phone numbers allowed.");
+    if (!validation.isValid) {
+      setFieldErrors(validation.errors);
+      setError(validation.errorMessage || "Please fix the errors before saving.");
       setSaving(false);
       return;
-    }
-
-    for (const p of validPhoneNumbers) {
-      if (!PHONE_E164_REGEX.test(p.phoneNumber)) {
-        setError(
-          `Invalid phone number format: "${p.phoneNumber}". Please use E.164 international format (e.g. +94771234567).`
-        );
-        setSaving(false);
-        return;
-      }
-    }
-
-    const numSet = new Set(validPhoneNumbers.map((p) => p.phoneNumber));
-    if (numSet.size < validPhoneNumbers.length) {
-      setError("Duplicate phone numbers are not allowed.");
-      setSaving(false);
-      return;
-    }
-
-    if (validPhoneNumbers.length > 0 && !validPhoneNumbers.some((p) => p.isPrimary)) {
-      validPhoneNumbers[0].isPrimary = true;
     }
 
     try {
       const updated = await updateMyProfile(accessToken, {
-        firstName,
-        lastName,
-        username,
-        bio,
-        location,
+        firstName: firstName.trim(),
+        lastName: lastName.trim() || undefined,
+        username: username.trim() || undefined,
+        bio: bio.trim() || undefined,
+        location: location.trim() || undefined,
         publicProfile,
-        phoneNumbers: validPhoneNumbers,
+        phoneNumbers: validation.cleanedPhoneNumbers,
       });
 
       if (updated) {
@@ -363,7 +351,7 @@ export default function EditProfilePage() {
       </div>
 
       {/* Profile Details & Phone Numbers Form */}
-      <form onSubmit={handleSubmit} className="space-y-8">
+      <form onSubmit={handleSubmit} className="space-y-8" noValidate>
         {/* Personal Details Section */}
         <div className="glass-panel p-6 sm:p-8 space-y-6">
           <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
@@ -379,10 +367,16 @@ export default function EditProfilePage() {
               <input
                 type="text"
                 value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                className="input-field"
+                onChange={(e) => {
+                  setFirstName(e.target.value);
+                  setFieldErrors((p) => ({ ...p, firstName: "" }));
+                }}
+                className={fieldClass("firstName")}
                 required
               />
+              {fieldErrors.firstName && (
+                <p className="text-xs text-rose-500 mt-1">{fieldErrors.firstName}</p>
+              )}
             </div>
 
             <div className="space-y-1.5">
@@ -392,9 +386,15 @@ export default function EditProfilePage() {
               <input
                 type="text"
                 value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                className="input-field"
+                onChange={(e) => {
+                  setLastName(e.target.value);
+                  setFieldErrors((p) => ({ ...p, lastName: "" }));
+                }}
+                className={fieldClass("lastName")}
               />
+              {fieldErrors.lastName && (
+                <p className="text-xs text-rose-500 mt-1">{fieldErrors.lastName}</p>
+              )}
             </div>
           </div>
 
@@ -406,10 +406,16 @@ export default function EditProfilePage() {
               <input
                 type="text"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  setFieldErrors((p) => ({ ...p, username: "" }));
+                }}
                 placeholder="e.g. john_doe"
-                className="input-field"
+                className={fieldClass("username")}
               />
+              {fieldErrors.username && (
+                <p className="text-xs text-rose-500 mt-1">{fieldErrors.username}</p>
+              )}
             </div>
 
             <div className="space-y-1.5">
@@ -419,10 +425,16 @@ export default function EditProfilePage() {
               <input
                 type="text"
                 value={location}
-                onChange={(e) => setLocation(e.target.value)}
+                onChange={(e) => {
+                  setLocation(e.target.value);
+                  setFieldErrors((p) => ({ ...p, location: "" }));
+                }}
                 placeholder="e.g. Colombo, Sri Lanka"
-                className="input-field"
+                className={fieldClass("location")}
               />
+              {fieldErrors.location && (
+                <p className="text-xs text-rose-500 mt-1">{fieldErrors.location}</p>
+              )}
             </div>
           </div>
 
@@ -432,14 +444,22 @@ export default function EditProfilePage() {
             </label>
             <textarea
               value={bio}
-              onChange={(e) => setBio(e.target.value)}
+              onChange={(e) => {
+                setBio(e.target.value);
+                setFieldErrors((p) => ({ ...p, bio: "" }));
+              }}
               placeholder="Tell buyers and sellers a bit about yourself..."
               rows={4}
               maxLength={500}
-              className="input-field resize-none"
+              className={`${fieldClass("bio")} resize-none`}
             />
-            <div className="text-right text-xs text-slate-400">
-              {bio.length}/500 characters
+            <div className="flex justify-between items-center text-xs">
+              {fieldErrors.bio ? (
+                <p className="text-rose-500">{fieldErrors.bio}</p>
+              ) : (
+                <span />
+              )}
+              <span className="text-slate-400">{bio.length}/500 characters</span>
             </div>
           </div>
         </div>
@@ -461,6 +481,10 @@ export default function EditProfilePage() {
             </span>
           </div>
 
+          {fieldErrors.phoneNumbers && (
+            <p className="text-xs text-rose-500">{fieldErrors.phoneNumbers}</p>
+          )}
+
           {phoneNumbers.length === 0 ? (
             <div className="p-6 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-3">
               <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -480,10 +504,11 @@ export default function EditProfilePage() {
               {phoneNumbers.map((phoneItem, index) => (
                 <div
                   key={index}
-                  className={`p-4 rounded-xl border transition-all ${phoneItem.isPrimary
-                    ? "bg-emerald-500/5 border-emerald-500/30 dark:bg-emerald-500/10"
-                    : "bg-slate-50/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800"
-                    }`}
+                  className={`p-4 rounded-xl border transition-all ${
+                    phoneItem.isPrimary
+                      ? "bg-emerald-500/5 border-emerald-500/30 dark:bg-emerald-500/10"
+                      : "bg-slate-50/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800"
+                  }`}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                     <div className="flex-1 space-y-1">

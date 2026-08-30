@@ -1,6 +1,7 @@
 import { getPublicProfile } from "@/lib/api/users";
 import Link from "next/link";
 import Image from "next/image";
+import { Calendar, MapPin, Search } from "lucide-react";
 
 interface PageProps {
   params: Promise<{
@@ -22,7 +23,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
     return (
       <main className="flex-1 max-w-md w-full mx-auto px-4 py-20 text-center">
         <div className="glass-panel p-8 space-y-4">
-          <div className="text-4xl">🔍</div>
+          <div className="text-4xl"><Search size={48} color="red" /></div>
           <h2 className="text-xl font-bold text-slate-900 dark:text-white">
             User Not Found
           </h2>
@@ -40,7 +41,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
   return (
     <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="glass-panel overflow-hidden">
-        
+
         {/* Cover Photo Banner */}
         {user.coverPhotoUrl ? (
           <div className="h-32 sm:h-48 relative overflow-hidden">
@@ -58,7 +59,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
 
         {/* Profile Card Body */}
         <div className="p-6 sm:p-8 relative pt-0">
-          
+
           {/* Avatar Badge Overlapping Banner */}
           <div className="-mt-16 sm:-mt-20 mb-4 flex items-end justify-between flex-wrap gap-4">
             {user.avatarUrl ? (
@@ -96,11 +97,11 @@ export default async function PublicProfilePage({ params }: PageProps) {
           <div className="mt-4 flex flex-wrap items-center gap-4 text-xs font-medium text-slate-500 dark:text-slate-400">
             {user.location && (
               <span className="flex items-center gap-1">
-                📍 {user.location}
+                <MapPin className="w-3.5 h-3.5 text-emerald-500" /> {user.location}
               </span>
             )}
             <span className="flex items-center gap-1">
-              📅 Joined {new Date(user.createdAt).toLocaleDateString()}
+              <Calendar className="w-3.5 h-3.5 text-emerald-500" /> Joined {new Date(user.createdAt).toLocaleDateString()}
             </span>
           </div>
 
