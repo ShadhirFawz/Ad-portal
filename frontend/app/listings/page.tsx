@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState, useCallback, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { getListings, getListingsByCategory } from "@/lib/api/listings";
+import { getListings } from "@/lib/api/listings";
 import { getCategories, getCategory, getCategoryBreadcrumbs } from "@/lib/api/categories";
 import type { Listing } from "@/types/listing";
 import type { Category, CategoryBreadcrumb } from "@/types/category";
@@ -30,16 +30,6 @@ interface Filters {
   maxPrice: string;
   sortBy: string;
 }
-
-const EMPTY_FILTERS: Filters = {
-  search: "",
-  condition: "",
-  pricingType: "",
-  listingType: "",
-  minPrice: "",
-  maxPrice: "",
-  sortBy: "newest",
-};
 
 const PAGE_SIZE = 8;
 
@@ -74,7 +64,11 @@ function Pagination({
 
       {pages[0] > 0 && (
         <>
-          <button type="button" onClick={() => onChange(0)} className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+          <button
+            type="button"
+            onClick={() => onChange(0)}
+            className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+          >
             1
           </button>
           {pages[0] > 1 && <span className="text-slate-400 text-xs px-1">…</span>}
@@ -87,8 +81,8 @@ function Pagination({
           type="button"
           onClick={() => onChange(p)}
           className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all ${p === current
-            ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/25"
-            : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+              ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/25"
+              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
             }`}
         >
           {p + 1}
@@ -97,7 +91,9 @@ function Pagination({
 
       {pages[pages.length - 1] < total - 1 && (
         <>
-          {pages[pages.length - 1] < total - 2 && <span className="text-slate-400 text-xs px-1">…</span>}
+          {pages[pages.length - 1] < total - 2 && (
+            <span className="text-slate-400 text-xs px-1">…</span>
+          )}
           <button
             type="button"
             onClick={() => onChange(total - 1)}
@@ -121,58 +117,59 @@ function Pagination({
 }
 
 function ListingsContent() {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
-  const categoryId = searchParams.get("category");
 
-  const [allListings, setAllListings] = useState<Listing[]>([]);
+  const categoryId = searchParams.get("category");
+  const searchParam = searchParams.get("search") || "";
+  const conditionParam = searchParams.get("condition") || "";
+  const pricingTypeParam = searchParams.get("pricingType") || "";
+  const listingTypeParam = searchParams.get("listingType") || "";
+  const minPriceParam = searchParams.get("minPrice") || "";
+  const maxPriceParam = searchParams.get("maxPrice") || "";
+  const sortByParam = searchParams.get("sortBy") || "newest";
+  const pageParam = parseInt(searchParams.get("page") || "0", 10);
+  const currentPage = isNaN(pageParam) || pageParam < 0 ? 0 : pageParam;
+
+  const [listings, setListings] = useState<Listing[]>([]);
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [currentCategory, setCurrentCategory] = useState<Category | null>(null);
   const [breadcrumbs, setBreadcrumbs] = useState<CategoryBreadcrumb[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalElements, setTotalElements] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const [currentPage, setCurrentPage] = useState(0);
 
-  const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
-  const [pendingSearch, setPendingSearch] = useState("");
+  const [pendingSearch, setPendingSearch] = useState(searchParam);
   const [viewLayout, setViewLayout] = useState<"row" | "grid">("row");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  const filteredListings = allListings.filter((l) => {
-    if (
-      filters.search &&
-      !l.title.toLowerCase().includes(filters.search.toLowerCase()) &&
-      !(l.description ?? "").toLowerCase().includes(filters.search.toLowerCase())
-    )
-      return false;
-    if (filters.condition && l.condition !== filters.condition) return false;
-    if (filters.pricingType && l.pricingType !== filters.pricingType) return false;
-    if (filters.listingType && l.listingType !== filters.listingType) return false;
-    if (filters.minPrice && l.price < Number(filters.minPrice)) return false;
-    if (filters.maxPrice && l.price > Number(filters.maxPrice)) return false;
-    return true;
-  });
+  useEffect(() => {
+    setPendingSearch(searchParam);
+  }, [searchParam]);
 
-  const sortedListings = [...filteredListings].sort((a, b) => {
-    switch (filters.sortBy) {
-      case "price_asc":
-        return a.price - b.price;
-      case "price_desc":
-        return b.price - a.price;
-      case "oldest":
-        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-      default:
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    }
-  });
+  const updateParams = useCallback(
+    (updates: Record<string, string | null | undefined>) => {
+      const nextParams = new URLSearchParams(searchParams.toString());
+      Object.entries(updates).forEach(([key, val]) => {
+        if (val !== undefined && val !== null && val !== "") {
+          nextParams.set(key, val);
+        } else {
+          nextParams.delete(key);
+        }
+      });
+      router.replace(`${pathname}?${nextParams.toString()}`, { scroll: false });
+    },
+    [router, pathname, searchParams]
+  );
 
   const activeFilterCount = [
-    filters.search,
-    filters.condition,
-    filters.pricingType,
-    filters.listingType,
-    filters.minPrice,
-    filters.maxPrice,
+    searchParam,
+    conditionParam,
+    pricingTypeParam,
+    listingTypeParam,
+    minPriceParam,
+    maxPriceParam,
   ].filter(Boolean).length;
 
   const rootCategories = allCategories.filter((c) => !c.parentId && c.active);
@@ -180,27 +177,16 @@ function ListingsContent() {
   // Fetch data from API
   useEffect(() => {
     let isMounted = true;
-    setCurrentPage(0);
 
-    async function loadData() {
-      setLoading(true);
+    async function loadCategoryData() {
       try {
-        const [allCats, listingsPage] = await Promise.all([
-          getCategories(),
-          categoryId
-            ? getListingsByCategory(categoryId, 0, PAGE_SIZE)
-            : getListings(0, PAGE_SIZE),
-        ]);
-
+        const allCats = await getCategories();
         if (!isMounted) return;
-
         setAllCategories(allCats);
-        setAllListings(listingsPage.content ?? []);
-        setTotalElements(listingsPage.totalElements ?? 0);
-        setTotalPages(listingsPage.totalPages ?? 0);
 
         if (categoryId) {
-          const found = allCats.find((c) => c.id === categoryId || c.slug === categoryId) ?? null;
+          const found =
+            allCats.find((c) => c.id === categoryId || c.slug === categoryId) ?? null;
           setCurrentCategory(found);
 
           if (!found) {
@@ -223,55 +209,98 @@ function ListingsContent() {
           setBreadcrumbs([]);
         }
       } catch (err) {
+        console.error("Failed to load category metadata:", err);
+      }
+    }
+
+    loadCategoryData();
+    return () => {
+      isMounted = false;
+    };
+  }, [categoryId]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadListings() {
+      setLoading(true);
+      try {
+        const result = await getListings({
+          page: currentPage,
+          size: PAGE_SIZE,
+          search: searchParam || undefined,
+          condition: conditionParam || undefined,
+          pricingType: pricingTypeParam || undefined,
+          listingType: listingTypeParam || undefined,
+          minPrice: minPriceParam || undefined,
+          maxPrice: maxPriceParam || undefined,
+          sortBy: sortByParam || undefined,
+          category: categoryId || undefined,
+        });
+
+        if (!isMounted) return;
+
+        setListings(result.content ?? []);
+        setTotalElements(result.totalElements ?? 0);
+        setTotalPages(result.totalPages ?? 0);
+      } catch (err) {
         console.error("Failed to load listings:", err);
       } finally {
         if (isMounted) setLoading(false);
       }
     }
 
-    loadData();
+    loadListings();
     return () => {
       isMounted = false;
     };
-  }, [categoryId]);
+  }, [
+    categoryId,
+    searchParam,
+    conditionParam,
+    pricingTypeParam,
+    listingTypeParam,
+    minPriceParam,
+    maxPriceParam,
+    sortByParam,
+    currentPage,
+  ]);
 
   const goToPage = useCallback(
-    async (page: number) => {
-      if (page < 0 || page >= totalPages) return;
-      setLoading(true);
-      setCurrentPage(page);
-      try {
-        const result = categoryId
-          ? await getListingsByCategory(categoryId, page, PAGE_SIZE)
-          : await getListings(page, PAGE_SIZE);
-        setAllListings(result.content ?? []);
-        setTotalElements(result.totalElements ?? 0);
-        setTotalPages(result.totalPages ?? 0);
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      } catch (err) {
-        console.error("Failed to load page:", err);
-      } finally {
-        setLoading(false);
-      }
+    (page: number) => {
+      if (page < 0 || (totalPages > 0 && page >= totalPages)) return;
+      updateParams({ page: page > 0 ? String(page) : null });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     },
-    [categoryId, totalPages]
+    [totalPages, updateParams]
   );
 
-  const commitSearch = () => setFilters((f) => ({ ...f, search: pendingSearch }));
+  const commitSearch = () => {
+    updateParams({
+      search: pendingSearch.trim() || null,
+      page: null,
+    });
+  };
 
   const handleFilterChange = <K extends keyof Omit<Filters, "search">>(
     key: K,
-    value: Filters[K]
+    value: string
   ) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: prev[key] === value ? "" : value,
-    }));
+    const currentVal = searchParams.get(key) || (key === "sortBy" ? "newest" : "");
+    const nextVal = currentVal === value ? null : value;
+    updateParams({
+      [key]: nextVal,
+      page: null,
+    });
   };
 
   const clearFilters = () => {
-    setFilters(EMPTY_FILTERS);
     setPendingSearch("");
+    const nextParams = new URLSearchParams();
+    if (categoryId) {
+      nextParams.set("category", categoryId);
+    }
+    router.replace(`${pathname}?${nextParams.toString()}`, { scroll: false });
   };
 
   return (
@@ -295,7 +324,6 @@ function ListingsContent() {
           )}
           <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
             {loading ? "Loading…" : `${totalElements} listing${totalElements !== 1 ? "s" : ""} found`}
-            {activeFilterCount > 0 && ` · ${sortedListings.length} after filters`}
           </p>
         </div>
 
@@ -307,8 +335,8 @@ function ListingsContent() {
               onClick={() => setViewLayout("row")}
               title="Row layout"
               className={`p-2.5 transition-all ${viewLayout === "row"
-                ? "bg-emerald-600 text-white"
-                : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  ? "bg-emerald-600 text-white"
+                  : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
                 }`}
             >
               <LayoutList className="w-4 h-4" />
@@ -318,8 +346,8 @@ function ListingsContent() {
               onClick={() => setViewLayout("grid")}
               title="Grid layout"
               className={`p-2.5 transition-all ${viewLayout === "grid"
-                ? "bg-emerald-600 text-white"
-                : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  ? "bg-emerald-600 text-white"
+                  : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
                 }`}
             >
               <LayoutGrid className="w-4 h-4" />
@@ -360,12 +388,12 @@ function ListingsContent() {
             onSearchChange={setPendingSearch}
             onSearchSubmit={commitSearch}
             filters={{
-              condition: filters.condition,
-              pricingType: filters.pricingType,
-              listingType: filters.listingType,
-              sortBy: filters.sortBy,
-              minPrice: filters.minPrice,
-              maxPrice: filters.maxPrice,
+              condition: conditionParam,
+              pricingType: pricingTypeParam,
+              listingType: listingTypeParam,
+              sortBy: sortByParam,
+              minPrice: minPriceParam,
+              maxPrice: maxPriceParam,
             }}
             onFilterChange={handleFilterChange}
             activeFilterCount={activeFilterCount}
@@ -385,12 +413,12 @@ function ListingsContent() {
             onSearchChange={setPendingSearch}
             onSearchSubmit={commitSearch}
             filters={{
-              condition: filters.condition,
-              pricingType: filters.pricingType,
-              listingType: filters.listingType,
-              sortBy: filters.sortBy,
-              minPrice: filters.minPrice,
-              maxPrice: filters.maxPrice,
+              condition: conditionParam,
+              pricingType: pricingTypeParam,
+              listingType: listingTypeParam,
+              sortBy: sortByParam,
+              minPrice: minPriceParam,
+              maxPrice: maxPriceParam,
             }}
             onFilterChange={handleFilterChange}
             activeFilterCount={activeFilterCount}
@@ -410,17 +438,17 @@ function ListingsContent() {
                 Loading listings…
               </p>
             </div>
-          ) : sortedListings.length > 0 ? (
+          ) : listings.length > 0 ? (
             <>
               {viewLayout === "row" ? (
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-3.5">
-                  {sortedListings.map((listing) => (
+                  {listings.map((listing) => (
                     <ListingCard key={listing.id} listing={listing} layout="row" />
                   ))}
                 </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-                  {sortedListings.map((listing) => (
+                  {listings.map((listing) => (
                     <ListingCard key={listing.id} listing={listing} layout="grid" />
                   ))}
                 </div>
@@ -443,7 +471,7 @@ function ListingsContent() {
                 {activeFilterCount > 0
                   ? "No listings match your current filters. Try adjusting or clearing them."
                   : currentCategory
-                    ? `No active listings in found for "${currentCategory.name}"`
+                    ? `No active listings found for "${currentCategory.name}"`
                     : "No active listings are currently available."}
               </p>
               <div className="pt-2 flex flex-wrap justify-center gap-3">
