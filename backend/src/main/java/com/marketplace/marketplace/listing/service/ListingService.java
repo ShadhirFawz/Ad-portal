@@ -1,6 +1,7 @@
 package com.marketplace.marketplace.listing.service;
 
 import com.marketplace.marketplace.listing.dto.request.CreateListingRequest;
+import com.marketplace.marketplace.listing.dto.request.ListingFilterParams;
 import com.marketplace.marketplace.listing.dto.request.UpdateListingRequest;
 import com.marketplace.marketplace.listing.dto.response.ListingResponse;
 import org.springframework.data.domain.Page;
@@ -36,6 +37,14 @@ public interface ListingService {
                         Pageable pageable);
 
         Page<ListingResponse> getActiveListings(
+                        Pageable pageable);
+
+        Page<ListingResponse> getActiveListings(
+                        ListingFilterParams params,
+                        Pageable pageable);
+
+        Page<ListingResponse> getListingsByUsername(
+                        String username,
                         Pageable pageable);
 
         Page<ListingResponse> getByCategory(

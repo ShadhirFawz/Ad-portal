@@ -8,6 +8,7 @@ import com.marketplace.marketplace.common.exception.ConflictException;
 import com.marketplace.marketplace.common.exception.ResourceNotFoundException;
 import com.marketplace.marketplace.common.security.util.SecurityUtils;
 import com.marketplace.marketplace.listing.dto.request.CreateListingRequest;
+import com.marketplace.marketplace.listing.dto.request.ListingFilterParams;
 import com.marketplace.marketplace.listing.dto.request.UpdateListingRequest;
 import com.marketplace.marketplace.listing.dto.response.ListingImageResponse;
 import com.marketplace.marketplace.listing.dto.response.ListingResponse;
@@ -20,6 +21,7 @@ import com.marketplace.marketplace.listing.enums.PricingType;
 import com.marketplace.marketplace.listing.mapper.ListingImageMapper;
 import com.marketplace.marketplace.listing.repository.ListingImageRepository;
 import com.marketplace.marketplace.listing.repository.ListingRepository;
+import com.marketplace.marketplace.listing.repository.ListingSpecification;
 import com.marketplace.marketplace.listing.service.ListingService;
 import com.marketplace.marketplace.user.entity.User;
 import com.marketplace.marketplace.user.repository.UserRepository;
@@ -397,8 +399,35 @@ public class ListingServiceImpl implements ListingService {
         public Page<ListingResponse> getActiveListings(
                         Pageable pageable) {
 
+                return getActiveListings(null, pageable);
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public Page<ListingResponse> getActiveListings(
+                        ListingFilterParams params,
+                        Pageable pageable) {
+
                 return listingRepository
-                                .findAllByStatus(
+                                .findAll(
+                                                ListingSpecification.buildSpec(params),
+                                                pageable)
+                                .map(this::toResponse);
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public Page<ListingResponse> getListingsByUsername(
+                        String username,
+                        Pageable pageable) {
+
+                if (username == null || username.isBlank()) {
+                        return Page.empty(pageable);
+                }
+
+                return listingRepository
+                                .findAllBySellerUsernameIgnoreCaseAndStatus(
+                                                username.trim(),
                                                 ListingStatus.ACTIVE,
                                                 pageable)
                                 .map(this::toResponse);
