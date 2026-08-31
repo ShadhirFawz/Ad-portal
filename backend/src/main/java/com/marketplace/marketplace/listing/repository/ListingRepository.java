@@ -6,11 +6,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+
 import java.util.Optional;
 import java.util.UUID;
 
 public interface ListingRepository
-                extends JpaRepository<Listing, UUID> {
+                extends JpaRepository<Listing, UUID>, JpaSpecificationExecutor<Listing> {
 
         Page<Listing> findAllBySellerId(
                         UUID sellerId,
@@ -42,6 +44,11 @@ public interface ListingRepository
 
         Optional<Listing> findBySlug(
                         String slug);
+
+        Page<Listing> findAllBySellerUsernameIgnoreCaseAndStatus(
+                        String username,
+                        ListingStatus status,
+                        Pageable pageable);
 
         boolean existsBySlug(
                         String slug);
