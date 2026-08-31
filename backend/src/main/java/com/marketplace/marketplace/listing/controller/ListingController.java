@@ -2,8 +2,12 @@ package com.marketplace.marketplace.listing.controller;
 
 import com.marketplace.marketplace.common.response.ApiResponse;
 import com.marketplace.marketplace.listing.dto.request.CreateListingRequest;
+import com.marketplace.marketplace.listing.dto.request.ListingFilterParams;
 import com.marketplace.marketplace.listing.dto.request.UpdateListingRequest;
 import com.marketplace.marketplace.listing.dto.response.ListingResponse;
+import com.marketplace.marketplace.listing.enums.ListingCondition;
+import com.marketplace.marketplace.listing.enums.ListingType;
+import com.marketplace.marketplace.listing.enums.PricingType;
 import com.marketplace.marketplace.listing.service.ListingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @RestController
@@ -38,13 +43,37 @@ public class ListingController {
                 listingService.getMyListings(pageable));
     }
 
-    @GetMapping
-    public ApiResponse<Page<ListingResponse>> getActiveListings(
+    @GetMapping("/user/{username}")
+    public ApiResponse<Page<ListingResponse>> getListingsByUsername(
+            @PathVariable String username,
             Pageable pageable) {
 
         return ApiResponse.success(
+                "User listings retrieved successfully.",
+                listingService.getListingsByUsername(username, pageable));
+    }
+
+    @GetMapping
+    public ApiResponse<Page<ListingResponse>> getActiveListings(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) ListingCondition condition,
+            @RequestParam(required = false) PricingType pricingType,
+            @RequestParam(required = false) ListingType listingType,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            Pageable pageable) {
+
+        ListingFilterParams params = new ListingFilterParams(
+                search,
+                condition,
+                pricingType,
+                listingType,
+                minPrice,
+                maxPrice);
+
+        return ApiResponse.success(
                 "Listings retrieved successfully.",
-                listingService.getActiveListings(pageable));
+                listingService.getActiveListings(params, pageable));
     }
 
     @GetMapping("/category/{categoryIdOrSlug}")
