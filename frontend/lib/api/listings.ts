@@ -159,16 +159,97 @@ export async function getMyListings(
   return response.data;
 }
 
+export interface ListingQueryParams {
+  page?: number;
+  size?: number;
+  search?: string;
+  condition?: string;
+  pricingType?: string;
+  listingType?: string;
+  minPrice?: string;
+  maxPrice?: string;
+  sortBy?: string;
+  category?: string;
+}
+
 export async function getListings(
-  page = 0,
-  size = 20
+  params?: ListingQueryParams | number,
+  legacySize?: number
 ): Promise<PageResponse<Listing>> {
+  const queryParams: ListingQueryParams =
+    typeof params === "number"
+      ? { page: params, size: legacySize ?? 20 }
+      : (params ?? {});
+
+  const {
+    page = 0,
+    size = 20,
+    search,
+    condition,
+    pricingType,
+    listingType,
+    minPrice,
+    maxPrice,
+    sortBy,
+    category,
+  } = queryParams;
+
+  const searchParams = new URLSearchParams();
+  searchParams.set("page", String(page));
+  searchParams.set("size", String(size));
+
+  if (search && search.trim()) {
+    searchParams.set("search", search.trim());
+  }
+  if (condition && condition.trim()) {
+    searchParams.set("condition", condition.trim());
+  }
+  if (pricingType && pricingType.trim()) {
+    searchParams.set("pricingType", pricingType.trim());
+  }
+  if (listingType && listingType.trim()) {
+    searchParams.set("listingType", listingType.trim());
+  }
+  if (minPrice && minPrice.trim()) {
+    searchParams.set("minPrice", minPrice.trim());
+  }
+  if (maxPrice && maxPrice.trim()) {
+    searchParams.set("maxPrice", maxPrice.trim());
+  }
+
+  if (sortBy) {
+    const sortMap: Record<string, string> = {
+      newest: "createdAt,desc",
+      oldest: "createdAt,asc",
+      price_asc: "price,asc",
+      price_desc: "price,desc",
+    };
+    const sortValue = sortMap[sortBy] || sortBy;
+    searchParams.set("sort", sortValue);
+  }
+
+  const endpoint = category
+    ? `/listings/category/${encodeURIComponent(category)}?${searchParams.toString()}`
+    : `/listings?${searchParams.toString()}`;
 
   const response =
     await publicRequest<
       ApiResponse<PageResponse<Listing>>
+    >(endpoint);
+
+  return response.data;
+}
+
+export async function getListingsByUsername(
+  username: string,
+  page = 0,
+  size = 20
+): Promise<PageResponse<Listing>> {
+  const response =
+    await publicRequest<
+      ApiResponse<PageResponse<Listing>>
     >(
-      `/listings?page=${page}&size=${size}`
+      `/listings/user/${encodeURIComponent(username)}?page=${page}&size=${size}`
     );
 
   return response.data;
@@ -179,7 +260,6 @@ export async function getListingsByCategory(
   page = 0,
   size = 20
 ): Promise<PageResponse<Listing>> {
-
   const response =
     await publicRequest<
       ApiResponse<PageResponse<Listing>>
