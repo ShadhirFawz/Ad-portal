@@ -1,4 +1,6 @@
 import { getPublicProfile } from "@/lib/api/users";
+import { getListingsByUsername } from "@/lib/api/listings";
+import UserListingsSection from "@/components/profile/UserListingsSection";
 import Link from "next/link";
 import Image from "next/image";
 import { Calendar, MapPin, Search } from "lucide-react";
@@ -13,8 +15,23 @@ export default async function PublicProfilePage({ params }: PageProps) {
   const { username } = await params;
 
   let user = null;
+  let initialListingsPage = null;
+
   try {
-    user = await getPublicProfile(username);
+    const [userRes, listingsRes] = await Promise.all([
+      getPublicProfile(username),
+      getListingsByUsername(username, 0, 8).catch(() => ({
+        content: [],
+        totalPages: 0,
+        totalElements: 0,
+        size: 8,
+        number: 0,
+        first: true,
+        last: true,
+      })),
+    ]);
+    user = userRes;
+    initialListingsPage = listingsRes;
   } catch {
     user = null;
   }
@@ -39,7 +56,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
   }
 
   return (
-    <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
       <div className="glass-panel overflow-hidden">
 
         {/* Cover Photo Banner */}
@@ -119,6 +136,15 @@ export default async function PublicProfilePage({ params }: PageProps) {
 
         </div>
       </div>
+
+      {/* User's Active Listings Section */}
+      <UserListingsSection
+        username={username}
+        initialListings={initialListingsPage?.content ?? []}
+        initialTotalPages={initialListingsPage?.totalPages ?? 0}
+        initialTotalElements={initialListingsPage?.totalElements ?? 0}
+        pageSize={8}
+      />
     </main>
   );
 }
