@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -180,29 +181,63 @@ public class ListingImageServiceImpl
 
                 getOwnedListing(listingId);
 
-                ListingImage image = imageRepository
+                // Verify the requested image belongs to the listing
+                ListingImage targetImageCheck = imageRepository
                                 .findByIdAndListingId(
                                                 imageId,
                                                 listingId)
                                 .orElseThrow(() -> new ResourceNotFoundException(
                                                 "Listing image not found."));
 
-                imageRepository
-                                .findByListingIdAndPrimaryTrue(
-                                                listingId)
-                                .ifPresent(current -> {
+                // Get current primary image ID before clearing
+                UUID oldPrimaryId = imageRepository
+                                .findByListingIdAndPrimaryTrue(listingId)
+                                .map(ListingImage::getId)
+                                .orElse(null);
 
-                                        if (!current.getId()
-                                                        .equals(imageId)) {
+                // Clear primary flags in DB and flush to prevent uk_listing_images_one_primary violation
+                imageRepository.clearPrimaryForListing(listingId);
 
-                                                current.setPrimary(false);
-                                                imageRepository.save(current);
-                                        }
-                                });
+                // Fetch all images for listing in current order
+                List<ListingImage> images = imageRepository
+                                .findAllByListingIdOrderByDisplayOrderAsc(listingId);
 
-                image.setPrimary(true);
+                ListingImage targetImage = images.stream()
+                                .filter(img -> img.getId().equals(imageId))
+                                .findFirst()
+                                .orElse(targetImageCheck);
 
-                imageRepository.save(image);
+                ListingImage oldPrimary = (oldPrimaryId != null && !oldPrimaryId.equals(imageId))
+                                ? images.stream().filter(img -> img.getId().equals(oldPrimaryId)).findFirst().orElse(null)
+                                : null;
+
+                List<ListingImage> newOrder = new ArrayList<>();
+
+                // 1. Newly selected primary image at index 0
+                targetImage.setPrimary(true);
+                newOrder.add(targetImage);
+
+                // 2. Previously primary image placed immediately next at index 1
+                if (oldPrimary != null) {
+                        oldPrimary.setPrimary(false);
+                        newOrder.add(oldPrimary);
+                }
+
+                // 3. Other images follow in their existing relative order
+                for (ListingImage img : images) {
+                        if (!img.getId().equals(targetImage.getId())
+                                        && (oldPrimary == null || !img.getId().equals(oldPrimary.getId()))) {
+                                img.setPrimary(false);
+                                newOrder.add(img);
+                        }
+                }
+
+                // 4. Update displayOrder sequentially
+                for (int index = 0; index < newOrder.size(); index++) {
+                        newOrder.get(index).setDisplayOrder(index);
+                }
+
+                imageRepository.saveAllAndFlush(newOrder);
         }
 
         @Transactional(readOnly = true)
