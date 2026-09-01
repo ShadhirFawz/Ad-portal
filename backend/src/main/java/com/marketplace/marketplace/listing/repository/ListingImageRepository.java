@@ -2,6 +2,7 @@ package com.marketplace.marketplace.listing.repository;
 
 import com.marketplace.marketplace.listing.entity.ListingImage;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -24,6 +25,10 @@ public interface ListingImageRepository
             UUID listingId);
 
     long countByListingId(UUID listingId);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE ListingImage i SET i.primary = false WHERE i.listing.id = :listingId AND i.primary = true")
+    void clearPrimaryForListing(@Param("listingId") UUID listingId);
 
     @Query("""
         SELECT i

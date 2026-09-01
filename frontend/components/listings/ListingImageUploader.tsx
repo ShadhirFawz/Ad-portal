@@ -313,12 +313,31 @@ export default function ListingImageUploader({
 
         await setPrimaryListingImage(accessToken, listingId, image.id);
 
-        updateImages((current) =>
-            current.map((item) => ({
+        updateImages((current) => {
+            const target = current.find((item) => item.id === image.id);
+            if (!target) return current;
+
+            const oldPrimary = current.find(
+                (item) => item.primary && item.id !== image.id
+            );
+
+            const others = current.filter(
+                (item) =>
+                    item.id !== image.id &&
+                    (!oldPrimary || item.id !== oldPrimary.id)
+            );
+
+            const newOrder: ListingImage[] = [
+                { ...target, primary: true },
+                ...(oldPrimary ? [{ ...oldPrimary, primary: false }] : []),
+                ...others.map((item) => ({ ...item, primary: false })),
+            ];
+
+            return newOrder.map((item, index) => ({
                 ...item,
-                primary: item.id === image.id,
-            }))
-        );
+                displayOrder: index,
+            }));
+        });
     }
 
     async function persistOrder(reorderedImages: ListingImage[]) {
