@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import type { ListingImage } from "@/types/listing-image";
 import {
@@ -31,12 +32,17 @@ export default function ListingImageLightbox({
   title,
   onClose,
 }: ListingImageLightboxProps) {
+  const [mounted, setMounted] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const panStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Sync initialIndex when lightbox opens
   useEffect(() => {
@@ -165,16 +171,16 @@ export default function ListingImageLightbox({
     }
   };
 
-  if (!isOpen || images.length === 0) return null;
+  if (!isOpen || images.length === 0 || !mounted) return null;
 
   const currentImage = images[currentIndex] || images[0];
 
-  return (
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
       aria-label="Image gallery lightbox"
-      className="fixed inset-0 z-[100] flex flex-col bg-black/50 backdrop-blur-xl select-none animate-in fade-in duration-200"
+      className="fixed inset-0 z-[9999] flex flex-col bg-black/90 backdrop-blur-xl select-none animate-in fade-in duration-200"
       onMouseUp={handleMouseUp}
     >
       {/* Top Bar: Title and Counter only */}
@@ -349,6 +355,7 @@ export default function ListingImageLightbox({
           })}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
