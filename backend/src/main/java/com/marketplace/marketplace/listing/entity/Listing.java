@@ -73,12 +73,6 @@ public class Listing {
     @Column(nullable = false, length = 30)
     private ListingStatus status = ListingStatus.DRAFT;
 
-    @Column(name = "view_count", nullable = false)
-    private long viewCount = 0;
-
-    @Column(name = "favorite_count", nullable = false)
-    private long favoriteCount = 0;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "listing_type", nullable = false, length = 30)
     private ListingType listingType = ListingType.ITEM;

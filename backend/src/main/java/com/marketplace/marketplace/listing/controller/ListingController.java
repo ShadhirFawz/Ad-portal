@@ -4,6 +4,7 @@ import com.marketplace.marketplace.common.response.ApiResponse;
 import com.marketplace.marketplace.listing.dto.request.CreateListingRequest;
 import com.marketplace.marketplace.listing.dto.request.ListingFilterParams;
 import com.marketplace.marketplace.listing.dto.request.UpdateListingRequest;
+import com.marketplace.marketplace.listing.dto.response.ListingFavoriteResponse;
 import com.marketplace.marketplace.listing.dto.response.ListingResponse;
 import com.marketplace.marketplace.listing.enums.ListingCondition;
 import com.marketplace.marketplace.listing.enums.ListingType;
@@ -118,6 +119,15 @@ public class ListingController {
         return ApiResponse.success(
                 "Listing retrieved successfully.",
                 listingService.getByIdOrSlug(idOrSlug));
+    }
+
+    @PostMapping("/{idOrSlug}/favorite")
+    public ApiResponse<ListingFavoriteResponse> toggleFavorite(
+            @PathVariable String idOrSlug) {
+
+        return ApiResponse.success(
+                "Favorite updated successfully.",
+                listingService.toggleFavorite(idOrSlug));
     }
 
     @PatchMapping("/{id}")
