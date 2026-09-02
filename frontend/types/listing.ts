@@ -87,6 +87,7 @@ export interface Listing {
 
   viewCount: number;
   favoriteCount: number;
+  isFavorited?: boolean;
 
   images: ListingImage[];
   primaryImage?: ListingCardImage | null;
@@ -167,6 +168,7 @@ export interface ListingCardData {
   images?: ListingImage[];
   viewCount?: number;
   favoriteCount?: number;
+  isFavorited?: boolean;
   publishedAt?: string | null;
   createdAt?: string;
 }
