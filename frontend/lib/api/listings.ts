@@ -290,3 +290,29 @@ export async function getSimilarListings(
 
   return response.data;
 }
+
+export interface FavoriteResponse {
+  listingId: string;
+  isFavorited: boolean;
+  favoriteCount: number;
+}
+
+export async function toggleFavoriteListing(
+  accessToken: string | undefined | null,
+  idOrSlug: string
+): Promise<FavoriteResponse> {
+  const headers: Record<string, string> = {};
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
+
+  const response = await apiRequest<ApiResponse<FavoriteResponse>>(
+    `/listings/${encodeURIComponent(idOrSlug)}/favorite`,
+    {
+      method: "POST",
+      headers,
+    }
+  );
+
+  return response.data;
+}

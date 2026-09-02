@@ -4,7 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/providers/AuthProvider";
-import { getListing } from "@/lib/api/listings";
+import { getListing, toggleFavoriteListing } from "@/lib/api/listings";
 import ListingImageGallery from "@/components/listings/ListingImageGallery";
 import ListingBreadcrumb from "@/components/listings/ListingBreadcrumb";
 import SimilarListingsColumn from "@/components/listings/SimilarListingsColumn";
@@ -32,6 +32,7 @@ import {
   Shield,
   Tag,
   User,
+  Loader2,
 } from "lucide-react";
 
 function DetailRow({
@@ -91,6 +92,7 @@ export default function ListingDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [favoriting, setFavoriting] = useState(false);
 
   useEffect(() => {
     if (!listingId) return;
@@ -135,6 +137,61 @@ export default function ListingDetailsPage() {
       setListing(data);
     } catch {
       // keep existing listing on refresh failure
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!listing) return;
+    if (!isLoggedIn) {
+      setLoginModalOpen(true);
+      return;
+    }
+    if (favoriting) return;
+
+    const previousIsFavorited = Boolean(listing.isFavorited);
+    const previousCount = listing.favoriteCount;
+    const newIsFavorited = !previousIsFavorited;
+    const newCount = newIsFavorited
+      ? previousCount + 1
+      : Math.max(0, previousCount - 1);
+
+    // Optimistic UI update
+    setListing((prev) =>
+      prev
+        ? {
+          ...prev,
+          isFavorited: newIsFavorited,
+          favoriteCount: newCount,
+        }
+        : null
+    );
+
+    setFavoriting(true);
+    try {
+      const res = await toggleFavoriteListing(accessToken, listing.id);
+      setListing((prev) =>
+        prev
+          ? {
+            ...prev,
+            isFavorited: res.isFavorited,
+            favoriteCount: res.favoriteCount,
+          }
+          : null
+      );
+    } catch (err) {
+      console.error("Failed to toggle favorite:", err);
+      // Revert optimistic update
+      setListing((prev) =>
+        prev
+          ? {
+            ...prev,
+            isFavorited: previousIsFavorited,
+            favoriteCount: previousCount,
+          }
+          : null
+      );
+    } finally {
+      setFavoriting(false);
     }
   };
 
@@ -238,10 +295,10 @@ export default function ListingDetailsPage() {
                 {listing.status !== "ACTIVE" && (
                   <span
                     className={`rounded-md px-2.5 py-1 text-xs font-bold uppercase tracking-wider ${listing.status === "DRAFT"
-                      ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
-                      : listing.status === "SOLD"
-                        ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
-                        : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                        ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
+                        : listing.status === "SOLD"
+                          ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
+                          : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                       }`}
                   >
                     {formatListingStatus(listing.status)}
@@ -253,47 +310,88 @@ export default function ListingDetailsPage() {
                 {listing.title}
               </h1>
 
-              <div className="flex flex-wrap items-baseline gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <span className="text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
-                  {formatListingPrice(listing)}
-                </span>
-                {listing.negotiable && listing.pricingType !== "FREE" && (
-                  <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-950/50 dark:border-emerald-800 dark:text-emerald-300">
-                    Negotiable
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex flex-wrap items-baseline gap-3">
+                  <span className="text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
+                    {formatListingPrice(listing)}
                   </span>
-                )}
+                  {listing.negotiable && listing.pricingType !== "FREE" && (
+                    <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-950/50 dark:border-emerald-800 dark:text-emerald-300">
+                      Negotiable
+                    </span>
+                  )}
+                </div>
+
+                {/* Favorite Action Button with Spinner */}
+                <button
+                  type="button"
+                  onClick={handleToggleFavorite}
+                  disabled={favoriting}
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all duration-200 cursor-pointer shadow-xs min-w-[80px] justify-center ${listing.isFavorited
+                      ? "bg-rose-50 border-rose-200 text-rose-600 dark:bg-rose-950/50 dark:border-rose-900 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/60"
+                      : "bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-rose-300 hover:text-rose-500 hover:bg-rose-50/40 dark:hover:bg-rose-950/30"
+                    }`}
+                  aria-label={listing.isFavorited ? "Remove from favorites" : "Save to favorites"}
+                >
+                  {favoriting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Heart
+                        className={`w-4 h-4 transition-transform duration-200 ${listing.isFavorited
+                            ? "fill-rose-500 text-rose-500 scale-110"
+                            : "text-slate-400 group-hover:scale-110"
+                          }`}
+                      />
+                      <span>{listing.isFavorited ? "Saved" : "Save"}</span>
+                    </>
+                  )}
+                </button>
               </div>
 
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-500 dark:text-slate-400 pt-1">
-                {locationString && (
-                  <div className="flex items-center gap-1.5">
-                    <MapPin className="h-4 w-4 text-slate-400 shrink-0" />
-                    <span>{locationString}</span>
-                  </div>
-                )}
-                {updatedAgo ? (
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                    <span>Updated {updatedAgo}</span>
-                  </div>
-                ) : publishedAgo ? (
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                    <span>Published {publishedAgo}</span>
-                  </div>
-                ) : listedAgo ? (
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                    <span>Listed {listedAgo}</span>
-                  </div>
-                ) : null}
-                <div className="flex items-center gap-1.5">
-                  <Eye className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                  <span>{listing.viewCount.toLocaleString()} views</span>
+              <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-2 text-xs text-slate-500 dark:text-slate-400 pt-1">
+                {/* Location and Date - Always together on same line */}
+                <div className="flex items-center gap-x-5 gap-y-1 flex-wrap">
+                  {locationString && (
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="h-4 w-4 text-slate-400 shrink-0" />
+                      <span>{locationString}</span>
+                    </div>
+                  )}
+                  {updatedAgo ? (
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                      <span>Updated {updatedAgo}</span>
+                    </div>
+                  ) : publishedAgo ? (
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                      <span>Published {publishedAgo}</span>
+                    </div>
+                  ) : listedAgo ? (
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                      <span>Listed {listedAgo}</span>
+                    </div>
+                  ) : null}
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <Heart className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                  <span>{listing.favoriteCount.toLocaleString()} favorites</span>
+
+                {/* Views and Favorites Counts - Always on their own line */}
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1.5">
+                    <Eye className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                    <span>{listing.viewCount.toLocaleString()} views</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Heart
+                      className={`h-3.5 w-3.5 shrink-0 ${listing.isFavorited ? "fill-rose-500 text-rose-500" : "text-slate-400"
+                        }`}
+                    />
+                    <span>{listing.favoriteCount.toLocaleString()} favorites</span>
+                  </div>
                 </div>
               </div>
             </div>
