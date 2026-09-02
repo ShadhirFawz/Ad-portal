@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/providers/AuthProvider";
+import ThemeToggle from "@/components/layout/ThemeToggle";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -27,13 +28,16 @@ export default function Navbar() {
         </Link>
 
         {/* Right Navigation */}
-        <nav className="flex items-center gap-4">
+        <nav className="flex items-center gap-3 sm:gap-4">
           <Link
             href="/listings"
             className="text-sm font-medium text-slate-600 hover:text-emerald-600 dark:text-slate-300 dark:hover:text-emerald-400 transition-colors px-3 py-2 rounded-lg"
           >
             Explore
           </Link>
+
+          {/* Theme Toggle */}
+          <ThemeToggle />
 
           {user ? (
             <div className="flex items-center gap-3">
