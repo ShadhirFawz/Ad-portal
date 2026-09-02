@@ -72,6 +72,8 @@ public record ListingResponse(
 
         long favoriteCount,
 
+        boolean isFavorited,
+
         List<ListingImageResponse> images,
 
         OffsetDateTime publishedAt,

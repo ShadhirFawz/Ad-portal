@@ -10,18 +10,23 @@ import com.marketplace.marketplace.common.security.util.SecurityUtils;
 import com.marketplace.marketplace.listing.dto.request.CreateListingRequest;
 import com.marketplace.marketplace.listing.dto.request.ListingFilterParams;
 import com.marketplace.marketplace.listing.dto.request.UpdateListingRequest;
+import com.marketplace.marketplace.listing.dto.response.ListingFavoriteResponse;
 import com.marketplace.marketplace.listing.dto.response.ListingImageResponse;
 import com.marketplace.marketplace.listing.dto.response.ListingResponse;
 import com.marketplace.marketplace.listing.entity.Listing;
+import com.marketplace.marketplace.listing.entity.ListingFavorite;
+import com.marketplace.marketplace.listing.entity.ListingStats;
 import com.marketplace.marketplace.listing.enums.ListingLocationType;
 import com.marketplace.marketplace.listing.enums.ListingStatus;
 import com.marketplace.marketplace.listing.enums.ListingType;
 import com.marketplace.marketplace.listing.enums.ModerationStatus;
 import com.marketplace.marketplace.listing.enums.PricingType;
 import com.marketplace.marketplace.listing.mapper.ListingImageMapper;
+import com.marketplace.marketplace.listing.repository.ListingFavoriteRepository;
 import com.marketplace.marketplace.listing.repository.ListingImageRepository;
 import com.marketplace.marketplace.listing.repository.ListingRepository;
 import com.marketplace.marketplace.listing.repository.ListingSpecification;
+import com.marketplace.marketplace.listing.repository.ListingStatsRepository;
 import com.marketplace.marketplace.listing.service.ListingService;
 import com.marketplace.marketplace.user.entity.User;
 import com.marketplace.marketplace.user.repository.UserRepository;
@@ -34,8 +39,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -48,6 +58,8 @@ public class ListingServiceImpl implements ListingService {
         private final UserRepository userRepository;
         private final ListingImageRepository imageRepository;
         private final ListingImageMapper imageMapper;
+        private final ListingFavoriteRepository listingFavoriteRepository;
+        private final ListingStatsRepository listingStatsRepository;
 
         @Override
         @Transactional
@@ -137,67 +149,93 @@ public class ListingServiceImpl implements ListingService {
                                 request.negotiable(),
                                 request.minimumOfferPrice());
 
-                return toResponse(
-                                listingRepository.save(listing));
+                Listing saved = listingRepository.save(listing);
+                listingStatsRepository.save(new ListingStats(saved.getId(), 0L));
+
+                return toResponse(saved, false, false, 0L, 0L);
         }
 
         @Override
-        @Transactional(readOnly = true)
+        @Transactional
         public ListingResponse getById(UUID id) {
 
                 Listing listing = listingRepository.findById(id)
                                 .orElseThrow(() -> new ResourceNotFoundException(
                                                 "Listing not found."));
 
+                listingStatsRepository.incrementViewCount(listing.getId());
+                long viewCount = listingStatsRepository.findViewCountByListingId(listing.getId()).orElse(1L);
+                long favoriteCount = listingFavoriteRepository.countByListingId(listing.getId());
+                boolean isFavorited = isListingFavoritedByCurrentUser(listing.getId());
+
                 boolean includeSellerContact = com.marketplace.marketplace.common.security.util.SecurityUtils
                                 .getCurrentUserOptional()
                                 .isPresent();
 
-                return toResponse(listing, includeSellerContact);
+                return toResponse(listing, includeSellerContact, isFavorited, viewCount, favoriteCount);
         }
 
         @Override
-        @Transactional(readOnly = true)
+        @Transactional
         public ListingResponse getBySlug(String slug) {
 
                 Listing listing = listingRepository.findBySlug(slug)
                                 .orElseThrow(() -> new ResourceNotFoundException(
                                                 "Listing not found: " + slug));
 
+                listingStatsRepository.incrementViewCount(listing.getId());
+                long viewCount = listingStatsRepository.findViewCountByListingId(listing.getId()).orElse(1L);
+                long favoriteCount = listingFavoriteRepository.countByListingId(listing.getId());
+                boolean isFavorited = isListingFavoritedByCurrentUser(listing.getId());
+
                 boolean includeSellerContact = com.marketplace.marketplace.common.security.util.SecurityUtils
                                 .getCurrentUserOptional()
                                 .isPresent();
 
-                return toResponse(listing, includeSellerContact);
+                return toResponse(listing, includeSellerContact, isFavorited, viewCount, favoriteCount);
         }
 
         @Override
-        @Transactional(readOnly = true)
+        @Transactional
         public ListingResponse getByIdOrSlug(String idOrSlug) {
 
-                if (idOrSlug == null || idOrSlug.isBlank()) {
-                        throw new ResourceNotFoundException("Listing identifier is required.");
-                }
+                Listing listing = resolveListing(idOrSlug);
 
-                Listing listing = null;
-                try {
-                        UUID id = UUID.fromString(idOrSlug);
-                        listing = listingRepository.findById(id).orElse(null);
-                } catch (IllegalArgumentException ignored) {
-                        // idOrSlug is a slug, not a UUID
-                }
-
-                if (listing == null) {
-                        listing = listingRepository.findBySlug(idOrSlug)
-                                        .orElseThrow(() -> new ResourceNotFoundException(
-                                                        "Listing not found: " + idOrSlug));
-                }
+                listingStatsRepository.incrementViewCount(listing.getId());
+                long viewCount = listingStatsRepository.findViewCountByListingId(listing.getId()).orElse(1L);
+                long favoriteCount = listingFavoriteRepository.countByListingId(listing.getId());
+                boolean isFavorited = isListingFavoritedByCurrentUser(listing.getId());
 
                 boolean includeSellerContact = com.marketplace.marketplace.common.security.util.SecurityUtils
                                 .getCurrentUserOptional()
                                 .isPresent();
 
-                return toResponse(listing, includeSellerContact);
+                return toResponse(listing, includeSellerContact, isFavorited, viewCount, favoriteCount);
+        }
+
+        @Override
+        @Transactional
+        public ListingFavoriteResponse toggleFavorite(String idOrSlug) {
+
+                User currentUser = getCurrentUser();
+                Listing listing = resolveListing(idOrSlug);
+
+                Optional<ListingFavorite> existing = listingFavoriteRepository
+                                .findByUserIdAndListingId(currentUser.getId(), listing.getId());
+
+                boolean isFavorited;
+                if (existing.isPresent()) {
+                        listingFavoriteRepository.delete(existing.get());
+                        isFavorited = false;
+                } else {
+                        ListingFavorite favorite = new ListingFavorite(currentUser, listing);
+                        listingFavoriteRepository.save(favorite);
+                        isFavorited = true;
+                }
+
+                long favoriteCount = listingFavoriteRepository.countByListingId(listing.getId());
+
+                return new ListingFavoriteResponse(listing.getId(), isFavorited, favoriteCount);
         }
 
         @Override
@@ -387,11 +425,8 @@ public class ListingServiceImpl implements ListingService {
 
                 UUID userId = SecurityUtils.getCurrentUserId();
 
-                return listingRepository
-                                .findAllBySellerId(
-                                                userId,
-                                                pageable)
-                                .map(this::toResponse);
+                Page<Listing> page = listingRepository.findAllBySellerId(userId, pageable);
+                return mapToResponsePage(page);
         }
 
         @Override
@@ -408,11 +443,8 @@ public class ListingServiceImpl implements ListingService {
                         ListingFilterParams params,
                         Pageable pageable) {
 
-                return listingRepository
-                                .findAll(
-                                                ListingSpecification.buildSpec(params),
-                                                pageable)
-                                .map(this::toResponse);
+                Page<Listing> page = listingRepository.findAll(ListingSpecification.buildSpec(params), pageable);
+                return mapToResponsePage(page);
         }
 
         @Override
@@ -425,12 +457,11 @@ public class ListingServiceImpl implements ListingService {
                         return Page.empty(pageable);
                 }
 
-                return listingRepository
-                                .findAllBySellerUsernameIgnoreCaseAndStatus(
-                                                username.trim(),
-                                                ListingStatus.ACTIVE,
-                                                pageable)
-                                .map(this::toResponse);
+                Page<Listing> page = listingRepository.findAllBySellerUsernameIgnoreCaseAndStatus(
+                                username.trim(),
+                                ListingStatus.ACTIVE,
+                                pageable);
+                return mapToResponsePage(page);
         }
 
         @Override
@@ -441,12 +472,11 @@ public class ListingServiceImpl implements ListingService {
 
                 List<UUID> categoryIds = categoryService.getSelfAndDescendantCategoryIds(categoryId);
 
-                return listingRepository
-                                .findAllByCategoryIdInAndStatus(
-                                                categoryIds,
-                                                ListingStatus.ACTIVE,
-                                                pageable)
-                                .map(this::toResponse);
+                Page<Listing> page = listingRepository.findAllByCategoryIdInAndStatus(
+                                categoryIds,
+                                ListingStatus.ACTIVE,
+                                pageable);
+                return mapToResponsePage(page);
         }
 
         @Override
@@ -491,7 +521,7 @@ public class ListingServiceImpl implements ListingService {
                                                 ListingStatus.ACTIVE,
                                                 pageable);
 
-                return page.map(this::toResponse);
+                return mapToResponsePage(page);
         }
 
         private Listing getOwnedListing(UUID id) {
@@ -704,6 +734,82 @@ public class ListingServiceImpl implements ListingService {
                 return breadcrumbs;
         }
 
+        private Page<ListingResponse> mapToResponsePage(Page<Listing> page) {
+                if (page.isEmpty()) {
+                        return page.map(l -> toResponse(l, false, false, 0L, 0L));
+                }
+                List<UUID> listingIds = page.getContent().stream().map(Listing::getId).toList();
+                Set<UUID> favoritedIds = getFavoritedListingIdsForCurrentUser(listingIds);
+                Map<UUID, Long> viewCounts = getViewCountsMap(listingIds);
+                Map<UUID, Long> favoriteCounts = getFavoriteCountsMap(listingIds);
+
+                return page.map(listing -> toResponse(
+                                listing,
+                                false,
+                                favoritedIds.contains(listing.getId()),
+                                viewCounts.getOrDefault(listing.getId(), 0L),
+                                favoriteCounts.getOrDefault(listing.getId(), 0L)));
+        }
+
+        private Map<UUID, Long> getViewCountsMap(Collection<UUID> listingIds) {
+                if (listingIds == null || listingIds.isEmpty()) {
+                        return Collections.emptyMap();
+                }
+                Map<UUID, Long> map = new HashMap<>();
+                List<Object[]> rows = listingStatsRepository.findViewCountsByListingIdIn(listingIds);
+                for (Object[] row : rows) {
+                        if (row[0] instanceof UUID id && row[1] instanceof Number count) {
+                                map.put(id, count.longValue());
+                        }
+                }
+                return map;
+        }
+
+        private Map<UUID, Long> getFavoriteCountsMap(Collection<UUID> listingIds) {
+                if (listingIds == null || listingIds.isEmpty()) {
+                        return Collections.emptyMap();
+                }
+                Map<UUID, Long> map = new HashMap<>();
+                List<Object[]> rows = listingFavoriteRepository.findFavoriteCountsByListingIdIn(listingIds);
+                for (Object[] row : rows) {
+                        if (row[0] instanceof UUID id && row[1] instanceof Number count) {
+                                map.put(id, count.longValue());
+                        }
+                }
+                return map;
+        }
+
+        private boolean isListingFavoritedByCurrentUser(UUID listingId) {
+                return SecurityUtils.getCurrentUserOptional()
+                                .map(auth -> listingFavoriteRepository.existsByUserIdAndListingId(SecurityUtils.getCurrentUserId(), listingId))
+                                .orElse(false);
+        }
+
+        private Set<UUID> getFavoritedListingIdsForCurrentUser(Collection<UUID> listingIds) {
+                if (listingIds == null || listingIds.isEmpty()) {
+                        return Collections.emptySet();
+                }
+                return SecurityUtils.getCurrentUserOptional()
+                                .map(auth -> listingFavoriteRepository.findFavoritedListingIds(SecurityUtils.getCurrentUserId(), listingIds))
+                                .orElse(Collections.emptySet());
+        }
+
+        private Listing resolveListing(String idOrSlug) {
+                if (idOrSlug == null || idOrSlug.isBlank()) {
+                        throw new ResourceNotFoundException("Listing identifier is required.");
+                }
+                try {
+                        UUID id = UUID.fromString(idOrSlug);
+                        Optional<Listing> byId = listingRepository.findById(id);
+                        if (byId.isPresent()) {
+                                return byId.get();
+                        }
+                } catch (IllegalArgumentException ignored) {
+                }
+                return listingRepository.findBySlug(idOrSlug)
+                                .orElseThrow(() -> new ResourceNotFoundException("Listing not found: " + idOrSlug));
+        }
+
         private ListingResponse toResponse(Listing listing) {
                 return toResponse(listing, false);
         }
@@ -711,6 +817,18 @@ public class ListingServiceImpl implements ListingService {
         private ListingResponse toResponse(
                         Listing listing,
                         boolean includeSellerContact) {
+                long viewCount = listingStatsRepository.findViewCountByListingId(listing.getId()).orElse(0L);
+                long favoriteCount = listingFavoriteRepository.countByListingId(listing.getId());
+                boolean isFavorited = isListingFavoritedByCurrentUser(listing.getId());
+                return toResponse(listing, includeSellerContact, isFavorited, viewCount, favoriteCount);
+        }
+
+        private ListingResponse toResponse(
+                        Listing listing,
+                        boolean includeSellerContact,
+                        boolean isFavorited,
+                        long viewCount,
+                        long favoriteCount) {
 
                 List<ListingImageResponse> images = imageRepository
                                 .findAllByListingIdOrderByDisplayOrderAsc(
@@ -756,8 +874,9 @@ public class ListingServiceImpl implements ListingService {
                                 listing.getCustomAttributes(),
                                 listing.getStatus(),
                                 listing.getModerationStatus(),
-                                listing.getViewCount(),
-                                listing.getFavoriteCount(),
+                                viewCount,
+                                favoriteCount,
+                                isFavorited,
                                 images,
                                 listing.getPublishedAt(),
                                 listing.getCreatedAt(),
