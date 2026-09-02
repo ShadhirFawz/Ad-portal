@@ -96,6 +96,9 @@ public class SecurityConfig {
                                 .requestMatchers(HttpMethod.GET, "/api/v1/listings/mine")
                                 .authenticated()
 
+                                .requestMatchers(HttpMethod.GET, "/api/v1/listings/{listingId}/auction/seller")
+                                .authenticated()
+
                                 .requestMatchers(HttpMethod.POST, "/api/v1/listings", "/api/v1/listings/**")
                                 .authenticated()
 
