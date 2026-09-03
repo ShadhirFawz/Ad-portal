@@ -82,7 +82,9 @@ public record ListingResponse(
 
         OffsetDateTime updatedAt,
 
-        String sellerPhoneNumber
+        String sellerPhoneNumber,
+
+        boolean hasActiveAuction
 
 ) {
 }
