@@ -6,6 +6,9 @@ import java.util.UUID;
 
 public record AuctionBidDetail(
         UUID bidId,
+        UUID bidderId,
+        String bidderFirstName,
+        String bidderLastName,
         String bidderUsername,
         String bidderAvatarUrl,
         BigDecimal amount,
