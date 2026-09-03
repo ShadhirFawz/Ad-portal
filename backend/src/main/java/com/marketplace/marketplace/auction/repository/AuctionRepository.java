@@ -8,7 +8,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.OffsetDateTime;
+import java.util.Collection;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 public interface AuctionRepository extends JpaRepository<Auction, UUID> {
@@ -24,6 +26,11 @@ public interface AuctionRepository extends JpaRepository<Auction, UUID> {
     boolean existsByListingId(UUID listingId);
 
     boolean existsBySellerIdAndStatus(UUID sellerId, AuctionStatus status);
+
+    /** Returns the IDs of listings that currently have an ACTIVE auction among the given set. */
+    @Query("SELECT a.listing.id FROM Auction a WHERE a.listing.id IN :listingIds AND a.status = 'ACTIVE' AND a.endsAt > :now")
+    Set<UUID> findActiveAuctionListingIds(@Param("listingIds") Collection<UUID> listingIds,
+                                          @Param("now") OffsetDateTime now);
 
     @Modifying
     @Query("UPDATE Auction a SET a.status = 'CLOSED' WHERE a.seller.id = :sellerId AND a.status = 'ACTIVE' AND a.endsAt <= :now")
