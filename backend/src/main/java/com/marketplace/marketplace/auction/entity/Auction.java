@@ -16,6 +16,8 @@ import java.util.UUID;
         @Index(name = "idx_auctions_listing_id", columnList = "listing_id"),
         @Index(name = "idx_auctions_seller_id", columnList = "seller_id"),
         @Index(name = "idx_auctions_status", columnList = "status")
+}, uniqueConstraints = {
+        @UniqueConstraint(name = "uq_auctions_listing_id", columnNames = {"listing_id"})
 })
 @Getter
 @Setter

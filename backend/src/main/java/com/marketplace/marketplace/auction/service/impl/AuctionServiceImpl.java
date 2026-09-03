@@ -68,11 +68,23 @@ public class AuctionServiceImpl implements AuctionService {
                     "Auctions can only be started on negotiable listings with a set price.");
         }
 
-        if (auctionRepository.findByListingIdAndStatus(listingId, AuctionStatus.ACTIVE).isPresent()) {
-            throw new ConflictException("This listing already has an active auction.");
+        // 1. Only one auction is allowed for a particular listing overall
+        if (auctionRepository.existsByListingId(listingId)) {
+            throw new ConflictException(
+                    "An auction has already been created for this listing. Only one auction is allowed per listing.");
         }
 
         OffsetDateTime now = OffsetDateTime.now();
+
+        // 2. Only one active auction is allowed per seller at a time
+        // First lazily close any expired auctions belonging to the seller so they aren't blocked by past auctions
+        auctionRepository.closeExpiredAuctionsForSeller(seller.getId(), now);
+
+        if (auctionRepository.existsBySellerIdAndStatus(seller.getId(), AuctionStatus.ACTIVE)) {
+            throw new ConflictException(
+                    "You already have an active auction in progress. Only one active auction is allowed per seller at a time.");
+        }
+
         Auction auction = new Auction();
         auction.setListing(listing);
         auction.setSeller(seller);
