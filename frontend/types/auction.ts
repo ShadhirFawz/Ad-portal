@@ -22,8 +22,11 @@ export interface AuctionPublicResponse {
 
 export interface AuctionBidDetail {
   bidId: string;
-  bidderUsername: string | null;
-  bidderAvatarUrl: string | null;
+  bidderId?: string | null;
+  bidderFirstName?: string | null;
+  bidderLastName?: string | null;
+  bidderUsername?: string | null;
+  bidderAvatarUrl?: string | null;
   amount: number;
   placedAt: string;
   isWinning: boolean;

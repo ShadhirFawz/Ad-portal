@@ -74,8 +74,10 @@ function useCountdown(endsAt: string | null, hasEnded: boolean) {
       return;
     }
 
+    const targetEndsAt = endsAt;
+
     function tick() {
-      const diff = new Date(endsAt).getTime() - Date.now();
+      const diff = new Date(targetEndsAt).getTime() - Date.now();
       setRemainingMs(Math.max(0, diff));
     }
 
@@ -119,38 +121,88 @@ function SellerBidTable({
           </tr>
         </thead>
         <tbody>
-          {bids.map((bid) => (
-            <tr
-              key={bid.bidId}
-              className={`border-t border-slate-100 dark:border-slate-800 ${bid.isWinning
-                ? "bg-emerald-50/80 dark:bg-emerald-950/30"
-                : ""
-                }`}
-            >
-              <td className="px-4 py-3">
-                <div className="flex items-center gap-2">
-                  <ProfileAvatar
-                    avatarUrl={bid.bidderAvatarUrl}
-                    username={bid.bidderUsername}
-                    size={32}
-                    alt=""
-                  />
-                  <span className="font-medium text-slate-800 dark:text-slate-200">
-                    @{bid.bidderUsername ?? "bidder"}
-                    {bid.isWinning && (
-                      <Trophy className="inline w-3.5 h-3.5 ml-1 text-amber-500" />
-                    )}
+          {bids.map((bid) => {
+            const profileTarget = bid.bidderUsername
+              ? `/profile/${encodeURIComponent(bid.bidderUsername)}`
+              : bid.bidderId
+                ? `/profile/${encodeURIComponent(bid.bidderId)}`
+                : null;
+
+            const displayName =
+              bid.bidderFirstName ||
+              (bid.bidderUsername ? `@${bid.bidderUsername}` : "Bidder");
+
+            const subtitle =
+              bid.bidderFirstName && bid.bidderUsername
+                ? `@${bid.bidderUsername}`
+                : bid.bidderLastName
+                  ? bid.bidderLastName
+                  : null;
+
+            const bidderCardContent = (
+              <>
+                <ProfileAvatar
+                  avatarUrl={bid.bidderAvatarUrl}
+                  firstName={bid.bidderFirstName}
+                  username={bid.bidderUsername}
+                  size={28}
+                  alt={displayName}
+                />
+                <div className="flex flex-col min-w-0">
+                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors truncate">
+                    {displayName}
                   </span>
+                  {subtitle && (
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500 truncate -mt-0.5">
+                      {subtitle}
+                    </span>
+                  )}
                 </div>
-              </td>
-              <td className="px-4 py-3 font-bold text-emerald-600 dark:text-emerald-400">
-                {formatAmount(bid.amount, currency)}
-              </td>
-              <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs">
-                {new Date(bid.placedAt).toLocaleString()}
-              </td>
-            </tr>
-          ))}
+                {bid.isWinning && (
+                  <span
+                    className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 border border-amber-200/80 dark:border-amber-800/60 px-1.5 py-0.5 rounded-md ml-1 shrink-0"
+                    title="Highest / Winning Bid"
+                  >
+                    <Trophy className="w-3 h-3 text-amber-500" />
+                    Winner
+                  </span>
+                )}
+              </>
+            );
+
+            return (
+              <tr
+                key={bid.bidId}
+                className={`border-t border-slate-100 dark:border-slate-800 ${
+                  bid.isWinning
+                    ? "bg-emerald-50/60 dark:bg-emerald-950/25"
+                    : "hover:bg-slate-50/60 dark:hover:bg-slate-800/40"
+                } transition-colors`}
+              >
+                <td className="px-4 py-3">
+                  {profileTarget ? (
+                    <Link
+                      href={profileTarget}
+                      className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 hover:border-emerald-500/50 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition-all group max-w-full shadow-2xs cursor-pointer"
+                      title={`View ${displayName}'s profile`}
+                    >
+                      {bidderCardContent}
+                    </Link>
+                  ) : (
+                    <div className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 max-w-full">
+                      {bidderCardContent}
+                    </div>
+                  )}
+                </td>
+                <td className="px-4 py-3 font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                  {formatAmount(bid.amount, currency)}
+                </td>
+                <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs whitespace-nowrap">
+                  {new Date(bid.placedAt).toLocaleString()}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

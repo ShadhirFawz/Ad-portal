@@ -250,11 +250,23 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public UserResponse getPublicProfile(String username) {
 
-        User user = userRepository
-                .findByUsernameIgnoreCase(username)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found."));
+        User user = null;
+        if (username != null && !username.isBlank()) {
+            try {
+                UUID id = UUID.fromString(username.trim());
+                user = userRepository.findById(id).orElse(null);
+            } catch (IllegalArgumentException ignored) {
+                // Not a UUID, look up by username
+            }
 
-        if (!user.getPublicProfile() || user.getStatus() != UserStatus.ACTIVE) {
+            if (user == null) {
+                user = userRepository
+                        .findByUsernameIgnoreCase(username.trim())
+                        .orElse(null);
+            }
+        }
+
+        if (user == null || !Boolean.TRUE.equals(user.getPublicProfile()) || user.getStatus() != UserStatus.ACTIVE) {
             throw new ResourceNotFoundException("User not found.");
         }
 

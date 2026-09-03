@@ -306,6 +306,9 @@ public class AuctionServiceImpl implements AuctionService {
                 .stream()
                 .map(bid -> new AuctionBidDetail(
                         bid.getId(),
+                        bid.getBidder().getId(),
+                        bid.getBidder().getFirstName(),
+                        bid.getBidder().getLastName(),
                         bid.getBidder().getUsername(),
                         resolveAvatarUrl(bid.getBidder().getAvatarUrl()),
                         bid.getAmount(),
