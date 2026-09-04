@@ -88,6 +88,7 @@ export interface Listing {
   viewCount: number;
   favoriteCount: number;
   isFavorited?: boolean;
+  isBookmarked?: boolean;
 
   hasActiveAuction?: boolean;
 
@@ -98,6 +99,11 @@ export interface Listing {
 
   createdAt: string;
   updatedAt: string;
+}
+
+export interface BookmarkResponse {
+  listingId: string;
+  isBookmarked: boolean;
 }
 
 export interface CreateListingRequest {
@@ -171,6 +177,7 @@ export interface ListingCardData {
   viewCount?: number;
   favoriteCount?: number;
   isFavorited?: boolean;
+  isBookmarked?: boolean;
   hasActiveAuction?: boolean;
   publishedAt?: string | null;
   createdAt?: string;
