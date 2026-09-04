@@ -159,6 +159,52 @@ export async function getMyListings(
   return response.data;
 }
 
+export async function getMyFavorites(
+  accessToken?: string | null,
+  page = 0,
+  size = 20
+): Promise<PageResponse<Listing>> {
+  const headers: Record<string, string> = {};
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
+
+  const response =
+    await apiRequest<
+      ApiResponse<PageResponse<Listing>>
+    >(
+      `/listings/favorites?page=${page}&size=${size}`,
+      {
+        headers,
+      }
+    );
+
+  return response.data;
+}
+
+export async function getMyBookmarks(
+  accessToken?: string | null,
+  page = 0,
+  size = 20
+): Promise<PageResponse<Listing>> {
+  const headers: Record<string, string> = {};
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
+
+  const response =
+    await apiRequest<
+      ApiResponse<PageResponse<Listing>>
+    >(
+      `/listings/bookmarks?page=${page}&size=${size}`,
+      {
+        headers,
+      }
+    );
+
+  return response.data;
+}
+
 export interface ListingQueryParams {
   page?: number;
   size?: number;
@@ -308,6 +354,31 @@ export async function toggleFavoriteListing(
 
   const response = await apiRequest<ApiResponse<FavoriteResponse>>(
     `/listings/${encodeURIComponent(idOrSlug)}/favorite`,
+    {
+      method: "POST",
+      headers,
+    }
+  );
+
+  return response.data;
+}
+
+export interface BookmarkResponse {
+  listingId: string;
+  isBookmarked: boolean;
+}
+
+export async function toggleBookmarkListing(
+  accessToken: string | undefined | null,
+  idOrSlug: string
+): Promise<BookmarkResponse> {
+  const headers: Record<string, string> = {};
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
+
+  const response = await apiRequest<ApiResponse<BookmarkResponse>>(
+    `/listings/${encodeURIComponent(idOrSlug)}/bookmark`,
     {
       method: "POST",
       headers,
