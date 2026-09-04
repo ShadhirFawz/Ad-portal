@@ -10,10 +10,12 @@ import com.marketplace.marketplace.common.security.util.SecurityUtils;
 import com.marketplace.marketplace.listing.dto.request.CreateListingRequest;
 import com.marketplace.marketplace.listing.dto.request.ListingFilterParams;
 import com.marketplace.marketplace.listing.dto.request.UpdateListingRequest;
+import com.marketplace.marketplace.listing.dto.response.ListingBookmarkResponse;
 import com.marketplace.marketplace.listing.dto.response.ListingFavoriteResponse;
 import com.marketplace.marketplace.listing.dto.response.ListingImageResponse;
 import com.marketplace.marketplace.listing.dto.response.ListingResponse;
 import com.marketplace.marketplace.listing.entity.Listing;
+import com.marketplace.marketplace.listing.entity.ListingBookmark;
 import com.marketplace.marketplace.listing.entity.ListingFavorite;
 import com.marketplace.marketplace.listing.entity.ListingStats;
 import com.marketplace.marketplace.listing.enums.ListingLocationType;
@@ -22,6 +24,7 @@ import com.marketplace.marketplace.listing.enums.ListingType;
 import com.marketplace.marketplace.listing.enums.ModerationStatus;
 import com.marketplace.marketplace.listing.enums.PricingType;
 import com.marketplace.marketplace.listing.mapper.ListingImageMapper;
+import com.marketplace.marketplace.listing.repository.ListingBookmarkRepository;
 import com.marketplace.marketplace.listing.repository.ListingFavoriteRepository;
 import com.marketplace.marketplace.listing.repository.ListingImageRepository;
 import com.marketplace.marketplace.listing.repository.ListingRepository;
@@ -60,6 +63,7 @@ public class ListingServiceImpl implements ListingService {
         private final ListingImageRepository imageRepository;
         private final ListingImageMapper imageMapper;
         private final ListingFavoriteRepository listingFavoriteRepository;
+        private final ListingBookmarkRepository listingBookmarkRepository;
         private final ListingStatsRepository listingStatsRepository;
         private final AuctionRepository auctionRepository;
 
@@ -154,7 +158,7 @@ public class ListingServiceImpl implements ListingService {
                 Listing saved = listingRepository.save(listing);
                 listingStatsRepository.save(new ListingStats(saved.getId(), 0L));
 
-                return toResponse(saved, false, false, 0L, 0L, false);
+                return toResponse(saved, false, false, false, 0L, 0L, false);
         }
 
         @Override
@@ -238,6 +242,29 @@ public class ListingServiceImpl implements ListingService {
                 long favoriteCount = listingFavoriteRepository.countByListingId(listing.getId());
 
                 return new ListingFavoriteResponse(listing.getId(), isFavorited, favoriteCount);
+        }
+
+        @Override
+        @Transactional
+        public ListingBookmarkResponse toggleBookmark(String idOrSlug) {
+
+                User currentUser = getCurrentUser();
+                Listing listing = resolveListing(idOrSlug);
+
+                Optional<ListingBookmark> existing = listingBookmarkRepository
+                                .findByUserIdAndListingId(currentUser.getId(), listing.getId());
+
+                boolean isBookmarked;
+                if (existing.isPresent()) {
+                        listingBookmarkRepository.delete(existing.get());
+                        isBookmarked = false;
+                } else {
+                        ListingBookmark bookmark = new ListingBookmark(currentUser, listing);
+                        listingBookmarkRepository.save(bookmark);
+                        isBookmarked = true;
+                }
+
+                return new ListingBookmarkResponse(listing.getId(), isBookmarked);
         }
 
         @Override
@@ -429,6 +456,30 @@ public class ListingServiceImpl implements ListingService {
 
                 Page<Listing> page = listingRepository.findAllBySellerId(userId, pageable);
                 return mapToResponsePage(page);
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public Page<ListingResponse> getMyFavorites(
+                        Pageable pageable) {
+
+                UUID userId = SecurityUtils.getCurrentUserId();
+
+                Page<ListingFavorite> page = listingFavoriteRepository
+                                .findAllByUserIdOrderByCreatedAtDesc(userId, pageable);
+                return mapToResponsePage(page.map(ListingFavorite::getListing));
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public Page<ListingResponse> getMyBookmarks(
+                        Pageable pageable) {
+
+                UUID userId = SecurityUtils.getCurrentUserId();
+
+                Page<ListingBookmark> page = listingBookmarkRepository
+                                .findAllByUserIdOrderByCreatedAtDesc(userId, pageable);
+                return mapToResponsePage(page.map(ListingBookmark::getListing));
         }
 
         @Override
@@ -738,10 +789,11 @@ public class ListingServiceImpl implements ListingService {
 
         private Page<ListingResponse> mapToResponsePage(Page<Listing> page) {
                 if (page.isEmpty()) {
-                        return page.map(l -> toResponse(l, false, false, 0L, 0L, false));
+                        return page.map(l -> toResponse(l, false, false, false, 0L, 0L, false));
                 }
                 List<UUID> listingIds = page.getContent().stream().map(Listing::getId).toList();
                 Set<UUID> favoritedIds = getFavoritedListingIdsForCurrentUser(listingIds);
+                Set<UUID> bookmarkedIds = getBookmarkedListingIdsForCurrentUser(listingIds);
                 Map<UUID, Long> viewCounts = getViewCountsMap(listingIds);
                 Map<UUID, Long> favoriteCounts = getFavoriteCountsMap(listingIds);
                 Set<UUID> activeAuctionListingIds = auctionRepository
@@ -751,6 +803,7 @@ public class ListingServiceImpl implements ListingService {
                                 listing,
                                 false,
                                 favoritedIds.contains(listing.getId()),
+                                bookmarkedIds.contains(listing.getId()),
                                 viewCounts.getOrDefault(listing.getId(), 0L),
                                 favoriteCounts.getOrDefault(listing.getId(), 0L),
                                 activeAuctionListingIds.contains(listing.getId())));
@@ -799,6 +852,21 @@ public class ListingServiceImpl implements ListingService {
                                 .orElse(Collections.emptySet());
         }
 
+        private boolean isListingBookmarkedByCurrentUser(UUID listingId) {
+                return SecurityUtils.getCurrentUserOptional()
+                                .map(auth -> listingBookmarkRepository.existsByUserIdAndListingId(SecurityUtils.getCurrentUserId(), listingId))
+                                .orElse(false);
+        }
+
+        private Set<UUID> getBookmarkedListingIdsForCurrentUser(Collection<UUID> listingIds) {
+                if (listingIds == null || listingIds.isEmpty()) {
+                        return Collections.emptySet();
+                }
+                return SecurityUtils.getCurrentUserOptional()
+                                .map(auth -> listingBookmarkRepository.findBookmarkedListingIds(SecurityUtils.getCurrentUserId(), listingIds))
+                                .orElse(Collections.emptySet());
+        }
+
         private Listing resolveListing(String idOrSlug) {
                 if (idOrSlug == null || idOrSlug.isBlank()) {
                         throw new ResourceNotFoundException("Listing identifier is required.");
@@ -825,7 +893,8 @@ public class ListingServiceImpl implements ListingService {
                 long viewCount = listingStatsRepository.findViewCountByListingId(listing.getId()).orElse(0L);
                 long favoriteCount = listingFavoriteRepository.countByListingId(listing.getId());
                 boolean isFavorited = isListingFavoritedByCurrentUser(listing.getId());
-                return toResponse(listing, includeSellerContact, isFavorited, viewCount, favoriteCount);
+                boolean isBookmarked = isListingBookmarkedByCurrentUser(listing.getId());
+                return toResponse(listing, includeSellerContact, isFavorited, isBookmarked, viewCount, favoriteCount);
         }
 
         private ListingResponse toResponse(
@@ -834,18 +903,30 @@ public class ListingServiceImpl implements ListingService {
                         boolean isFavorited,
                         long viewCount,
                         long favoriteCount) {
-                boolean hasActiveAuction = auctionRepository
-                                .findByListingIdAndStatus(listing.getId(),
-                                                com.marketplace.marketplace.auction.enums.AuctionStatus.ACTIVE)
-                                .map(a -> a.getEndsAt().isAfter(java.time.OffsetDateTime.now()))
-                                .orElse(false);
-                return toResponse(listing, includeSellerContact, isFavorited, viewCount, favoriteCount, hasActiveAuction);
+                boolean isBookmarked = isListingBookmarkedByCurrentUser(listing.getId());
+                return toResponse(listing, includeSellerContact, isFavorited, isBookmarked, viewCount, favoriteCount);
         }
 
         private ListingResponse toResponse(
                         Listing listing,
                         boolean includeSellerContact,
                         boolean isFavorited,
+                        boolean isBookmarked,
+                        long viewCount,
+                        long favoriteCount) {
+                boolean hasActiveAuction = auctionRepository
+                                .findByListingIdAndStatus(listing.getId(),
+                                                com.marketplace.marketplace.auction.enums.AuctionStatus.ACTIVE)
+                                .map(a -> a.getEndsAt().isAfter(java.time.OffsetDateTime.now()))
+                                .orElse(false);
+                return toResponse(listing, includeSellerContact, isFavorited, isBookmarked, viewCount, favoriteCount, hasActiveAuction);
+        }
+
+        private ListingResponse toResponse(
+                        Listing listing,
+                        boolean includeSellerContact,
+                        boolean isFavorited,
+                        boolean isBookmarked,
                         long viewCount,
                         long favoriteCount,
                         boolean hasActiveAuction) {
@@ -902,7 +983,8 @@ public class ListingServiceImpl implements ListingService {
                                 listing.getCreatedAt(),
                                 listing.getUpdatedAt(),
                                 sellerPhoneNumber,
-                                hasActiveAuction);
+                                hasActiveAuction,
+                                isBookmarked);
         }
 
         private String generateUniqueSlug(String title, UUID listingId) {

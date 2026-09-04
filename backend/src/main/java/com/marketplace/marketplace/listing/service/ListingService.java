@@ -3,6 +3,7 @@ package com.marketplace.marketplace.listing.service;
 import com.marketplace.marketplace.listing.dto.request.CreateListingRequest;
 import com.marketplace.marketplace.listing.dto.request.ListingFilterParams;
 import com.marketplace.marketplace.listing.dto.request.UpdateListingRequest;
+import com.marketplace.marketplace.listing.dto.response.ListingBookmarkResponse;
 import com.marketplace.marketplace.listing.dto.response.ListingFavoriteResponse;
 import com.marketplace.marketplace.listing.dto.response.ListingResponse;
 import org.springframework.data.domain.Page;
@@ -37,7 +38,16 @@ public interface ListingService {
         ListingFavoriteResponse toggleFavorite(
                         String idOrSlug);
 
+        ListingBookmarkResponse toggleBookmark(
+                        String idOrSlug);
+
         Page<ListingResponse> getMyListings(
+                        Pageable pageable);
+
+        Page<ListingResponse> getMyFavorites(
+                        Pageable pageable);
+
+        Page<ListingResponse> getMyBookmarks(
                         Pageable pageable);
 
         Page<ListingResponse> getActiveListings(

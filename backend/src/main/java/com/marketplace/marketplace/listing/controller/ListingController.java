@@ -4,6 +4,7 @@ import com.marketplace.marketplace.common.response.ApiResponse;
 import com.marketplace.marketplace.listing.dto.request.CreateListingRequest;
 import com.marketplace.marketplace.listing.dto.request.ListingFilterParams;
 import com.marketplace.marketplace.listing.dto.request.UpdateListingRequest;
+import com.marketplace.marketplace.listing.dto.response.ListingBookmarkResponse;
 import com.marketplace.marketplace.listing.dto.response.ListingFavoriteResponse;
 import com.marketplace.marketplace.listing.dto.response.ListingResponse;
 import com.marketplace.marketplace.listing.enums.ListingCondition;
@@ -14,6 +15,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -27,6 +29,7 @@ public class ListingController {
     private final ListingService listingService;
 
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<ListingResponse> create(
             @Valid @RequestBody CreateListingRequest request) {
 
@@ -42,6 +45,24 @@ public class ListingController {
         return ApiResponse.success(
                 "Listings retrieved successfully.",
                 listingService.getMyListings(pageable));
+    }
+
+    @GetMapping("/favorites")
+    public ApiResponse<Page<ListingResponse>> getMyFavorites(
+            Pageable pageable) {
+
+        return ApiResponse.success(
+                "Favorite listings retrieved successfully.",
+                listingService.getMyFavorites(pageable));
+    }
+
+    @GetMapping("/bookmarks")
+    public ApiResponse<Page<ListingResponse>> getMyBookmarks(
+            Pageable pageable) {
+
+        return ApiResponse.success(
+                "Bookmarked listings retrieved successfully.",
+                listingService.getMyBookmarks(pageable));
     }
 
     @GetMapping("/user/{username}")
@@ -128,6 +149,15 @@ public class ListingController {
         return ApiResponse.success(
                 "Favorite updated successfully.",
                 listingService.toggleFavorite(idOrSlug));
+    }
+
+    @PostMapping("/{idOrSlug}/bookmark")
+    public ApiResponse<ListingBookmarkResponse> toggleBookmark(
+            @PathVariable String idOrSlug) {
+
+        return ApiResponse.success(
+                "Bookmark updated successfully.",
+                listingService.toggleBookmark(idOrSlug));
     }
 
     @PatchMapping("/{id}")
