@@ -154,7 +154,7 @@ public class ListingServiceImpl implements ListingService {
                 Listing saved = listingRepository.save(listing);
                 listingStatsRepository.save(new ListingStats(saved.getId(), 0L));
 
-                return toResponse(saved, false, false, 0L, 0L);
+                return toResponse(saved, false, false, 0L, 0L, false);
         }
 
         @Override
@@ -825,6 +825,15 @@ public class ListingServiceImpl implements ListingService {
                 long viewCount = listingStatsRepository.findViewCountByListingId(listing.getId()).orElse(0L);
                 long favoriteCount = listingFavoriteRepository.countByListingId(listing.getId());
                 boolean isFavorited = isListingFavoritedByCurrentUser(listing.getId());
+                return toResponse(listing, includeSellerContact, isFavorited, viewCount, favoriteCount);
+        }
+
+        private ListingResponse toResponse(
+                        Listing listing,
+                        boolean includeSellerContact,
+                        boolean isFavorited,
+                        long viewCount,
+                        long favoriteCount) {
                 boolean hasActiveAuction = auctionRepository
                                 .findByListingIdAndStatus(listing.getId(),
                                                 com.marketplace.marketplace.auction.enums.AuctionStatus.ACTIVE)
