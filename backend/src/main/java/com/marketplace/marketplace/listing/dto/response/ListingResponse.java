@@ -84,7 +84,9 @@ public record ListingResponse(
 
         String sellerPhoneNumber,
 
-        boolean hasActiveAuction
+        boolean hasActiveAuction,
+
+        boolean isBookmarked
 
 ) {
 }
