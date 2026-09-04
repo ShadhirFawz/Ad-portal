@@ -2,9 +2,12 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useEffect, useRef, useState, useCallback } from "react";
 import type { Listing, ListingCardData } from "@/types/listing";
 import type { ListingImage } from "@/types/listing-image";
-import { MapPin, Clock, Tag, Gavel } from "lucide-react";
+import { MapPin, Clock, Tag, Gavel, MoreVertical, Bookmark, Loader2 } from "lucide-react";
+import { toggleBookmarkListing } from "@/lib/api/listings";
+import { useAuth } from "@/providers/AuthProvider";
 
 interface ListingCardProps {
   listing: Listing | ListingCardData;
@@ -31,6 +34,53 @@ export default function ListingCard({
   className = "",
   layout = "grid",
 }: ListingCardProps) {
+  const { accessToken } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [bookmarking, setBookmarking] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(
+    "isBookmarked" in listing ? (listing.isBookmarked ?? false) : false
+  );
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuOpen]);
+
+  const handleBookmark = useCallback(
+    async (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!accessToken) return;
+      if (bookmarking) return;
+      setMenuOpen(false);
+      setBookmarking(true);
+      try {
+        const idOrSlug = listing.slug || String(listing.id);
+        const result = await toggleBookmarkListing(accessToken, idOrSlug);
+        setIsBookmarked(result.isBookmarked);
+      } catch {
+        // silently fail
+      } finally {
+        setBookmarking(false);
+      }
+    },
+    [accessToken, bookmarking, listing]
+  );
+
+  const handleMenuToggle = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setMenuOpen((prev) => !prev);
+  };
+
   const resolvedPrimaryImage =
     listing.primaryImage?.url
       ? listing.primaryImage
@@ -81,6 +131,36 @@ export default function ListingCard({
       : listing.createdAt) as string
   );
 
+  /** Shared dropdown content */
+  const MenuDropdown = () => (
+    <div className="absolute right-0 top-8 min-w-[140px] rounded-xl border border-slate-200 bg-white py-1 shadow-xl dark:border-slate-700 dark:bg-slate-800">
+      {accessToken ? (
+        <button
+          type="button"
+          onClick={handleBookmark}
+          className="flex w-full items-center gap-2.5 px-3.5 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-700/60"
+        >
+          <Bookmark
+            className={`w-4 h-4 shrink-0 ${
+              isBookmarked
+                ? "fill-slate-800 text-slate-800 dark:fill-slate-100 dark:text-slate-100"
+                : "text-slate-500 dark:text-slate-400"
+            }`}
+          />
+          <span>{isBookmarked ? "Bookmarked" : "Bookmark"}</span>
+        </button>
+      ) : (
+        <Link
+          href="/auth/login"
+          className="flex w-full items-center gap-2.5 px-3.5 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-700/60"
+        >
+          <Bookmark className="w-4 h-4 shrink-0 text-slate-500" />
+          <span>Bookmark</span>
+        </Link>
+      )}
+    </div>
+  );
+
   if (layout === "row") {
     return (
       <article
@@ -95,6 +175,27 @@ export default function ListingCard({
             </div>
           </div>
         )}
+
+        {/* Ellipsis Menu - Row layout */}
+        <div
+          ref={menuRef}
+          className={`absolute z-30 ${listing.hasActiveAuction ? "top-9 right-2" : "top-2 right-2"}`}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+        >
+          <button
+            type="button"
+            aria-label="More options"
+            onClick={handleMenuToggle}
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-white/80 text-slate-600 backdrop-blur-sm shadow-sm transition-all duration-150 hover:bg-white hover:text-slate-900 dark:bg-slate-800/80 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
+          >
+            {bookmarking ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <MoreVertical className="w-3.5 h-3.5" />
+            )}
+          </button>
+          {menuOpen && <MenuDropdown />}
+        </div>
 
         <Link href={targetHref} className="flex w-full">
           {/* Thumbnail Container */}
@@ -173,7 +274,7 @@ export default function ListingCard({
               </div>
 
               {/* Title */}
-              <h3 className="line-clamp-1 sm:line-clamp-2 text-xs sm:text-sm font-semibold text-slate-800 transition-colors group-hover:text-emerald-600 dark:text-slate-100 dark:group-hover:text-emerald-400 leading-snug break-words">
+              <h3 className="line-clamp-1 sm:line-clamp-2 text-xs sm:text-sm font-semibold tracking-tight text-slate-800 transition-colors group-hover:text-emerald-600 dark:text-slate-100 dark:group-hover:text-emerald-400 leading-snug break-words">
                 {listing.title}
               </h3>
 
@@ -221,6 +322,27 @@ export default function ListingCard({
     <article
       className={`group relative flex flex-col overflow-hidden rounded-xl sm:rounded-2xl border border-slate-200/80 bg-white transition-all duration-300 hover:-translate-y-0.5 hover:border-emerald-500/40 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900/90 dark:hover:border-emerald-500/30 h-full w-full ${className}`}
     >
+      {/* Ellipsis Menu - Grid layout */}
+      <div
+        ref={menuRef}
+        className="absolute top-2 right-2 z-30"
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+      >
+        <button
+          type="button"
+          aria-label="More options"
+          onClick={handleMenuToggle}
+          className="flex h-7 w-7 items-center justify-center rounded-full bg-white/80 text-slate-600 backdrop-blur-sm shadow-sm transition-all duration-150 hover:bg-white hover:text-slate-900 dark:bg-slate-800/80 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
+        >
+          {bookmarking ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <MoreVertical className="w-3.5 h-3.5" />
+          )}
+        </button>
+        {menuOpen && <MenuDropdown />}
+      </div>
+
       <Link href={targetHref} className="flex flex-col h-full">
         {/* Media Thumbnail */}
         <div className="relative aspect-4/3 w-full shrink-0 overflow-hidden bg-slate-100 dark:bg-slate-800">
