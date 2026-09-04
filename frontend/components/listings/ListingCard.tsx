@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Listing, ListingCardData } from "@/types/listing";
 import type { ListingImage } from "@/types/listing-image";
-import { MapPin, Clock, Tag } from "lucide-react";
+import { MapPin, Clock, Tag, Gavel } from "lucide-react";
 
 interface ListingCardProps {
   listing: Listing | ListingCardData;
@@ -86,6 +86,16 @@ export default function ListingCard({
       <article
         className={`group relative flex overflow-hidden rounded-xl sm:rounded-2xl border border-slate-200/80 bg-white transition-all duration-300 hover:border-emerald-500/40 hover:shadow-md dark:border-slate-800 dark:bg-slate-900/90 dark:hover:border-emerald-500/30 w-full ${className}`}
       >
+        {/* Live Auction Badge - Top Right Corner of Card */}
+        {listing.hasActiveAuction && (
+          <div className="absolute top-0 right-0 z-20 pointer-events-none">
+            <div className="flex items-center gap-1 rounded-bl-xl bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-1.5 text-[10px] font-bold text-white shadow-lg">
+              <Gavel className="w-3 h-3 shrink-0" />
+              Live Auction
+            </div>
+          </div>
+        )}
+
         <Link href={targetHref} className="flex w-full">
           {/* Thumbnail Container */}
           <div className="relative shrink-0 w-28 sm:w-36 md:w-40 self-stretch overflow-hidden bg-slate-100 dark:bg-slate-800">
@@ -151,10 +161,10 @@ export default function ListingCard({
                 {listing.status && listing.status !== "ACTIVE" && (
                   <span
                     className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${listing.status === "DRAFT"
-                        ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
-                        : listing.status === "SOLD"
-                          ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
-                          : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                      ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
+                      : listing.status === "SOLD"
+                        ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
+                        : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                       }`}
                   >
                     {listing.status}
@@ -255,6 +265,16 @@ export default function ListingCard({
             )}
           </div>
 
+          {/* Live Auction Badge */}
+          {listing.hasActiveAuction && (
+            <div className="absolute bottom-2 right-2 z-10 pointer-events-none">
+              <div className="flex items-center gap-1 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 px-2 py-1 text-[9px] font-bold text-white shadow-lg backdrop-blur-sm">
+                <Gavel className="w-3 h-3 shrink-0" />
+                Live Auction
+              </div>
+            </div>
+          )}
+
           {/* Category Tag */}
           {listing.categoryName && (
             <div className="absolute bottom-2 left-2 pointer-events-none z-10 max-w-[85%]">
@@ -276,10 +296,10 @@ export default function ListingCard({
               {listing.status && listing.status !== "ACTIVE" && (
                 <span
                   className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${listing.status === "DRAFT"
-                      ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
-                      : listing.status === "SOLD"
-                        ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
-                        : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                    ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
+                    : listing.status === "SOLD"
+                      ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
+                      : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                     }`}
                 >
                   {listing.status}

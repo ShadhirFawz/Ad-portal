@@ -9,6 +9,7 @@ import ListingImageGallery from "@/components/listings/ListingImageGallery";
 import ListingBreadcrumb from "@/components/listings/ListingBreadcrumb";
 import SimilarListingsColumn from "@/components/listings/SimilarListingsColumn";
 import RelatedCategoryListings from "@/components/listings/RelatedCategoryListings";
+import AuctionPanel from "@/components/listings/AuctionPanel";
 import LoginModal from "@/components/auth/LoginModal";
 import { formatTimeAgo } from "@/lib/format/time-ago";
 import {
@@ -233,7 +234,9 @@ export default function ListingDetailsPage() {
     );
   }
 
-  const isOwner = user?.id === listing.sellerId;
+  const isOwner =
+    Boolean(user?.id) &&
+    user!.id.trim().toLowerCase() === listing.sellerId.trim().toLowerCase();
   const isLoggedIn = Boolean(user);
 
   const locationParts = [listing.city, listing.district, listing.province].filter(
@@ -295,10 +298,10 @@ export default function ListingDetailsPage() {
                 {listing.status !== "ACTIVE" && (
                   <span
                     className={`rounded-md px-2.5 py-1 text-xs font-bold uppercase tracking-wider ${listing.status === "DRAFT"
-                        ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
-                        : listing.status === "SOLD"
-                          ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
-                          : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                      ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
+                      : listing.status === "SOLD"
+                        ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
+                        : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                       }`}
                   >
                     {formatListingStatus(listing.status)}
@@ -328,8 +331,8 @@ export default function ListingDetailsPage() {
                   onClick={handleToggleFavorite}
                   disabled={favoriting}
                   className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all duration-200 cursor-pointer shadow-xs min-w-[80px] justify-center ${listing.isFavorited
-                      ? "bg-rose-50 border-rose-200 text-rose-600 dark:bg-rose-950/50 dark:border-rose-900 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/60"
-                      : "bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-rose-300 hover:text-rose-500 hover:bg-rose-50/40 dark:hover:bg-rose-950/30"
+                    ? "bg-rose-50 border-rose-200 text-rose-600 dark:bg-rose-950/50 dark:border-rose-900 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/60"
+                    : "bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-rose-300 hover:text-rose-500 hover:bg-rose-50/40 dark:hover:bg-rose-950/30"
                     }`}
                   aria-label={listing.isFavorited ? "Remove from favorites" : "Save to favorites"}
                 >
@@ -342,8 +345,8 @@ export default function ListingDetailsPage() {
                     <>
                       <Heart
                         className={`w-4 h-4 transition-transform duration-200 ${listing.isFavorited
-                            ? "fill-rose-500 text-rose-500 scale-110"
-                            : "text-slate-400 group-hover:scale-110"
+                          ? "fill-rose-500 text-rose-500 scale-110"
+                          : "text-slate-400 group-hover:scale-110"
                           }`}
                       />
                       <span>{listing.isFavorited ? "Saved" : "Save"}</span>
@@ -437,8 +440,7 @@ export default function ListingDetailsPage() {
               ) : (
                 <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-950/30 p-4 space-y-3">
                   <p className="text-sm text-slate-600 dark:text-slate-400">
-                    Sign in to view the seller&apos;s mobile number and get in
-                    touch directly.
+                    Sign in to get in touch directly with the seller.
                   </p>
                   <button
                     type="button"
@@ -450,6 +452,15 @@ export default function ListingDetailsPage() {
                 </div>
               )}
             </div>
+
+            <AuctionPanel
+              listingId={listing.id}
+              listing={listing}
+              isOwner={isOwner}
+              authLoading={authLoading}
+              accessToken={accessToken}
+              onLoginRequired={() => setLoginModalOpen(true)}
+            />
           </div>
 
           {/* Similar Items */}

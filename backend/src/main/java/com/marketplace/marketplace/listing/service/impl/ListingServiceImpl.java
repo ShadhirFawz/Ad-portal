@@ -28,6 +28,7 @@ import com.marketplace.marketplace.listing.repository.ListingRepository;
 import com.marketplace.marketplace.listing.repository.ListingSpecification;
 import com.marketplace.marketplace.listing.repository.ListingStatsRepository;
 import com.marketplace.marketplace.listing.service.ListingService;
+import com.marketplace.marketplace.auction.repository.AuctionRepository;
 import com.marketplace.marketplace.user.entity.User;
 import com.marketplace.marketplace.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -60,6 +61,7 @@ public class ListingServiceImpl implements ListingService {
         private final ListingImageMapper imageMapper;
         private final ListingFavoriteRepository listingFavoriteRepository;
         private final ListingStatsRepository listingStatsRepository;
+        private final AuctionRepository auctionRepository;
 
         @Override
         @Transactional
@@ -152,7 +154,7 @@ public class ListingServiceImpl implements ListingService {
                 Listing saved = listingRepository.save(listing);
                 listingStatsRepository.save(new ListingStats(saved.getId(), 0L));
 
-                return toResponse(saved, false, false, 0L, 0L);
+                return toResponse(saved, false, false, 0L, 0L, false);
         }
 
         @Override
@@ -736,19 +738,22 @@ public class ListingServiceImpl implements ListingService {
 
         private Page<ListingResponse> mapToResponsePage(Page<Listing> page) {
                 if (page.isEmpty()) {
-                        return page.map(l -> toResponse(l, false, false, 0L, 0L));
+                        return page.map(l -> toResponse(l, false, false, 0L, 0L, false));
                 }
                 List<UUID> listingIds = page.getContent().stream().map(Listing::getId).toList();
                 Set<UUID> favoritedIds = getFavoritedListingIdsForCurrentUser(listingIds);
                 Map<UUID, Long> viewCounts = getViewCountsMap(listingIds);
                 Map<UUID, Long> favoriteCounts = getFavoriteCountsMap(listingIds);
+                Set<UUID> activeAuctionListingIds = auctionRepository
+                                .findActiveAuctionListingIds(listingIds, java.time.OffsetDateTime.now());
 
                 return page.map(listing -> toResponse(
                                 listing,
                                 false,
                                 favoritedIds.contains(listing.getId()),
                                 viewCounts.getOrDefault(listing.getId(), 0L),
-                                favoriteCounts.getOrDefault(listing.getId(), 0L)));
+                                favoriteCounts.getOrDefault(listing.getId(), 0L),
+                                activeAuctionListingIds.contains(listing.getId())));
         }
 
         private Map<UUID, Long> getViewCountsMap(Collection<UUID> listingIds) {
@@ -829,6 +834,21 @@ public class ListingServiceImpl implements ListingService {
                         boolean isFavorited,
                         long viewCount,
                         long favoriteCount) {
+                boolean hasActiveAuction = auctionRepository
+                                .findByListingIdAndStatus(listing.getId(),
+                                                com.marketplace.marketplace.auction.enums.AuctionStatus.ACTIVE)
+                                .map(a -> a.getEndsAt().isAfter(java.time.OffsetDateTime.now()))
+                                .orElse(false);
+                return toResponse(listing, includeSellerContact, isFavorited, viewCount, favoriteCount, hasActiveAuction);
+        }
+
+        private ListingResponse toResponse(
+                        Listing listing,
+                        boolean includeSellerContact,
+                        boolean isFavorited,
+                        long viewCount,
+                        long favoriteCount,
+                        boolean hasActiveAuction) {
 
                 List<ListingImageResponse> images = imageRepository
                                 .findAllByListingIdOrderByDisplayOrderAsc(
@@ -881,7 +901,8 @@ public class ListingServiceImpl implements ListingService {
                                 listing.getPublishedAt(),
                                 listing.getCreatedAt(),
                                 listing.getUpdatedAt(),
-                                sellerPhoneNumber);
+                                sellerPhoneNumber,
+                                hasActiveAuction);
         }
 
         private String generateUniqueSlug(String title, UUID listingId) {
