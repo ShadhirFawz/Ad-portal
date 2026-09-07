@@ -8,8 +8,6 @@ import {
   Timer,
   Trophy,
   Users,
-  ChevronDown,
-  ChevronUp,
   Sparkles,
   Crown,
   TrendingUp,
@@ -17,6 +15,7 @@ import {
   Flame,
   CheckCircle2,
   AlertCircle,
+  ExternalLink,
 } from "lucide-react";
 import {
   getAuction,
@@ -27,6 +26,7 @@ import {
 import ProfileAvatar, {
   ParticipantAvatarGroup,
 } from "@/components/profile/ProfileAvatar";
+import SellerBidHistoryModal from "@/components/listings/SellerBidHistoryModal";
 import type {
   AuctionPublicResponse,
   AuctionSellerResponse,
@@ -95,120 +95,6 @@ function useCountdown(endsAt: string | null, hasEnded: boolean) {
   }, [remainingMs]);
 }
 
-function SellerBidTable({
-  bids,
-  currency,
-}: {
-  bids: AuctionSellerResponse["bids"];
-  currency: string;
-}) {
-  if (bids.length === 0) {
-    return (
-      <p className="text-sm text-slate-500 dark:text-slate-400">
-        No bids received yet.
-      </p>
-    );
-  }
-
-  return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="bg-slate-50 dark:bg-slate-950/50 text-left text-xs uppercase tracking-wider text-slate-500">
-            <th className="px-4 py-3 font-semibold">Bidder</th>
-            <th className="px-4 py-3 font-semibold">Amount</th>
-            <th className="px-4 py-3 font-semibold">Time</th>
-          </tr>
-        </thead>
-        <tbody>
-          {bids.map((bid) => {
-            const profileTarget = bid.bidderUsername
-              ? `/profile/${encodeURIComponent(bid.bidderUsername)}`
-              : bid.bidderId
-                ? `/profile/${encodeURIComponent(bid.bidderId)}`
-                : null;
-
-            const displayName =
-              bid.bidderFirstName ||
-              (bid.bidderUsername ? `@${bid.bidderUsername}` : "Bidder");
-
-            const subtitle =
-              bid.bidderFirstName && bid.bidderUsername
-                ? `@${bid.bidderUsername}`
-                : bid.bidderLastName
-                  ? bid.bidderLastName
-                  : null;
-
-            const bidderCardContent = (
-              <>
-                <ProfileAvatar
-                  avatarUrl={bid.bidderAvatarUrl}
-                  firstName={bid.bidderFirstName}
-                  username={bid.bidderUsername}
-                  size={28}
-                  alt={displayName}
-                />
-                <div className="flex flex-col min-w-0">
-                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors truncate">
-                    {displayName}
-                  </span>
-                  {subtitle && (
-                    <span className="text-[11px] text-slate-400 dark:text-slate-500 truncate -mt-0.5">
-                      {subtitle}
-                    </span>
-                  )}
-                </div>
-                {bid.isWinning && (
-                  <span
-                    className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 border border-amber-200/80 dark:border-amber-800/60 px-1.5 py-0.5 rounded-md ml-1 shrink-0"
-                    title="Highest / Winning Bid"
-                  >
-                    <Trophy className="w-3 h-3 text-amber-500" />
-                    Winner
-                  </span>
-                )}
-              </>
-            );
-
-            return (
-              <tr
-                key={bid.bidId}
-                className={`border-t border-slate-100 dark:border-slate-800 ${
-                  bid.isWinning
-                    ? "bg-emerald-50/60 dark:bg-emerald-950/25"
-                    : "hover:bg-slate-50/60 dark:hover:bg-slate-800/40"
-                } transition-colors`}
-              >
-                <td className="px-4 py-3">
-                  {profileTarget ? (
-                    <Link
-                      href={profileTarget}
-                      className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 hover:border-emerald-500/50 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition-all group max-w-full shadow-2xs cursor-pointer"
-                      title={`View ${displayName}'s profile`}
-                    >
-                      {bidderCardContent}
-                    </Link>
-                  ) : (
-                    <div className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 max-w-full">
-                      {bidderCardContent}
-                    </div>
-                  )}
-                </td>
-                <td className="px-4 py-3 font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                  {formatAmount(bid.amount, currency)}
-                </td>
-                <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs whitespace-nowrap">
-                  {new Date(bid.placedAt).toLocaleString()}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
 export default function AuctionPanel({
   listingId,
   listing,
@@ -229,7 +115,7 @@ export default function AuctionPanel({
   const [error, setError] = useState<string | null>(null);
   const [bidAmount, setBidAmount] = useState("");
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [showBidHistory, setShowBidHistory] = useState(false);
+  const [bidHistoryModalOpen, setBidHistoryModalOpen] = useState(false);
 
   const floorPrice =
     listing.minimumOfferPrice != null
@@ -632,28 +518,32 @@ export default function AuctionPanel({
         )}
 
         {/* Seller bid history */}
-        {isOwner && sellerView && sellerView.bids.length > 0 && (
-          <div className="pt-1">
+        {isOwner && sellerView && (
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
             <button
               type="button"
-              onClick={() => setShowBidHistory(!showBidHistory)}
-              className="w-full flex items-center justify-between py-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors border-t border-slate-100 dark:border-slate-800 pt-3"
+              onClick={() => setBidHistoryModalOpen(true)}
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-slate-100/80 dark:bg-slate-800/60 hover:bg-slate-200/70 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/60 transition-all group shadow-2xs"
             >
-              <span className="flex items-center gap-1.5">
-                <TrendingUp className="w-3.5 h-3.5" />
-                Bid History ({sellerView.bids.length})
+              <span className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span>View Bid History</span>
               </span>
-              {showBidHistory ? (
-                <ChevronUp className="w-3.5 h-3.5" />
-              ) : (
-                <ChevronDown className="w-3.5 h-3.5" />
-              )}
+              <span className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/80 dark:border-emerald-800/60 px-2 py-0.5 rounded-md">
+                {sellerView.bids.length} {sellerView.bids.length === 1 ? "bid" : "bids"}
+                <ExternalLink className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+              </span>
             </button>
-            {showBidHistory && (
-              <div className="mt-2">
-                <SellerBidTable bids={sellerView.bids} currency={listing.currency} />
-              </div>
-            )}
+
+            <SellerBidHistoryModal
+              open={bidHistoryModalOpen}
+              onClose={() => setBidHistoryModalOpen(false)}
+              bids={sellerView.bids}
+              currency={listing.currency}
+              listingTitle={listing.title}
+              currentHighestBid={auction.currentHighestBid}
+              hasEnded={hasEnded}
+            />
           </div>
         )}
       </div>
