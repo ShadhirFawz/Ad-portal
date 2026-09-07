@@ -220,7 +220,8 @@ export interface ListingQueryParams {
 
 export async function getListings(
   params?: ListingQueryParams | number,
-  legacySize?: number
+  legacySize?: number,
+  accessToken?: string | null
 ): Promise<PageResponse<Listing>> {
   const queryParams: ListingQueryParams =
     typeof params === "number"
@@ -278,6 +279,16 @@ export async function getListings(
     ? `/listings/category/${encodeURIComponent(category)}?${searchParams.toString()}`
     : `/listings?${searchParams.toString()}`;
 
+  if (accessToken) {
+    const response = await apiRequest<ApiResponse<PageResponse<Listing>>>(
+      endpoint,
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }
+    );
+    return response.data;
+  }
+
   const response =
     await publicRequest<
       ApiResponse<PageResponse<Listing>>
@@ -289,14 +300,24 @@ export async function getListings(
 export async function getListingsByUsername(
   username: string,
   page = 0,
-  size = 20
+  size = 20,
+  accessToken?: string | null
 ): Promise<PageResponse<Listing>> {
+  const endpoint = `/listings/user/${encodeURIComponent(username)}?page=${page}&size=${size}`;
+  if (accessToken) {
+    const response = await apiRequest<ApiResponse<PageResponse<Listing>>>(
+      endpoint,
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }
+    );
+    return response.data;
+  }
+
   const response =
     await publicRequest<
       ApiResponse<PageResponse<Listing>>
-    >(
-      `/listings/user/${encodeURIComponent(username)}?page=${page}&size=${size}`
-    );
+    >(endpoint);
 
   return response.data;
 }
@@ -304,14 +325,24 @@ export async function getListingsByUsername(
 export async function getListingsByCategory(
   categoryId: string,
   page = 0,
-  size = 20
+  size = 20,
+  accessToken?: string | null
 ): Promise<PageResponse<Listing>> {
+  const endpoint = `/listings/category/${categoryId}?page=${page}&size=${size}`;
+  if (accessToken) {
+    const response = await apiRequest<ApiResponse<PageResponse<Listing>>>(
+      endpoint,
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }
+    );
+    return response.data;
+  }
+
   const response =
     await publicRequest<
       ApiResponse<PageResponse<Listing>>
-    >(
-      `/listings/category/${categoryId}?page=${page}&size=${size}`
-    );
+    >(endpoint);
 
   return response.data;
 }
@@ -320,19 +351,30 @@ export async function getSimilarListings(
   categoryIdOrSlug: string,
   excludeIdOrSlug?: string,
   page = 0,
-  size = 10
+  size = 10,
+  accessToken?: string | null
 ): Promise<PageResponse<Listing>> {
 
   const excludeParam = excludeIdOrSlug
     ? `&exclude=${encodeURIComponent(excludeIdOrSlug)}`
     : "";
 
+  const endpoint = `/listings/category/${encodeURIComponent(categoryIdOrSlug)}/similar?page=${page}&size=${size}${excludeParam}`;
+
+  if (accessToken) {
+    const response = await apiRequest<ApiResponse<PageResponse<Listing>>>(
+      endpoint,
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }
+    );
+    return response.data;
+  }
+
   const response =
     await publicRequest<
       ApiResponse<PageResponse<Listing>>
-    >(
-      `/listings/category/${encodeURIComponent(categoryIdOrSlug)}/similar?page=${page}&size=${size}${excludeParam}`
-    );
+    >(endpoint);
 
   return response.data;
 }
