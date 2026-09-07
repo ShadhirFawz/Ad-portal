@@ -135,7 +135,7 @@ export default function SellerBidHistoryModal({
               {hasEnded ? "Winning Bid" : "Current Highest"}
             </span>
             <div className="flex items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400 text-sm">
-              <Trophy className="w-4 h-4 text-amber-500 shrink-0" />
+              <Trophy className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span>{formatAmount(highestBid, currency)}</span>
             </div>
           </div>
@@ -146,11 +146,10 @@ export default function SellerBidHistoryModal({
             </span>
             <div className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300 text-sm">
               <span
-                className={`w-2 h-2 rounded-full ${
-                  hasEnded
+                className={`w-2 h-2 rounded-full ${hasEnded
                     ? "bg-slate-400"
                     : "bg-emerald-500 animate-pulse"
-                }`}
+                  }`}
               />
               <span>{hasEnded ? "Closed" : "Active / Live"}</span>
             </div>
@@ -206,11 +205,10 @@ export default function SellerBidHistoryModal({
                 return (
                   <div
                     key={bid.bidId}
-                    className={`p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
-                      isHighest
+                    className={`p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${isHighest
                         ? "bg-emerald-50/50 dark:bg-emerald-950/20"
                         : "hover:bg-slate-50/80 dark:hover:bg-slate-800/40"
-                    }`}
+                      }`}
                   >
                     {/* Bidder info */}
                     <div className="flex items-center gap-3 min-w-0">
@@ -269,7 +267,7 @@ export default function SellerBidHistoryModal({
 
                       {isHighest && (
                         <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/60 px-2 py-0.5 rounded-md ml-1 shrink-0">
-                          <Trophy className="w-3 h-3 text-amber-500" />
+                          <Trophy className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                           {hasEnded ? "Winner" : "Highest"}
                         </span>
                       )}
