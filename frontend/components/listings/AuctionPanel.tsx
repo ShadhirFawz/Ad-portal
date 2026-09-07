@@ -354,9 +354,9 @@ export default function AuctionPanel({
             <div>
               <div className="flex items-center gap-1.5">
                 {hasEnded ? (
-                  <Trophy className="w-3.5 h-3.5 text-amber-500" />
+                  <Trophy className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 ) : (
-                  <Flame className="w-3.5 h-3.5 text-emerald-500" />
+                  <Flame className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 )}
                 <p className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
                   {hasEnded ? "Winning Bid" : "Current Highest"}
@@ -506,7 +506,7 @@ export default function AuctionPanel({
         {hasEnded && (
           <div className="bg-gradient-to-br from-emerald-50/80 to-teal-50/80 dark:from-emerald-950/20 dark:to-teal-950/20 rounded-xl border border-emerald-200 dark:border-emerald-900/30 p-3">
             <div className="flex items-center gap-2">
-              <Trophy className="w-4 h-4 text-amber-500" />
+              <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
               <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">
                 Auction closed
               </span>
