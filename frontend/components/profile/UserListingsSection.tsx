@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/providers/AuthProvider";
 import { getListingsByUsername } from "@/lib/api/listings";
 import type { Listing } from "@/types/listing";
 import ListingCard from "@/components/listings/ListingCard";
@@ -21,11 +22,33 @@ export default function UserListingsSection({
   initialTotalElements,
   pageSize = 8,
 }: UserListingsSectionProps) {
+  const { accessToken } = useAuth();
   const [listings, setListings] = useState<Listing[]>(initialListings);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(initialTotalPages);
   const [totalElements, setTotalElements] = useState(initialTotalElements);
   const [loading, setLoading] = useState(false);
+
+  // fetch bookmark and favourite with accessToken
+  useEffect(() => {
+    if (!accessToken) return;
+    let isMounted = true;
+    async function loadWithAuth() {
+      try {
+        const result = await getListingsByUsername(username, currentPage, pageSize, accessToken);
+        if (!isMounted) return;
+        setListings(result.content ?? []);
+        setTotalPages(result.totalPages ?? 0);
+        setTotalElements(result.totalElements ?? 0);
+      } catch {
+        // keep initial listings on error
+      }
+    }
+    loadWithAuth();
+    return () => {
+      isMounted = false;
+    };
+  }, [username, currentPage, pageSize, accessToken]);
 
   const handlePageChange = async (newPage: number) => {
     if (newPage < 0 || (totalPages > 0 && newPage >= totalPages) || newPage === currentPage) {
@@ -34,7 +57,7 @@ export default function UserListingsSection({
     setLoading(true);
     setCurrentPage(newPage);
     try {
-      const result = await getListingsByUsername(username, newPage, pageSize);
+      const result = await getListingsByUsername(username, newPage, pageSize, accessToken);
       setListings(result.content ?? []);
       setTotalPages(result.totalPages ?? 0);
       setTotalElements(result.totalElements ?? 0);
@@ -125,11 +148,10 @@ export default function UserListingsSection({
                   type="button"
                   onClick={() => handlePageChange(i)}
                   disabled={loading}
-                  className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                    i === currentPage
+                  className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all ${i === currentPage
                       ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/25"
                       : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-                  }`}
+                    }`}
                 >
                   {i + 1}
                 </button>

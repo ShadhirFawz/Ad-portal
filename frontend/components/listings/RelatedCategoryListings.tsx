@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@/providers/AuthProvider";
 import { getListingsByCategory } from "@/lib/api/listings";
 import type { Listing } from "@/types/listing";
 import type { CategoryBreadcrumb } from "@/types/category";
@@ -23,6 +24,7 @@ export default function RelatedCategoryListings({
   fallbackCategoryId,
   fallbackCategoryName,
 }: RelatedCategoryListingsProps) {
+  const { accessToken } = useAuth();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -38,8 +40,8 @@ export default function RelatedCategoryListings({
       if (!targetCategoryIdentifier) return;
       setLoading(true);
       try {
-        // Fetch listings from top-level category (includes all 3 levels recursively)
-        const response = await getListingsByCategory(targetCategoryIdentifier, 0, 12);
+        // Fetch listings from top-level category
+        const response = await getListingsByCategory(targetCategoryIdentifier, 0, 12, accessToken);
         if (isMounted) {
           const filtered = (response.content ?? []).filter(
             (item) => item.id !== currentListingId

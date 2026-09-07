@@ -38,9 +38,13 @@ export default function ListingCard({
   const [menuOpen, setMenuOpen] = useState(false);
   const [bookmarking, setBookmarking] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(
-    "isBookmarked" in listing ? (listing.isBookmarked ?? false) : false
+    "isBookmarked" in listing ? Boolean(listing.isBookmarked) : false
   );
   const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setIsBookmarked("isBookmarked" in listing ? Boolean(listing.isBookmarked) : false);
+  }, [listing.id, (listing as Listing).isBookmarked]);
 
   // Close menu on outside click
   useEffect(() => {
@@ -141,11 +145,10 @@ export default function ListingCard({
           className="flex w-full items-center gap-2.5 px-3.5 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-700/60"
         >
           <Bookmark
-            className={`w-4 h-4 shrink-0 ${
-              isBookmarked
+            className={`w-4 h-4 shrink-0 ${isBookmarked
                 ? "fill-slate-800 text-slate-800 dark:fill-slate-100 dark:text-slate-100"
                 : "text-slate-500 dark:text-slate-400"
-            }`}
+              }`}
           />
           <span>{isBookmarked ? "Bookmarked" : "Bookmark"}</span>
         </button>

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+import { useAuth } from "@/providers/AuthProvider";
 import { getListings } from "@/lib/api/listings";
 import { getCategories, getCategory, getCategoryBreadcrumbs } from "@/lib/api/categories";
 import type { Listing } from "@/types/listing";
@@ -81,8 +82,8 @@ function Pagination({
           type="button"
           onClick={() => onChange(p)}
           className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all ${p === current
-              ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/25"
-              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+            ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/25"
+            : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
             }`}
         >
           {p + 1}
@@ -131,7 +132,7 @@ function ListingsContent() {
   const sortByParam = searchParams.get("sortBy") || "newest";
   const pageParam = parseInt(searchParams.get("page") || "0", 10);
   const currentPage = isNaN(pageParam) || pageParam < 0 ? 0 : pageParam;
-
+  const { accessToken, loading: authLoading } = useAuth();
   const [listings, setListings] = useState<Listing[]>([]);
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [currentCategory, setCurrentCategory] = useState<Category | null>(null);
@@ -220,23 +221,28 @@ function ListingsContent() {
   }, [categoryId]);
 
   useEffect(() => {
+    if (authLoading) return;
     let isMounted = true;
 
     async function loadListings() {
       setLoading(true);
       try {
-        const result = await getListings({
-          page: currentPage,
-          size: PAGE_SIZE,
-          search: searchParam || undefined,
-          condition: conditionParam || undefined,
-          pricingType: pricingTypeParam || undefined,
-          listingType: listingTypeParam || undefined,
-          minPrice: minPriceParam || undefined,
-          maxPrice: maxPriceParam || undefined,
-          sortBy: sortByParam || undefined,
-          category: categoryId || undefined,
-        });
+        const result = await getListings(
+          {
+            page: currentPage,
+            size: PAGE_SIZE,
+            search: searchParam || undefined,
+            condition: conditionParam || undefined,
+            pricingType: pricingTypeParam || undefined,
+            listingType: listingTypeParam || undefined,
+            minPrice: minPriceParam || undefined,
+            maxPrice: maxPriceParam || undefined,
+            sortBy: sortByParam || undefined,
+            category: categoryId || undefined,
+          },
+          undefined,
+          accessToken
+        );
 
         if (!isMounted) return;
 
@@ -264,6 +270,8 @@ function ListingsContent() {
     maxPriceParam,
     sortByParam,
     currentPage,
+    accessToken,
+    authLoading,
   ]);
 
   const goToPage = useCallback(
@@ -335,8 +343,8 @@ function ListingsContent() {
               onClick={() => setViewLayout("row")}
               title="Row layout"
               className={`p-2.5 transition-all ${viewLayout === "row"
-                  ? "bg-emerald-600 text-white"
-                  : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                ? "bg-emerald-600 text-white"
+                : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
                 }`}
             >
               <LayoutList className="w-4 h-4" />
@@ -346,8 +354,8 @@ function ListingsContent() {
               onClick={() => setViewLayout("grid")}
               title="Grid layout"
               className={`p-2.5 transition-all ${viewLayout === "grid"
-                  ? "bg-emerald-600 text-white"
-                  : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                ? "bg-emerald-600 text-white"
+                : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
                 }`}
             >
               <LayoutGrid className="w-4 h-4" />
