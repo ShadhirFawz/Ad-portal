@@ -944,6 +944,15 @@ public class ListingServiceImpl implements ListingService {
                                 ? listing.getSeller().getPhoneNumber()
                                 : null;
 
+                String sellerWhatsappNumber = null;
+                if (includeSellerContact && listing.getSeller() != null && listing.getSeller().getPhoneNumbers() != null) {
+                        sellerWhatsappNumber = listing.getSeller().getPhoneNumbers().stream()
+                                        .filter(pn -> Boolean.TRUE.equals(pn.getIsWhatsapp()) && pn.getDeletedAt() == null)
+                                        .map(com.marketplace.marketplace.user.entity.UserPhoneNumber::getPhoneNumber)
+                                        .findFirst()
+                                        .orElse(null);
+                }
+
                 UUID categoryId = listing.getCategory() != null ? listing.getCategory().getId() : null;
                 String categoryName = listing.getCategory() != null ? listing.getCategory().getName() : "Uncategorized";
                 List<CategoryBreadcrumbResponse> breadcrumbs = buildCategoryBreadcrumbs(listing.getCategory());
@@ -983,6 +992,7 @@ public class ListingServiceImpl implements ListingService {
                                 listing.getCreatedAt(),
                                 listing.getUpdatedAt(),
                                 sellerPhoneNumber,
+                                sellerWhatsappNumber,
                                 hasActiveAuction,
                                 isBookmarked);
         }

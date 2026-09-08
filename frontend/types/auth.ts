@@ -13,6 +13,7 @@ export interface UserPhoneNumber {
   id?: string;
   phoneNumber: string;
   isPrimary: boolean;
+  isWhatsapp?: boolean;
 }
 
 export interface UserResponse {

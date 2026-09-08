@@ -23,6 +23,7 @@ import {
   Trash2,
   Star,
 } from "lucide-react";
+import WhatsAppIcon from "@/components/common/WhatsAppIcon";
 
 function EditProfileContent() {
   const router = useRouter();
@@ -73,10 +74,11 @@ function EditProfileContent() {
             id: p.id,
             phoneNumber: p.phoneNumber,
             isPrimary: p.isPrimary,
+            isWhatsapp: Boolean(p.isWhatsapp),
           }))
         );
       } else if (user.phoneNumber) {
-        setPhoneNumbers([{ phoneNumber: user.phoneNumber, isPrimary: true }]);
+        setPhoneNumbers([{ phoneNumber: user.phoneNumber, isPrimary: true, isWhatsapp: false }]);
       } else {
         setPhoneNumbers([]);
       }
@@ -162,7 +164,7 @@ function EditProfileContent() {
     setFieldErrors((p) => ({ ...p, phoneNumbers: "" }));
     setPhoneNumbers((prev) => [
       ...prev,
-      { phoneNumber: "", isPrimary: isFirst },
+      { phoneNumber: "", isPrimary: isFirst, isWhatsapp: false },
     ]);
   };
 
@@ -182,6 +184,16 @@ function EditProfileContent() {
       prev.map((item, i) => ({
         ...item,
         isPrimary: i === index,
+      }))
+    );
+  };
+
+  const handleToggleWhatsapp = (index: number) => {
+    setFieldErrors((p) => ({ ...p, phoneNumbers: "" }));
+    setPhoneNumbers((prev) =>
+      prev.map((item, i) => ({
+        ...item,
+        isWhatsapp: i === index ? !item.isWhatsapp : false,
       }))
     );
   };
@@ -247,6 +259,7 @@ function EditProfileContent() {
               id: p.id,
               phoneNumber: p.phoneNumber,
               isPrimary: p.isPrimary,
+              isWhatsapp: Boolean(p.isWhatsapp),
             }))
           );
         }
@@ -521,16 +534,24 @@ function EditProfileContent() {
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                     <div className="flex-1 space-y-1">
-                      <div className="flex items-center justify-between sm:justify-start gap-2">
+                      <div className="flex items-center justify-between sm:justify-start gap-2 flex-wrap">
                         <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                           Phone Number {index + 1}
                         </label>
-                        {phoneItem.isPrimary && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                            <Star className="w-3 h-3 fill-emerald-500 text-emerald-500" />
-                            Primary
-                          </span>
-                        )}
+                        <div className="flex items-center gap-1.5">
+                          {phoneItem.isPrimary && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                              <Star className="w-3 h-3 fill-emerald-500 text-emerald-500" />
+                              Primary
+                            </span>
+                          )}
+                          {phoneItem.isWhatsapp && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                              <WhatsAppIcon size={12} className="text-emerald-500" />
+                              WhatsApp
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <input
                         type="tel"
@@ -544,7 +565,7 @@ function EditProfileContent() {
                       />
                     </div>
 
-                    <div className="flex items-center gap-2 self-end sm:self-center sm:pt-4">
+                    <div className="flex items-center gap-2 self-end sm:self-center sm:pt-4 flex-wrap">
                       {!phoneItem.isPrimary && (
                         <button
                           type="button"
@@ -555,6 +576,26 @@ function EditProfileContent() {
                           <span>Set Primary</span>
                         </button>
                       )}
+
+                      <button
+                        type="button"
+                        onClick={() => handleToggleWhatsapp(index)}
+                        className={`text-xs font-semibold px-3 py-2 rounded-xl border transition-colors flex items-center gap-1.5 ${
+                          phoneItem.isWhatsapp
+                            ? "bg-emerald-600 text-white border-emerald-600 dark:bg-emerald-500 dark:border-emerald-500"
+                            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400"
+                        }`}
+                      >
+                        <WhatsAppIcon
+                          size={14}
+                          className={
+                            phoneItem.isWhatsapp
+                              ? "text-white"
+                              : "text-emerald-600 dark:text-emerald-400"
+                          }
+                        />
+                        <span>{phoneItem.isWhatsapp ? "WhatsApp Set" : "Set WhatsApp"}</span>
+                      </button>
 
                       <button
                         type="button"
