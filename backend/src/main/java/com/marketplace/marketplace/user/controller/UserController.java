@@ -4,6 +4,7 @@ import com.marketplace.marketplace.common.response.ApiResponse;
 import com.marketplace.marketplace.user.dto.request.ChangePasswordRequest;
 import com.marketplace.marketplace.user.dto.request.UpdateProfileRequest;
 import com.marketplace.marketplace.auth.dto.response.UserResponse;
+import com.marketplace.marketplace.user.dto.response.UsernameAvailabilityResponse;
 import com.marketplace.marketplace.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,15 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+
+    @GetMapping("/check-username")
+    public ApiResponse<UsernameAvailabilityResponse> checkUsernameAvailability(
+            @RequestParam(required = false, defaultValue = "") String username) {
+
+        return ApiResponse.success(
+                "Username availability checked successfully.",
+                userService.checkUsernameAvailability(username));
+    }
 
     @GetMapping("/me")
     public ApiResponse<UserResponse> getMe() {

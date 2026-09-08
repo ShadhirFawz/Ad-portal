@@ -85,6 +85,9 @@ public class SecurityConfig {
                                 .authenticated()
 
                                 // ── Users — public ────────────────────────────
+                                .requestMatchers(HttpMethod.GET, "/api/v1/users/check-username")
+                                .permitAll()
+
                                 .requestMatchers(HttpMethod.GET, "/api/v1/users/{username}")
                                 .permitAll()
 
