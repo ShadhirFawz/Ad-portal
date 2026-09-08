@@ -18,6 +18,7 @@ interface AuthContextValue {
   accessToken: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: (redirectTo?: string) => Promise<void>;
   signUp: (
     email: string,
     password: string,
@@ -193,6 +194,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   };
 
+  const loginWithGoogle = async (redirectTo?: string) => {
+    const supabase = createClient();
+    // Build the callback URL — include `next` so the callback route knows
+    // where to send the user after the session is established
+    const callbackUrl = new URL("/auth/callback", window.location.origin);
+    if (redirectTo) {
+      callbackUrl.searchParams.set("next", redirectTo);
+    }
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: callbackUrl.toString(),
+        queryParams: {
+          // Request offline access so Supabase can refresh the token
+          access_type: "offline",
+          prompt: "consent",
+        },
+      },
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+    // The browser will navigate to Google's auth page — no further action needed
+  };
+
   const signUp = async (
     email: string,
     password: string,
@@ -258,6 +286,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         accessToken,
         loading,
         login,
+        loginWithGoogle,
         signUp,
         logout,
         refreshSession,
