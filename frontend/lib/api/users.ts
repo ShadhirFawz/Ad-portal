@@ -122,3 +122,29 @@ export async function getPublicProfile(
 
   return response.data;
 }
+
+export interface UsernameAvailabilityResult {
+  username: string;
+  available: boolean;
+  valid: boolean;
+  message: string;
+}
+
+export async function checkUsernameAvailability(
+  username: string,
+  accessToken?: string | null
+): Promise<UsernameAvailabilityResult> {
+  const headers: Record<string, string> = {};
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
+
+  const response = await apiRequest<ApiResponse<UsernameAvailabilityResult>>(
+    `/users/check-username?username=${encodeURIComponent(username)}`,
+    {
+      headers,
+    }
+  );
+
+  return response.data;
+}

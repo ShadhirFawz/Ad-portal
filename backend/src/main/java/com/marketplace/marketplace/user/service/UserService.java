@@ -7,6 +7,7 @@ import com.marketplace.marketplace.auth.dto.request.SyncUserRequest;
 import com.marketplace.marketplace.auth.dto.response.UserResponse;
 import com.marketplace.marketplace.user.dto.request.ChangePasswordRequest;
 import com.marketplace.marketplace.user.dto.request.UpdateProfileRequest;
+import com.marketplace.marketplace.user.dto.response.UsernameAvailabilityResponse;
 import com.marketplace.marketplace.user.entity.User;
 
 public interface UserService {
@@ -22,6 +23,8 @@ public interface UserService {
     boolean existsByPhoneNumber(String phoneNumber);
 
     boolean existsByUsername(String username);
+
+    UsernameAvailabilityResponse checkUsernameAvailability(String username);
 
     Optional<User> findById(UUID id);
 

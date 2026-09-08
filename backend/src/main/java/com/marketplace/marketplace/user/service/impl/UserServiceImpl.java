@@ -10,6 +10,7 @@ import com.marketplace.marketplace.common.exception.ResourceNotFoundException;
 import com.marketplace.marketplace.common.security.util.SecurityUtils;
 import com.marketplace.marketplace.user.dto.request.ChangePasswordRequest;
 import com.marketplace.marketplace.user.dto.request.UpdateProfileRequest;
+import com.marketplace.marketplace.user.dto.response.UsernameAvailabilityResponse;
 import com.marketplace.marketplace.user.entity.User;
 import com.marketplace.marketplace.user.entity.UserPhoneNumber;
 import com.marketplace.marketplace.user.mapper.UserMapper;
@@ -28,10 +29,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
+
+    private static final Pattern USERNAME_PATTERN = Pattern.compile(
+            "^(?=.{3,30}$)(?![_-])(?!.*[_-]{2})[a-zA-Z0-9_-]+(?<![_-])$");
 
     private final UserRepository userRepository;
     private final UserPhoneNumberRepository userPhoneNumberRepository;
@@ -60,6 +65,72 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public boolean existsByUsername(String username) {
         return userRepository.existsByUsernameIgnoreCase(username);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UsernameAvailabilityResponse checkUsernameAvailability(String rawUsername) {
+        if (rawUsername == null || rawUsername.isBlank()) {
+            return new UsernameAvailabilityResponse(
+                    rawUsername,
+                    false,
+                    false,
+                    "Username cannot be empty.");
+        }
+
+        String username = rawUsername.trim();
+
+        if (username.length() < 3) {
+            return new UsernameAvailabilityResponse(
+                    username,
+                    false,
+                    false,
+                    "Username must be at least 3 characters.");
+        }
+
+        if (username.length() > 30) {
+            return new UsernameAvailabilityResponse(
+                    username,
+                    false,
+                    false,
+                    "Username must not exceed 30 characters.");
+        }
+
+        if (!USERNAME_PATTERN.matcher(username).matches()) {
+            return new UsernameAvailabilityResponse(
+                    username,
+                    false,
+                    false,
+                    "Username can only contain letters, numbers, hyphens, and underscores without consecutive or edge symbols.");
+        }
+
+        boolean taken = userRepository.existsByUsernameIgnoreCase(username);
+        if (!taken) {
+            return new UsernameAvailabilityResponse(
+                    username,
+                    true,
+                    true,
+                    "Username @" + username + " is available!");
+        }
+
+        var currentUserOpt = SecurityUtils.getCurrentUserOptional();
+        if (currentUserOpt.isPresent()) {
+            UUID currentUserId = currentUserOpt.get().id();
+            Optional<User> owner = userRepository.findByUsernameIgnoreCase(username);
+            if (owner.isPresent() && owner.get().getId().equals(currentUserId)) {
+                return new UsernameAvailabilityResponse(
+                        username,
+                        true,
+                        true,
+                        "This is already your username.");
+            }
+        }
+
+        return new UsernameAvailabilityResponse(
+                username,
+                false,
+                true,
+                "Username @" + username + " is already taken.");
     }
 
     @Override
