@@ -217,7 +217,7 @@ export default function NewListingPage() {
     return () => {
       isMounted = false;
     };
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, categories.length]);
 
   const handlePricingTypeChange = (type: PricingType) => {
     setPricingType(type);

@@ -55,6 +55,15 @@ export function validatePhoneNumbers(
     };
   }
 
+  const whatsappCount = validPhoneNumbers.filter((p) => Boolean(p.isWhatsapp)).length;
+  if (whatsappCount > 1) {
+    return {
+      isValid: false,
+      error: "Only one WhatsApp number is allowed.",
+      cleanedPhoneNumbers: validPhoneNumbers,
+    };
+  }
+
   if (validPhoneNumbers.length > 0 && !validPhoneNumbers.some((p) => p.isPrimary)) {
     validPhoneNumbers[0].isPrimary = true;
   }

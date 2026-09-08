@@ -285,7 +285,7 @@ export default function EditListingPage({ params }: PageProps) {
     return () => {
       isMounted = false;
     };
-  }, [listingId, user, authLoading, router]);
+  }, [listingId, user, authLoading, router, listing]);
 
   const handlePricingTypeChange = (type: PricingType) => {
     setPricingType(type);
