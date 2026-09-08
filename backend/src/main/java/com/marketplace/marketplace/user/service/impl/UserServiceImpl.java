@@ -224,13 +224,21 @@ public class UserServiceImpl implements UserService {
                 }
             }
 
+            long whatsappCount = request.phoneNumbers().stream()
+                    .filter(p -> Boolean.TRUE.equals(p.isWhatsapp()))
+                    .count();
+            if (whatsappCount > 1) {
+                throw new ConflictException("Only one WhatsApp number is allowed.");
+            }
+
             if (!request.phoneNumbers().isEmpty()) {
                 boolean hasExplicitPrimary = request.phoneNumbers().stream()
                         .anyMatch(p -> Boolean.TRUE.equals(p.isPrimary()));
 
                 String primaryPhone = null;
                 boolean primaryAssigned = false;
-                java.util.Map<String, Boolean> requestedNumberPrimaryMap = new java.util.LinkedHashMap<>();
+                record PhoneConfig(boolean isPrimary, boolean isWhatsapp) {}
+                java.util.Map<String, PhoneConfig> requestedNumberConfigMap = new java.util.LinkedHashMap<>();
 
                 for (int i = 0; i < request.phoneNumbers().size(); i++) {
                     var phoneReq = request.phoneNumbers().get(i);
@@ -248,28 +256,32 @@ public class UserServiceImpl implements UserService {
                     if (isPrimary) {
                         primaryPhone = cleanNum;
                     }
-                    requestedNumberPrimaryMap.put(cleanNum, isPrimary);
+
+                    boolean isWhatsapp = Boolean.TRUE.equals(phoneReq.isWhatsapp());
+                    requestedNumberConfigMap.put(cleanNum, new PhoneConfig(isPrimary, isWhatsapp));
                 }
 
                 // 1. Remove phone numbers that are no longer present in the request
-                user.getPhoneNumbers().removeIf(existing -> !requestedNumberPrimaryMap.containsKey(existing.getPhoneNumber()));
+                user.getPhoneNumbers().removeIf(existing -> !requestedNumberConfigMap.containsKey(existing.getPhoneNumber()));
 
                 // 2. Update existing entries or add new ones
-                for (java.util.Map.Entry<String, Boolean> entry : requestedNumberPrimaryMap.entrySet()) {
+                for (java.util.Map.Entry<String, PhoneConfig> entry : requestedNumberConfigMap.entrySet()) {
                     String num = entry.getKey();
-                    Boolean isPrimary = entry.getValue();
+                    PhoneConfig cfg = entry.getValue();
 
                     Optional<UserPhoneNumber> existingOpt = user.getPhoneNumbers().stream()
                             .filter(p -> p.getPhoneNumber().equals(num))
                             .findFirst();
 
                     if (existingOpt.isPresent()) {
-                        existingOpt.get().setIsPrimary(isPrimary);
+                        existingOpt.get().setIsPrimary(cfg.isPrimary());
+                        existingOpt.get().setIsWhatsapp(cfg.isWhatsapp());
                     } else {
                         UserPhoneNumber upn = UserPhoneNumber.builder()
                                 .user(user)
                                 .phoneNumber(num)
-                                .isPrimary(isPrimary)
+                                .isPrimary(cfg.isPrimary())
+                                .isWhatsapp(cfg.isWhatsapp())
                                 .build();
                         user.getPhoneNumbers().add(upn);
                     }

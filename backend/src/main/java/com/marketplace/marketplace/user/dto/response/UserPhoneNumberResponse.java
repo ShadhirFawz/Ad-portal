@@ -8,7 +8,7 @@ public record UserPhoneNumberResponse(
 
         String phoneNumber,
 
-        Boolean isPrimary
-
+        Boolean isPrimary,
+        Boolean isWhatsapp
 ) {
 }

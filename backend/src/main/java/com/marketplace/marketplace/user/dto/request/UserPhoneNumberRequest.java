@@ -9,7 +9,7 @@ public record UserPhoneNumberRequest(
         @PhoneNumber
         String phoneNumber,
 
-        Boolean isPrimary
-
+        Boolean isPrimary,
+        Boolean isWhatsapp
 ) {
 }
