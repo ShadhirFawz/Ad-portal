@@ -469,19 +469,37 @@ export default function ListingDetailsPage() {
             {/* Seller Contact */}
             <div className="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 dark:border-slate-800 dark:bg-slate-900/90 shadow-sm space-y-4">
               <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-linear-to-tr from-emerald-500 to-teal-400 text-white font-bold text-lg flex items-center justify-center shadow-md shadow-emerald-500/20 shrink-0">
-                  {listing.sellerUsername
-                    ? listing.sellerUsername.charAt(0).toUpperCase()
-                    : "U"}
-                </div>
+                {listing.sellerUsername ? (
+                  <Link
+                    href={`/profile/${listing.sellerUsername}`}
+                    className="w-12 h-12 rounded-2xl bg-linear-to-tr from-emerald-500 to-teal-400 text-white font-bold text-lg flex items-center justify-center shadow-md shadow-emerald-500/20 shrink-0 hover:opacity-90 hover:scale-105 transition-all"
+                    title={`View @${listing.sellerUsername}'s profile`}
+                  >
+                    {listing.sellerUsername.charAt(0).toUpperCase()}
+                  </Link>
+                ) : (
+                  <div className="w-12 h-12 rounded-2xl bg-linear-to-tr from-emerald-500 to-teal-400 text-white font-bold text-lg flex items-center justify-center shadow-md shadow-emerald-500/20 shrink-0">
+                    U
+                  </div>
+                )}
                 <div className="min-w-0">
                   <p className="text-xs text-slate-400 uppercase font-semibold tracking-wider flex items-center gap-1">
                     <User className="w-3 h-3" />
                     Listed By
                   </p>
-                  <p className="font-bold text-slate-900 dark:text-white truncate">
-                    @{listing.sellerUsername || "Seller"}
-                  </p>
+                  {listing.sellerUsername ? (
+                    <Link
+                      href={`/profile/${listing.sellerUsername}`}
+                      className="font-bold text-slate-900 dark:text-white hover:text-emerald-600 dark:hover:text-emerald-400 hover:underline transition-colors truncate block"
+                      title={`View @${listing.sellerUsername}'s profile`}
+                    >
+                      @{listing.sellerUsername}
+                    </Link>
+                  ) : (
+                    <p className="font-bold text-slate-900 dark:text-white truncate">
+                      @Seller
+                    </p>
+                  )}
                 </div>
               </div>
 
