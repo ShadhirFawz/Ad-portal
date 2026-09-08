@@ -1,15 +1,18 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import { FormEvent, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/providers/AuthProvider";
 import { UserPlus, AlertTriangle, Eye, EyeOff } from "lucide-react";
 import { validateRegisterForm, RegisterFormData } from "@/lib/validation/authValidation";
 import { getPasswordStrength } from "@/lib/validation/passwordStrength";
+import { getSafeRedirectUrl } from "@/lib/utils/redirect";
 
-export default function RegisterPage() {
+function RegisterContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get("redirect") || searchParams.get("returnUrl");
   const { signUp } = useAuth();
 
   const [firstName, setFirstName] = useState("");
@@ -51,7 +54,8 @@ export default function RegisterPage() {
         lastName: lastName.trim() || undefined,
         phoneNumber: phoneNumber.trim() || undefined,
       });
-      router.push("/");
+      const target = getSafeRedirectUrl(redirectParam, "/");
+      router.push(target);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed. Please check inputs.");
     } finally {
@@ -247,7 +251,7 @@ export default function RegisterPage() {
         <div className="pt-3 text-center text-[11px] text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800">
           Already have an account?{" "}
           <Link
-            href="/login"
+            href={redirectParam ? `/login?redirect=${encodeURIComponent(redirectParam)}` : "/login"}
             className="font-semibold text-emerald-600 hover:text-emerald-500 dark:text-emerald-400 transition-colors"
           >
             Sign in instead
@@ -255,5 +259,22 @@ export default function RegisterPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex-1 flex items-center justify-center py-20">
+          <div className="flex items-center gap-3 text-slate-500 font-medium">
+            <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+            Loading registration...
+          </div>
+        </main>
+      }
+    >
+      <RegisterContent />
+    </Suspense>
   );
 }

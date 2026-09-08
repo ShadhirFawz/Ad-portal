@@ -177,7 +177,7 @@ export default function SellerBidHistoryModal({
                 No bids recorded yet
               </p>
               <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                Bids submitted by prospective buyers will show up here in real time with their profile details and timestamps.
+                Bids submitted by prospective buyers will show up here.
               </p>
             </div>
           ) : (

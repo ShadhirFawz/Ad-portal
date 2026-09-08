@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/providers/AuthProvider";
 import {
   Gavel,
   Loader2,
@@ -16,6 +18,8 @@ import {
   CheckCircle2,
   AlertCircle,
   ExternalLink,
+  UserCheck,
+  ArrowRight,
 } from "lucide-react";
 import {
   getAuction,
@@ -103,8 +107,11 @@ export default function AuctionPanel({
   accessToken,
   onLoginRequired,
 }: AuctionPanelProps) {
+  const router = useRouter();
+  const { user } = useAuth();
   const eligible = isAuctionEligible(listing);
   const isLoggedIn = Boolean(accessToken);
+  const listingPath = `/listings/${listing.slug || listing.id}`;
 
   const [auction, setAuction] = useState<AuctionPublicResponse | null>(null);
   const [sellerView, setSellerView] = useState<AuctionSellerResponse | null>(
@@ -185,6 +192,13 @@ export default function AuctionPanel({
   async function handlePlaceBid() {
     if (!accessToken) {
       onLoginRequired?.();
+      return;
+    }
+
+    if (!user?.username || user.username.trim() === "") {
+      router.push(
+        `/profile?redirect=${encodeURIComponent(listingPath)}&reason=username_required`
+      );
       return;
     }
 
@@ -433,57 +447,75 @@ export default function AuctionPanel({
         {isActive && !isOwner && (
           <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-3 shadow-sm">
             {isLoggedIn ? (
-              <>
-                {auction.userHasBid && auction.userCurrentBid != null && (
-                  <div className="flex items-center gap-1.5 mb-2 text-[10px] text-slate-500 dark:text-slate-400">
-                    <span>Your current bid:</span>
-                    <span className="font-bold text-slate-700 dark:text-slate-300">
-                      {formatAmount(auction.userCurrentBid, listing.currency)}
-                    </span>
-                    <span className="text-emerald-500">●</span>
-                    <span className="text-emerald-600 dark:text-emerald-400">
-                      Leading
-                    </span>
+              !user?.username || user.username.trim() === "" ? (
+                <div className="space-y-2.5">
+                  <div className="flex items-start gap-2 text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 p-3 rounded-lg border border-amber-200 dark:border-amber-800/60">
+                    <UserCheck className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <p className="leading-snug">
+                      A username is required to participate in auctions. Set your username to place bids.
+                    </p>
                   </div>
-                )}
-                <div className="flex gap-2">
-                  <div className="flex-1 relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-medium text-slate-400">
-                      {listing.currency}
-                    </span>
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={bidAmount}
-                      onChange={(e) => setBidAmount(e.target.value)}
-                      placeholder={`${formatAmount(
-                        auction.currentHighestBid ?? floorPrice,
-                        ''
-                      ).trim()}`}
-                      className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handlePlaceBid}
-                    disabled={actionLoading || !bidAmount}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 disabled:opacity-50 text-white text-sm font-semibold transition-all shadow-sm hover:shadow"
+                  <Link
+                    href={`/profile?redirect=${encodeURIComponent(listingPath)}&reason=username_required`}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-sm hover:shadow"
                   >
-                    {actionLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <>
-                        <Gavel className="w-3.5 h-3.5" />
-                        Bid
-                      </>
-                    )}
-                  </button>
+                    <span>Confirm</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
                 </div>
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5">
-                  Enter amount above minimum to place your bid
-                </p>
-              </>
+              ) : (
+                <>
+                  {auction.userHasBid && auction.userCurrentBid != null && (
+                    <div className="flex items-center gap-1.5 mb-2 text-[10px] text-slate-500 dark:text-slate-400">
+                      <span>Your current bid:</span>
+                      <span className="font-bold text-slate-700 dark:text-slate-300">
+                        {formatAmount(auction.userCurrentBid, listing.currency)}
+                      </span>
+                      <span className="text-emerald-500">●</span>
+                      <span className="text-emerald-600 dark:text-emerald-400">
+                        Leading
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <div className="flex-1 relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-medium text-slate-400">
+                        {listing.currency}
+                      </span>
+                      <input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        value={bidAmount}
+                        onChange={(e) => setBidAmount(e.target.value)}
+                        placeholder={`${formatAmount(
+                          auction.currentHighestBid ?? floorPrice,
+                          ""
+                        ).trim()}`}
+                        className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handlePlaceBid}
+                      disabled={actionLoading || !bidAmount}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 disabled:opacity-50 text-white text-sm font-semibold transition-all shadow-sm hover:shadow"
+                    >
+                      {actionLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Gavel className="w-3.5 h-3.5" />
+                          Bid
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5">
+                    Enter amount above minimum to place your bid
+                  </p>
+                </>
+              )
             ) : (
               <div className="space-y-2">
                 <p className="text-xs text-slate-600 dark:text-slate-400">

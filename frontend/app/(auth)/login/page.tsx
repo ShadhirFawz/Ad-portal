@@ -1,14 +1,17 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import { FormEvent, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/providers/AuthProvider";
 import { Lock, AlertTriangle, Eye, EyeOff } from "lucide-react";
 import { validateLoginForm } from "@/lib/validation/authValidation";
+import { getSafeRedirectUrl } from "@/lib/utils/redirect";
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get("redirect") || searchParams.get("returnUrl");
   const { login } = useAuth();
 
   const [email, setEmail] = useState("");
@@ -32,7 +35,8 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       await login(email, password);
-      router.push("/");
+      const target = getSafeRedirectUrl(redirectParam, "/");
+      router.push(target);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed. Please try again.");
     } finally {
@@ -126,7 +130,7 @@ export default function LoginPage() {
         <div className="pt-3 text-center text-[11px] text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800">
           Don&apos;t have an account?{" "}
           <Link
-            href="/register"
+            href={redirectParam ? `/register?redirect=${encodeURIComponent(redirectParam)}` : "/register"}
             className="font-semibold text-emerald-600 hover:text-emerald-500 dark:text-emerald-400 transition-colors"
           >
             Create one now
@@ -134,5 +138,22 @@ export default function LoginPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex-1 flex items-center justify-center py-20">
+          <div className="flex items-center gap-3 text-slate-500 font-medium">
+            <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+            Loading login...
+          </div>
+        </main>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   );
 }

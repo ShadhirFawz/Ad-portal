@@ -1,11 +1,12 @@
 "use client";
 
-import { FormEvent, useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { FormEvent, useEffect, useState, useRef, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/providers/AuthProvider";
 import { updateMyProfile, UserPhoneNumberPayload } from "@/lib/api/users";
 import { validateEditProfileForm } from "@/lib/validation/profileValidation";
+import { getSafeRedirectUrl } from "@/lib/utils/redirect";
 import {
   uploadProfileImage,
   registerProfileImage,
@@ -23,8 +24,10 @@ import {
   Star,
 } from "lucide-react";
 
-export default function EditProfilePage() {
+function EditProfileContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get("redirect") || searchParams.get("returnUrl");
   const { user, accessToken, loading, syncProfile } = useAuth();
 
   const [firstName, setFirstName] = useState("");
@@ -46,9 +49,9 @@ export default function EditProfilePage() {
 
   useEffect(() => {
     if (!loading && !user) {
-      router.replace("/login");
+      router.replace(redirectParam ? `/login?redirect=${encodeURIComponent(redirectParam)}` : "/login?redirect=/profile/edit");
     }
-  }, [loading, user, router]);
+  }, [loading, user, router, redirectParam]);
 
   const initializedRef = useRef(false);
 
@@ -250,7 +253,9 @@ export default function EditProfilePage() {
       }
 
       await syncProfile();
-      router.push(user.username ? `/profile/${user.username}` : "/profile");
+      const defaultTarget = (updated && updated.username) || user.username ? `/profile/${(updated && updated.username) || user.username}` : "/profile";
+      const target = getSafeRedirectUrl(redirectParam, defaultTarget);
+      router.push(target);
       setMessage("Profile updated successfully!");
     } catch (err) {
       setError(
@@ -261,11 +266,15 @@ export default function EditProfilePage() {
     }
   };
 
+  const backTarget = redirectParam
+    ? getSafeRedirectUrl(redirectParam, user.username ? `/profile/${user.username}` : "/profile")
+    : (user.username ? `/profile/${user.username}` : "/profile");
+
   return (
     <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       {/* Back Button */}
       <Link
-        href={user.username ? `/profile/${user.username}` : "/profile"}
+        href={backTarget}
         className="inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
@@ -602,5 +611,22 @@ export default function EditProfilePage() {
         </div>
       </form>
     </main>
+  );
+}
+
+export default function EditProfilePage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex-1 flex items-center justify-center py-20">
+          <div className="flex items-center gap-3 text-slate-500 font-medium">
+            <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+            Loading profile editor...
+          </div>
+        </main>
+      }
+    >
+      <EditProfileContent />
+    </Suspense>
   );
 }
