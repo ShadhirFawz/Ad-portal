@@ -269,11 +269,8 @@ export default function AuctionPanel({
 
   if (!auction) {
     return (
-      <div className="rounded-2xl bg-gradient-to-br from-amber-50/80 to-white dark:from-amber-950/30 dark:to-slate-900/80 border border-amber-200/60 dark:border-amber-800/40 p-5 shadow-sm">
+      <div className="rounded-2xl bg-linear-to-br from-amber-50/80 to-white dark:from-amber-950/30 dark:to-slate-900/80 border border-amber-200/60 dark:border-amber-800/40 p-5 shadow-sm">
         <div className="flex items-center gap-2 mb-2">
-          <div className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/50">
-            <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-          </div>
           <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
             Start Auction
           </h3>

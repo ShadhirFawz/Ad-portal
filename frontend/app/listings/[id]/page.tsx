@@ -37,6 +37,7 @@ import {
   Loader2,
   Search,
 } from "lucide-react";
+import WhatsAppIcon from "@/components/common/WhatsAppIcon";
 
 function DetailRow({
   label,
@@ -390,9 +391,6 @@ export default function ListingDetailsPage() {
                     {formatListingCondition(listing.condition)}
                   </span>
                 )}
-                <span className="rounded-md bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-                  {formatListingType(listing.listingType)}
-                </span>
                 {listing.status !== "ACTIVE" && (
                   <span
                     className={`rounded-md px-2.5 py-1 text-xs font-bold uppercase tracking-wider ${listing.status === "DRAFT"
@@ -488,22 +486,58 @@ export default function ListingDetailsPage() {
               </div>
 
               {isLoggedIn ? (
-                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/40 p-4 space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                    Seller Mobile
-                  </p>
-                  {listing.sellerPhoneNumber ? (
-                    <a
-                      href={`tel:${listing.sellerPhoneNumber}`}
-                      className="inline-flex items-center gap-2 text-lg font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
-                    >
-                      <Phone className="w-5 h-5 shrink-0" />
-                      {listing.sellerPhoneNumber}
-                    </a>
-                  ) : (
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      Seller has not provided a mobile number.
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/40 p-4 space-y-3">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                      Seller Mobile
                     </p>
+                    {listing.sellerPhoneNumber ? (
+                      <a
+                        href={`tel:${listing.sellerPhoneNumber}`}
+                        className="inline-flex items-center gap-2 text-lg font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
+                      >
+                        <Phone className="w-5 h-5 shrink-0" />
+                        {listing.sellerPhoneNumber}
+                      </a>
+                    ) : (
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        Seller has not provided a mobile number.
+                      </p>
+                    )}
+                  </div>
+
+                  {listing.sellerWhatsappNumber && (
+                    <div className="pt-3 border-t border-slate-200 dark:border-slate-800/80 space-y-2">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                        <WhatsAppIcon size={13} className="text-emerald-500" />
+                        <span>WhatsApp Contact</span>
+                      </p>
+                      <a
+                        href={`https://wa.me/${listing.sellerWhatsappNumber.replace(
+                          /\D/g,
+                          ""
+                        )}?text=${encodeURIComponent(
+                          `Hi, I'm interested in your listing "${listing.title}" on the Marketplace. Is it still available?`
+                        )}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-between w-full px-3.5 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100/80 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-300 transition group shadow-xs"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div className="p-1.5 rounded-lg bg-emerald-600 text-white shadow-xs group-hover:scale-105 transition-transform">
+                            <WhatsAppIcon size={16} />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold tracking-tight">
+                              Chat on WhatsApp
+                            </p>
+                          </div>
+                        </div>
+                        <span className="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 group-hover:bg-emerald-600 group-hover:text-white dark:group-hover:bg-emerald-500 transition-colors">
+                          Message →
+                        </span>
+                      </a>
+                    </div>
                   )}
                 </div>
               ) : (
