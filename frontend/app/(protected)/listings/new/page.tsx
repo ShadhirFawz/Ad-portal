@@ -186,7 +186,7 @@ export default function NewListingPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      router.replace("/login");
+      router.replace("/login?redirect=/listings/new");
       return;
     }
 

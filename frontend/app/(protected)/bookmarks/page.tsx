@@ -30,7 +30,7 @@ export default function BookmarksPage() {
 
   useEffect(() => {
     if (!loading && !user) {
-      router.replace("/login");
+      router.replace("/login?redirect=/bookmarks");
       return;
     }
   }, [user, loading, router]);

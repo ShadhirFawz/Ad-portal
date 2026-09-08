@@ -207,7 +207,7 @@ export default function EditListingPage({ params }: PageProps) {
   // Load Categories & Listing Data
   useEffect(() => {
     if (!authLoading && !user) {
-      router.replace("/login");
+      router.replace(`/login?redirect=${encodeURIComponent(`/listings/${listingId}/edit`)}`);
       return;
     }
 

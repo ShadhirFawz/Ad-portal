@@ -144,6 +144,10 @@ public class AuctionServiceImpl implements AuctionService {
             throw new BadRequestException("Listing owners cannot bid on their own auction.");
         }
 
+        if (bidder.getUsername() == null || bidder.getUsername().isBlank()) {
+            throw new BadRequestException("You must set a unique username in your profile before participating in auctions.");
+        }
+
         Auction auction = auctionRepository
                 .findByListingIdAndStatus(listingId, AuctionStatus.ACTIVE)
                 .map(this::closeIfExpired)

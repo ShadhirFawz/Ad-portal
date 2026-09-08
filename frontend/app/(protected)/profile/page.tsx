@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, useCallback, Suspense, FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/providers/AuthProvider";
 import { getMyListings, getMyFavorites } from "@/lib/api/listings";
+import { updateMyProfile } from "@/lib/api/users";
+import { getSafeRedirectUrl } from "@/lib/utils/redirect";
 import type { Listing } from "@/types/listing";
 import ListingCard from "@/components/listings/ListingCard";
 import {
@@ -23,13 +25,22 @@ import {
   Heart,
   Bookmark,
   ArrowRight,
+  UserCheck,
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  Sparkles,
 } from "lucide-react";
 
 const PAGE_SIZE = 8;
 
-export default function ProfilePage() {
+function ProfileContent() {
   const router = useRouter();
-  const { user, accessToken, loading } = useAuth();
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get("redirect");
+  const reasonParam = searchParams.get("reason");
+
+  const { user, accessToken, loading, syncProfile } = useAuth();
 
   const [myListings, setMyListings] = useState<Listing[]>([]);
   const [listingsLoading, setListingsLoading] = useState(true);
@@ -43,12 +54,62 @@ export default function ProfilePage() {
   const [favoritesTotalPages, setFavoritesTotalPages] = useState(0);
   const [favoritesTotalElements, setFavoritesTotalElements] = useState(0);
 
+  // Username prompt state
+  const [usernameInput, setUsernameInput] = useState("");
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [usernameSaving, setUsernameSaving] = useState(false);
+  const [usernameSuccess, setUsernameSuccess] = useState<string | null>(null);
+
   useEffect(() => {
     if (!loading && !user) {
-      router.replace("/login");
+      const loginUrl = redirectParam
+        ? `/login?redirect=${encodeURIComponent(redirectParam)}`
+        : "/login?redirect=/profile";
+      router.replace(loginUrl);
       return;
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, redirectParam]);
+
+  const handleSaveUsername = async (e: FormEvent) => {
+    e.preventDefault();
+    setUsernameError(null);
+    setUsernameSuccess(null);
+
+    const clean = usernameInput.trim().toLowerCase();
+    if (!clean) {
+      setUsernameError("Please enter a valid username.");
+      return;
+    }
+
+    if (clean.length < 3 || clean.length > 30) {
+      setUsernameError("Username must be between 3 and 30 characters.");
+      return;
+    }
+
+    if (!/^[a-z0-9_]+$/.test(clean)) {
+      setUsernameError("Username can only contain letters, numbers, and underscores.");
+      return;
+    }
+
+    setUsernameSaving(true);
+    try {
+      await updateMyProfile(accessToken, { username: clean });
+      await syncProfile();
+      setUsernameSuccess("Username set successfully!");
+
+      if (redirectParam) {
+        setTimeout(() => {
+          router.push(getSafeRedirectUrl(redirectParam));
+        }, 800);
+      }
+    } catch (err) {
+      setUsernameError(
+        err instanceof Error ? err.message : "Failed to update username. It may already be taken."
+      );
+    } finally {
+      setUsernameSaving(false);
+    }
+  };
 
   const fetchMyListings = useCallback(
     async (page: number) => {
@@ -120,8 +181,92 @@ export default function ProfilePage() {
     );
   }
 
+  const isUsernameMissing = !user.username || user.username.trim() === "";
+  const isAuctionRedirect = reasonParam === "username_required" || Boolean(redirectParam);
+
   return (
-    <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
+    <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+      {/* Username Setup Prompt Card (Displayed if user has no username or came from auction redirect) */}
+      {isUsernameMissing && (
+        <div className="rounded-2xl border-2 border-emerald-500/30 bg-gradient-to-br from-emerald-50/90 via-white to-teal-50/80 dark:from-emerald-950/40 dark:via-slate-900 dark:to-teal-950/30 p-5 sm:p-6 shadow-xl animate-in fade-in slide-in-from-top-3 duration-200">
+          <div className="flex items-start gap-3.5 mb-3.5">
+            <div className="p-2.5 rounded-xl bg-emerald-600 text-white shadow-md shadow-emerald-500/20 shrink-0">
+              <UserCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                {isAuctionRedirect
+                  ? "Username Required to Participate in Auctions"
+                  : "Choose Your Unique Profile Username"}
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-0.5">
+                {isAuctionRedirect ? (
+                  <span>
+                    To place bids on listings, enter a unique username below. After saving, you will be automatically returned to your listing.
+                  </span>
+                ) : (
+                  "Your username is your unique identifier for your public profile, listings, and auction participation."
+                )}
+              </p>
+            </div>
+          </div>
+
+          {usernameError && (
+            <div className="mb-3.5 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{usernameError}</span>
+            </div>
+          )}
+
+          {usernameSuccess && (
+            <div className="mb-3.5 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>
+                {usernameSuccess}
+                {redirectParam && " Returning to listing..."}
+              </span>
+            </div>
+          )}
+
+          <form onSubmit={handleSaveUsername} className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
+            <div className="relative flex-1">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-emerald-600 dark:text-emerald-400 select-none">
+                @
+              </span>
+              <input
+                type="text"
+                value={usernameInput}
+                onChange={(e) => {
+                  setUsernameInput(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""));
+                  setUsernameError(null);
+                }}
+                placeholder="choose_username"
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 pl-8 pr-3 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 font-medium transition"
+                required
+                autoFocus
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={usernameSaving || !usernameInput.trim()}
+              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition shadow-md shadow-emerald-600/20 whitespace-nowrap"
+            >
+              {usernameSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>{redirectParam ? "Save & Return to Listing" : "Save Username"}</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </>
+              )}
+            </button>
+          </form>
+        </div>
+      )}
 
       {/* Cover Photo Section */}
       <div className="glass-panel overflow-hidden">
@@ -548,5 +693,22 @@ export default function ProfilePage() {
       </section>
 
     </main>
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex-1 flex items-center justify-center py-20">
+          <div className="flex items-center gap-3 text-slate-500 font-medium">
+            <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+            Loading profile...
+          </div>
+        </main>
+      }
+    >
+      <ProfileContent />
+    </Suspense>
   );
 }

@@ -154,7 +154,7 @@ export default function ListingCard({
         </button>
       ) : (
         <Link
-          href="/auth/login"
+          href={`/login?redirect=${encodeURIComponent(targetHref)}`}
           className="flex w-full items-center gap-2.5 px-3.5 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-700/60"
         >
           <Bookmark className="w-4 h-4 shrink-0 text-slate-500" />
