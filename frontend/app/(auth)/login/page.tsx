@@ -7,12 +7,13 @@ import { useAuth } from "@/providers/AuthProvider";
 import { Lock, AlertTriangle, Eye, EyeOff } from "lucide-react";
 import { validateLoginForm } from "@/lib/validation/authValidation";
 import { getSafeRedirectUrl } from "@/lib/utils/redirect";
+import GoogleIcon from "@/components/common/GoogleIcon";
 
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectParam = searchParams.get("redirect") || searchParams.get("returnUrl");
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,6 +21,8 @@ function LoginContent() {
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleError, setGoogleError] = useState<string | null>(null);
 
   const fieldClass = (key: string) => 
     `w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 placeholder:text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all ${fieldErrors[key] ? "border-rose-500 focus:border-rose-500 focus:ring-rose-500/20" : ""}`;
@@ -58,6 +61,46 @@ function LoginContent() {
           <p className="text-xs text-slate-500 dark:text-slate-400">
             Enter your credentials to access your account
           </p>
+        </div>
+
+        {/* Google OAuth Error */}
+        {googleError && (
+          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-medium flex items-center gap-2">
+            <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-rose-500" />
+            <span>{googleError}</span>
+          </div>
+        )}
+
+        {/* Google Sign-In Button */}
+        <button
+          type="button"
+          disabled={googleLoading || submitting}
+          onClick={async () => {
+            setGoogleError(null);
+            setGoogleLoading(true);
+            try {
+              const next = getSafeRedirectUrl(redirectParam, "/");
+              await loginWithGoogle(next);
+            } catch (err) {
+              setGoogleError(err instanceof Error ? err.message : "Google sign-in failed.");
+              setGoogleLoading(false);
+            }
+          }}
+          className="w-full flex items-center justify-center gap-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+        >
+          {googleLoading ? (
+            <span className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <GoogleIcon />
+          )}
+          Continue with Google
+        </button>
+
+        {/* Divider */}
+        <div className="relative flex items-center gap-3">
+          <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
+          <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider font-medium">or</span>
+          <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
         </div>
 
         {/* Error Alert */}
