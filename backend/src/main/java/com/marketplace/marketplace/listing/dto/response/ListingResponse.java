@@ -84,6 +84,8 @@ public record ListingResponse(
 
         String sellerPhoneNumber,
 
+        String sellerWhatsappNumber,
+
         boolean hasActiveAuction,
 
         boolean isBookmarked

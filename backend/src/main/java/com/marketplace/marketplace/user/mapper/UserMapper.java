@@ -28,7 +28,8 @@ public class UserMapper {
                                 .map(pn -> new com.marketplace.marketplace.user.dto.response.UserPhoneNumberResponse(
                                         pn.getId(),
                                         pn.getPhoneNumber(),
-                                        Boolean.TRUE.equals(pn.getIsPrimary())
+                                        Boolean.TRUE.equals(pn.getIsPrimary()),
+                                        Boolean.TRUE.equals(pn.getIsWhatsapp())
                                 ))
                                 .toList();
 

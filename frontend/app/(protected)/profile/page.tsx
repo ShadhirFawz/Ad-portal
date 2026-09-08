@@ -30,9 +30,8 @@ import {
   CheckCircle2,
   XCircle,
   Loader2,
-  Sparkles,
-  Save,
 } from "lucide-react";
+import WhatsAppIcon from "@/components/common/WhatsAppIcon";
 
 const PAGE_SIZE = 8;
 
@@ -262,7 +261,7 @@ function ProfileContent() {
     <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       {/* Username Setup Prompt Card (Displayed if user has no username or came from auction redirect) */}
       {isUsernameMissing && (
-        <div className="rounded-2xl border-2 border-emerald-500/30 bg-gradient-to-br from-emerald-50/90 via-white to-teal-50/80 dark:from-emerald-950/40 dark:via-slate-900 dark:to-teal-950/30 p-5 sm:p-6 shadow-xl animate-in fade-in slide-in-from-top-3 duration-200">
+        <div className="rounded-2xl border-2 border-emerald-500/30 bg-linear-to-br from-emerald-50/90 via-white to-teal-50/80 dark:from-emerald-950/40 dark:via-slate-900 dark:to-teal-950/30 p-5 sm:p-6 shadow-xl animate-in fade-in slide-in-from-top-3 duration-200">
           <div className="flex items-start gap-3.5 mb-3.5">
             <div className="p-2.5 rounded-xl bg-emerald-600 text-white shadow-md shadow-emerald-500/20 shrink-0">
               <UserCheck className="w-5 h-5" />
@@ -371,7 +370,7 @@ function ProfileContent() {
             </div>
 
             {/* Real-time live status indicator & feedback */}
-            <div className="min-h-[20px] flex items-center">
+            <div className="min-h-5 flex items-center">
               {checkingUsername ? (
                 <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1.5 animate-pulse">
                   <Loader2 className="w-3 h-3 animate-spin" />
@@ -481,12 +480,20 @@ function ProfileContent() {
                       className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-200"
                     >
                       <span className="font-mono">{phone.phoneNumber}</span>
-                      {phone.isPrimary && (
-                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                          <Star className="w-2.5 h-2.5 fill-emerald-500 text-emerald-500" />
-                          Primary
-                        </span>
-                      )}
+                      <div className="flex items-center gap-1">
+                        {phone.isPrimary && (
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                            <Star className="w-2.5 h-2.5 fill-emerald-500 text-emerald-500" />
+                            Primary
+                          </span>
+                        )}
+                        {phone.isWhatsapp && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                            <WhatsAppIcon size={11} className="text-emerald-500" />
+                            WhatsApp
+                          </span>
+                        )}
+                      </div>
                     </div>
                   ))
                 ) : (
