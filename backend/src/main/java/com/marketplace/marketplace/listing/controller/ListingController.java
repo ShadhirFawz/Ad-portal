@@ -8,6 +8,7 @@ import com.marketplace.marketplace.listing.dto.response.ListingBookmarkResponse;
 import com.marketplace.marketplace.listing.dto.response.ListingFavoriteResponse;
 import com.marketplace.marketplace.listing.dto.response.ListingResponse;
 import com.marketplace.marketplace.listing.enums.ListingCondition;
+import com.marketplace.marketplace.listing.enums.ListingStatus;
 import com.marketplace.marketplace.listing.enums.ListingType;
 import com.marketplace.marketplace.listing.enums.PricingType;
 import com.marketplace.marketplace.listing.service.ListingService;
@@ -40,20 +41,49 @@ public class ListingController {
 
     @GetMapping("/mine")
     public ApiResponse<Page<ListingResponse>> getMyListings(
+            @RequestParam(required = false) ListingStatus status,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) ListingCondition condition,
+            @RequestParam(required = false) PricingType pricingType,
+            @RequestParam(required = false) ListingType listingType,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
             Pageable pageable) {
+
+        ListingFilterParams params = new ListingFilterParams(
+                search,
+                condition,
+                pricingType,
+                listingType,
+                minPrice,
+                maxPrice);
 
         return ApiResponse.success(
                 "Listings retrieved successfully.",
-                listingService.getMyListings(pageable));
+                listingService.getMyListings(status, params, pageable));
     }
 
     @GetMapping("/favorites")
     public ApiResponse<Page<ListingResponse>> getMyFavorites(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) ListingCondition condition,
+            @RequestParam(required = false) PricingType pricingType,
+            @RequestParam(required = false) ListingType listingType,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
             Pageable pageable) {
+
+        ListingFilterParams params = new ListingFilterParams(
+                search,
+                condition,
+                pricingType,
+                listingType,
+                minPrice,
+                maxPrice);
 
         return ApiResponse.success(
                 "Favorite listings retrieved successfully.",
-                listingService.getMyFavorites(pageable));
+                listingService.getMyFavorites(params, pageable));
     }
 
     @GetMapping("/bookmarks")

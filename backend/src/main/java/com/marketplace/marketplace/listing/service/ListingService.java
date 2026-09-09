@@ -6,6 +6,7 @@ import com.marketplace.marketplace.listing.dto.request.UpdateListingRequest;
 import com.marketplace.marketplace.listing.dto.response.ListingBookmarkResponse;
 import com.marketplace.marketplace.listing.dto.response.ListingFavoriteResponse;
 import com.marketplace.marketplace.listing.dto.response.ListingResponse;
+import com.marketplace.marketplace.listing.enums.ListingStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -47,7 +48,16 @@ public interface ListingService {
         Page<ListingResponse> getMyListings(
                         Pageable pageable);
 
+        Page<ListingResponse> getMyListings(
+                        ListingStatus status,
+                        ListingFilterParams params,
+                        Pageable pageable);
+
         Page<ListingResponse> getMyFavorites(
+                        Pageable pageable);
+
+        Page<ListingResponse> getMyFavorites(
+                        ListingFilterParams params,
                         Pageable pageable);
 
         Page<ListingResponse> getMyBookmarks(
