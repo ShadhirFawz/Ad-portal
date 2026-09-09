@@ -150,6 +150,9 @@ public class Listing {
     @Column(name = "published_at")
     private OffsetDateTime publishedAt;
 
+    @Column(name = "sold_at")
+    private OffsetDateTime soldAt;
+
     @Column(name = "expires_at")
     private OffsetDateTime expiresAt;
 

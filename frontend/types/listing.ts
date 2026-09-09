@@ -97,6 +97,7 @@ export interface Listing {
   primaryImage?: ListingCardImage | null;
 
   publishedAt: string | null;
+  soldAt?: string | null;
 
   createdAt: string;
   updatedAt: string;
@@ -183,5 +184,6 @@ export interface ListingCardData {
   isBookmarked?: boolean;
   hasActiveAuction?: boolean;
   publishedAt?: string | null;
+  soldAt?: string | null;
   createdAt?: string;
 }

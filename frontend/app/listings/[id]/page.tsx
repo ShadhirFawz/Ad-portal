@@ -4,7 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/providers/AuthProvider";
-import { getListing, toggleFavoriteListing, toggleBookmarkListing } from "@/lib/api/listings";
+import { getListing, toggleFavoriteListing, toggleBookmarkListing, markListingAsSold } from "@/lib/api/listings";
 import ListingImageGallery from "@/components/listings/ListingImageGallery";
 import ListingBreadcrumb from "@/components/listings/ListingBreadcrumb";
 import SimilarListingsColumn from "@/components/listings/SimilarListingsColumn";
@@ -36,6 +36,9 @@ import {
   User,
   Loader2,
   Search,
+  CheckCircle2,
+  AlertCircle,
+  X,
 } from "lucide-react";
 import WhatsAppIcon from "@/components/common/WhatsAppIcon";
 
@@ -98,6 +101,10 @@ export default function ListingDetailsPage() {
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [favoriting, setFavoriting] = useState(false);
   const [bookmarking, setBookmarking] = useState(false);
+  const [markSoldModalOpen, setMarkSoldModalOpen] = useState(false);
+  const [markingSold, setMarkingSold] = useState(false);
+  const [markSoldError, setMarkSoldError] = useState<string | null>(null);
+  const [soldSuccessMessage, setSoldSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!listingId) return;
@@ -248,6 +255,24 @@ export default function ListingDetailsPage() {
     }
   };
 
+  const handleMarkAsSold = async () => {
+    if (!listing || !accessToken) return;
+    setMarkingSold(true);
+    setMarkSoldError(null);
+    try {
+      const updated = await markListingAsSold(accessToken, listing.id);
+      setListing(updated);
+      setMarkSoldModalOpen(false);
+      setSoldSuccessMessage("Listing has been successfully marked as sold!");
+      setTimeout(() => setSoldSuccessMessage(null), 5000);
+    } catch (err) {
+      console.error("Failed to mark listing as sold:", err);
+      setMarkSoldError(err instanceof Error ? err.message : "Failed to mark listing as sold. Please try again.");
+    } finally {
+      setMarkingSold(false);
+    }
+  };
+
   if (loading && !listing) {
     return (
       <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12 flex justify-center items-center min-h-[60vh]">
@@ -288,9 +313,15 @@ export default function ListingDetailsPage() {
     );
   }
 
-  const isOwner =
-    Boolean(user?.id) &&
-    user!.id.trim().toLowerCase() === listing.sellerId.trim().toLowerCase();
+  const isOwner = Boolean(
+    user &&
+    listing &&
+    (
+      (Boolean(user.id) && Boolean(listing.sellerId) && user.id.trim().toLowerCase() === listing.sellerId.trim().toLowerCase()) ||
+      (Boolean(user.username) && Boolean(listing.sellerUsername) && user.username!.trim().toLowerCase() === listing.sellerUsername.trim().toLowerCase()) ||
+      (Boolean(user.email) && Boolean(listing.sellerUsername) && user.email.toLowerCase().startsWith(listing.sellerUsername.toLowerCase()))
+    )
+  );
   const isLoggedIn = Boolean(user);
 
   const locationParts = [listing.city, listing.district, listing.province].filter(
@@ -319,15 +350,53 @@ export default function ListingDetailsPage() {
           />
 
           {isOwner && (
-            <Link
-              href={`/listings/${listing.id}/edit`}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 font-semibold text-xs transition"
-            >
-              <Pencil className="w-3.5 h-3.5" />
-              Manage Photos &amp; Edit
-            </Link>
+            <div className="flex items-center gap-2 flex-wrap">
+              {listing.status !== "SOLD" && listing.status !== "DELETED" && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMarkSoldError(null);
+                    setMarkSoldModalOpen(true);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-500/40 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/60 font-semibold text-xs transition shadow-xs cursor-pointer"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                  Mark as Sold
+                </button>
+              )}
+              {listing.status === "SOLD" && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400 font-bold text-xs">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Item Sold
+                </span>
+              )}
+              <Link
+                href={`/listings/${listing.id}/edit`}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 font-semibold text-xs transition"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                Manage Photos &amp; Edit
+              </Link>
+            </div>
           )}
         </div>
+
+        {/* Success Alert */}
+        {soldSuccessMessage && (
+          <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-sm font-semibold flex items-center justify-between gap-3 animate-in fade-in duration-200">
+            <div className="flex items-center gap-2.5">
+              <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-500" />
+              <span>{soldSuccessMessage}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSoldSuccessMessage(null)}
+              className="p-1 hover:text-emerald-800 dark:hover:text-emerald-200 rounded-lg transition"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         {/* Header & Seller Contact */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -466,44 +535,94 @@ export default function ListingDetailsPage() {
               </div>
             </div>
 
-            {/* Seller Contact */}
+            {/* Seller Contact & Management */}
             <div className="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 dark:border-slate-800 dark:bg-slate-900/90 shadow-sm space-y-4">
-              <div className="flex items-center gap-3.5">
-                {listing.sellerUsername ? (
-                  <Link
-                    href={`/profile/${listing.sellerUsername}`}
-                    className="w-12 h-12 rounded-2xl bg-linear-to-tr from-emerald-500 to-teal-400 text-white font-bold text-lg flex items-center justify-center shadow-md shadow-emerald-500/20 shrink-0 hover:opacity-90 hover:scale-105 transition-all"
-                    title={`View @${listing.sellerUsername}'s profile`}
-                  >
-                    {listing.sellerUsername.charAt(0).toUpperCase()}
-                  </Link>
-                ) : (
-                  <div className="w-12 h-12 rounded-2xl bg-linear-to-tr from-emerald-500 to-teal-400 text-white font-bold text-lg flex items-center justify-center shadow-md shadow-emerald-500/20 shrink-0">
-                    U
-                  </div>
-                )}
-                <div className="min-w-0">
-                  <p className="text-xs text-slate-400 uppercase font-semibold tracking-wider flex items-center gap-1">
-                    <User className="w-3 h-3" />
-                    Listed By
-                  </p>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3.5">
                   {listing.sellerUsername ? (
                     <Link
                       href={`/profile/${listing.sellerUsername}`}
-                      className="font-bold text-slate-900 dark:text-white hover:text-emerald-600 dark:hover:text-emerald-400 hover:underline transition-colors truncate block"
+                      className="w-12 h-12 rounded-2xl bg-linear-to-tr from-emerald-500 to-teal-400 text-white font-bold text-lg flex items-center justify-center shadow-md shadow-emerald-500/20 shrink-0 hover:opacity-90 hover:scale-105 transition-all"
                       title={`View @${listing.sellerUsername}'s profile`}
                     >
-                      @{listing.sellerUsername}
+                      {listing.sellerUsername.charAt(0).toUpperCase()}
                     </Link>
                   ) : (
-                    <p className="font-bold text-slate-900 dark:text-white truncate">
-                      @Seller
-                    </p>
+                    <div className="w-12 h-12 rounded-2xl bg-linear-to-tr from-emerald-500 to-teal-400 text-white font-bold text-lg flex items-center justify-center shadow-md shadow-emerald-500/20 shrink-0">
+                      U
+                    </div>
                   )}
+                  <div className="min-w-0">
+                    <p className="text-xs text-slate-400 uppercase font-semibold tracking-wider flex items-center gap-1">
+                      <User className="w-3 h-3" />
+                      {isOwner ? "Your Listing" : "Listed By"}
+                    </p>
+                    {listing.sellerUsername ? (
+                      <Link
+                        href={`/profile/${listing.sellerUsername}`}
+                        className="font-bold text-slate-900 dark:text-white hover:text-emerald-600 dark:hover:text-emerald-400 hover:underline transition-colors truncate block"
+                        title={`View @${listing.sellerUsername}'s profile`}
+                      >
+                        @{listing.sellerUsername}
+                      </Link>
+                    ) : (
+                      <p className="font-bold text-slate-900 dark:text-white truncate">
+                        @Seller
+                      </p>
+                    )}
+                  </div>
                 </div>
+
+                {isOwner && (
+                  <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[11px] font-bold">
+                    You (Owner)
+                  </span>
+                )}
               </div>
 
-              {isLoggedIn ? (
+              {/* Owner Action Panel */}
+              {isOwner ? (
+                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-950/60 p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                      <Shield className="w-3.5 h-3.5 text-emerald-500" />
+                      <span>Seller Controls</span>
+                    </p>
+                    <span className="text-[11px] font-semibold text-slate-400">
+                      Status: <strong className={listing.status === "SOLD" ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}>{listing.status}</strong>
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 pt-1">
+                    {listing.status !== "SOLD" && listing.status !== "DELETED" ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMarkSoldError(null);
+                          setMarkSoldModalOpen(true);
+                        }}
+                        className="w-full py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-[0.99] text-white font-bold text-sm shadow-md shadow-rose-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        Mark as Sold
+                      </button>
+                    ) : listing.status === "SOLD" ? (
+                      <div className="w-full py-2.5 px-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 font-bold text-sm flex items-center justify-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+                        Item Marked as Sold
+                      </div>
+                    ) : null}
+
+                    <Link
+                      href={`/listings/${listing.id}/edit`}
+                      className="w-full py-2 px-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold text-xs transition flex items-center justify-center gap-2 text-center"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      Manage Photos &amp; Edit Details
+                    </Link>
+                  </div>
+                </div>
+              ) : isLoggedIn ? (
                 <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/40 p-4 space-y-3">
                   <div className="space-y-1">
                     <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
@@ -698,6 +817,104 @@ export default function ListingDetailsPage() {
         title="Sign in to contact seller"
         description="Log in to view the seller's mobile number and connect directly."
       />
+
+      {/* Mark As Sold Confirmation Modal */}
+      {markSoldModalOpen && listing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div
+            className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 sm:p-7 space-y-5 animate-in zoom-in-95 duration-150 relative"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mark-sold-modal-title"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center border border-rose-500/20 shrink-0">
+                  <CheckCircle2 className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 id="mark-sold-modal-title" className="text-lg font-bold text-slate-900 dark:text-white">
+                    Mark as Sold?
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Item Status Confirmation
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!markingSold) {
+                    setMarkSoldModalOpen(false);
+                    setMarkSoldError(null);
+                  }
+                }}
+                disabled={markingSold}
+                className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg transition"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                Are you sure you want to mark <span className="font-semibold text-slate-900 dark:text-white">&ldquo;{listing.title}&rdquo;</span> as <span className="font-bold text-rose-600 dark:text-rose-400">SOLD</span>?
+              </p>
+              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 space-y-1.5">
+                <p className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                  What happens when marked as sold:
+                </p>
+                <ul className="list-disc list-inside space-y-1 pl-1 text-[11px]">
+                  <li>The listing status will be changed to <strong>SOLD</strong>.</li>
+                  <li>Buyers will see that this item is no longer available.</li>
+                  <li>Any active auction on this listing will be closed automatically.</li>
+                </ul>
+              </div>
+            </div>
+
+            {markSoldError && (
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-medium flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
+                <span>{markSoldError}</span>
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setMarkSoldModalOpen(false);
+                  setMarkSoldError(null);
+                }}
+                disabled={markingSold}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition disabled:opacity-50 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleMarkAsSold}
+                disabled={markingSold}
+                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition shadow-md shadow-rose-600/20 disabled:opacity-60 flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed"
+              >
+                {markingSold ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Marking as Sold...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Yes, Mark as Sold</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

@@ -78,6 +78,8 @@ public record ListingResponse(
 
         OffsetDateTime publishedAt,
 
+        OffsetDateTime soldAt,
+
         OffsetDateTime createdAt,
 
         OffsetDateTime updatedAt,
