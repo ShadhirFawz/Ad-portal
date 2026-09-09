@@ -39,6 +39,8 @@ import {
   CheckCircle2,
   AlertCircle,
   X,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import WhatsAppIcon from "@/components/common/WhatsAppIcon";
 
@@ -105,6 +107,7 @@ export default function ListingDetailsPage() {
   const [markingSold, setMarkingSold] = useState(false);
   const [markSoldError, setMarkSoldError] = useState<string | null>(null);
   const [soldSuccessMessage, setSoldSuccessMessage] = useState<string | null>(null);
+  const [showAdditionalInfo, setShowAdditionalInfo] = useState(false);
 
   useEffect(() => {
     if (!listingId) return;
@@ -728,10 +731,6 @@ export default function ListingDetailsPage() {
               <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
                 <DetailRow label="Category" value={listing.categoryName} />
                 <DetailRow
-                  label="Offering Type"
-                  value={formatListingType(listing.listingType)}
-                />
-                <DetailRow
                   label="Condition"
                   value={formatListingCondition(listing.condition)}
                 />
@@ -749,10 +748,6 @@ export default function ListingDetailsPage() {
                   value={(
                     listing.availableQuantity ?? listing.quantity
                   )?.toLocaleString()}
-                />
-                <DetailRow
-                  label="Listing Status"
-                  value={formatListingStatus(listing.status)}
                 />
                 {isOwner && (
                   <DetailRow
@@ -780,21 +775,45 @@ export default function ListingDetailsPage() {
                 )}
               </dl>
             </SectionCard>
+          </div>
 
-            {/* Custom attributes */}
-            {customAttributeEntries.length > 0 && (
-              <div className="md:col-span-2">
-                <SectionCard title="Additional information" icon={Shield}>
-                  <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
-                    {customAttributeEntries.map(([key, value]) => (
-                      <DetailRow
-                        key={key}
-                        label={key}
-                        value={String(value)}
-                      />
-                    ))}
-                  </dl>
-                </SectionCard>
+          {/* Additional Information Section with Toggle */}
+          <div className="space-y-4">
+            {/* Separator with Toggle Button */}
+            <div className="relative flex items-center justify-center">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-200 dark:border-slate-800"></div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAdditionalInfo(!showAdditionalInfo)}
+                className="relative inline-flex items-center gap-2 px-6 py-2.5 bg-white dark:bg-slate-900 rounded-full border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-700 transition-all shadow-sm hover:shadow"
+              >
+                <span>More Information</span>
+                {showAdditionalInfo ? (
+                  <ChevronUp className="w-3.5 h-3.5" />
+                ) : (
+                  <ChevronDown className="w-3.5 h-3.5" />
+                )}
+              </button>
+            </div>
+
+            {/* Additional Info Content */}
+            {showAdditionalInfo && (
+              <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+                {customAttributeEntries.length > 0 && (
+                  <SectionCard title="Additional information" icon={Shield}>
+                    <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
+                      {customAttributeEntries.map(([key, value]) => (
+                        <DetailRow
+                          key={key}
+                          label={key}
+                          value={String(value)}
+                        />
+                      ))}
+                    </dl>
+                  </SectionCard>
+                )}
               </div>
             )}
           </div>
