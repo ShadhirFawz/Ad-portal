@@ -283,9 +283,18 @@ function ListingsContent() {
     [totalPages, updateParams]
   );
 
-  const commitSearch = () => {
+  const commitSearch = (overrideValue?: string) => {
+    const val = typeof overrideValue === "string" ? overrideValue : pendingSearch;
     updateParams({
-      search: pendingSearch.trim() || null,
+      search: val.trim() || null,
+      page: null,
+    });
+  };
+
+  const handleSearchClear = () => {
+    setPendingSearch("");
+    updateParams({
+      search: null,
       page: null,
     });
   };
@@ -395,6 +404,7 @@ function ListingsContent() {
             searchQuery={pendingSearch}
             onSearchChange={setPendingSearch}
             onSearchSubmit={commitSearch}
+            onSearchClear={handleSearchClear}
             filters={{
               condition: conditionParam,
               pricingType: pricingTypeParam,
@@ -420,6 +430,7 @@ function ListingsContent() {
             searchQuery={pendingSearch}
             onSearchChange={setPendingSearch}
             onSearchSubmit={commitSearch}
+            onSearchClear={handleSearchClear}
             filters={{
               condition: conditionParam,
               pricingType: pricingTypeParam,
@@ -438,7 +449,81 @@ function ListingsContent() {
         )}
 
         {/* Listing Results */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 space-y-4">
+          {/* Active Filter Chips */}
+          {activeFilterCount > 0 && (
+            <div className="flex items-center gap-1.5 flex-wrap text-xs pb-1">
+              <span className="text-slate-400 font-medium">Active filters:</span>
+              {searchParam && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-medium">
+                  Search: &ldquo;{searchParam}&rdquo;
+                  <button
+                    type="button"
+                    onClick={handleSearchClear}
+                    className="hover:text-rose-500 p-0.5 rounded-full"
+                    title="Clear search"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+              {conditionParam && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-medium">
+                  Condition: {conditionParam}
+                  <button
+                    type="button"
+                    onClick={() => handleFilterChange("condition", conditionParam)}
+                    className="hover:text-rose-500 p-0.5 rounded-full"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+              {pricingTypeParam && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-medium">
+                  Pricing: {pricingTypeParam}
+                  <button
+                    type="button"
+                    onClick={() => handleFilterChange("pricingType", pricingTypeParam)}
+                    className="hover:text-rose-500 p-0.5 rounded-full"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+              {listingTypeParam && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-medium">
+                  Type: {listingTypeParam}
+                  <button
+                    type="button"
+                    onClick={() => handleFilterChange("listingType", listingTypeParam)}
+                    className="hover:text-rose-500 p-0.5 rounded-full"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+              {(minPriceParam || maxPriceParam) && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-medium">
+                  Price: ${minPriceParam || "0"} - ${maxPriceParam || "Any"}
+                  <button
+                    type="button"
+                    onClick={() => updateParams({ minPrice: null, maxPrice: null, page: null })}
+                    className="hover:text-rose-500 p-0.5 rounded-full"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="text-xs font-semibold text-rose-500 hover:text-rose-600 dark:hover:text-rose-400 ml-1.5 transition cursor-pointer"
+              >
+                Reset all
+              </button>
+            </div>
+          )}
           {loading ? (
             <div className="py-20 flex flex-col items-center gap-3">
               <div className="w-9 h-9 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />

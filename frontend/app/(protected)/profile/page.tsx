@@ -596,7 +596,15 @@ function ProfileContent() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 self-end sm:self-auto">
+          <div className="flex items-center gap-2 self-end sm:self-auto flex-wrap">
+            <Link
+              href="/my-listings"
+              className="btn-outline text-xs px-3 py-2 flex items-center gap-1.5"
+            >
+              <span>View All ({totalElements})</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+
             {totalPages > 1 && (
               <div className="flex items-center gap-1.5">
                 <button
@@ -726,31 +734,41 @@ function ProfileContent() {
             </div>
           </div>
 
-          {favoritesTotalPages > 1 && (
-            <div className="flex items-center gap-1.5 self-end sm:self-auto">
-              <button
-                type="button"
-                onClick={() => handleFavoritesPageChange(favoritesCurrentPage - 1)}
-                disabled={favoritesCurrentPage === 0 || favoritesLoading}
-                aria-label="Previous Page"
-                className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-500 hover:border-rose-500 hover:text-rose-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <span className="px-3 py-1 text-xs font-semibold text-slate-600 dark:text-slate-300">
-                Page {favoritesCurrentPage + 1} of {favoritesTotalPages}
-              </span>
-              <button
-                type="button"
-                onClick={() => handleFavoritesPageChange(favoritesCurrentPage + 1)}
-                disabled={favoritesCurrentPage >= favoritesTotalPages - 1 || favoritesLoading}
-                aria-label="Next Page"
-                className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-500 hover:border-rose-500 hover:text-rose-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          )}
+          <div className="flex items-center gap-2 self-end sm:self-auto flex-wrap">
+            <Link
+              href="/favorites"
+              className="btn-outline text-xs px-3 py-2 flex items-center gap-1.5"
+            >
+              <span>View All ({favoritesTotalElements})</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+
+            {favoritesTotalPages > 1 && (
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => handleFavoritesPageChange(favoritesCurrentPage - 1)}
+                  disabled={favoritesCurrentPage === 0 || favoritesLoading}
+                  aria-label="Previous Page"
+                  className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-500 hover:border-rose-500 hover:text-rose-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="px-3 py-1 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                  Page {favoritesCurrentPage + 1} of {favoritesTotalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleFavoritesPageChange(favoritesCurrentPage + 1)}
+                  disabled={favoritesCurrentPage >= favoritesTotalPages - 1 || favoritesLoading}
+                  aria-label="Next Page"
+                  className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-500 hover:border-rose-500 hover:text-rose-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Content */}

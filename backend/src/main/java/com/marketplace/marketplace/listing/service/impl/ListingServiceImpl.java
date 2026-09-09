@@ -479,10 +479,21 @@ public class ListingServiceImpl implements ListingService {
         @Transactional(readOnly = true)
         public Page<ListingResponse> getMyListings(
                         Pageable pageable) {
+                return getMyListings(null, null, pageable);
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public Page<ListingResponse> getMyListings(
+                        ListingStatus status,
+                        ListingFilterParams params,
+                        Pageable pageable) {
 
                 UUID userId = SecurityUtils.getCurrentUserId();
 
-                Page<Listing> page = listingRepository.findAllBySellerId(userId, pageable);
+                Page<Listing> page = listingRepository.findAll(
+                                ListingSpecification.buildSellerSpec(userId, status, params),
+                                pageable);
                 return mapToResponsePage(page);
         }
 
@@ -490,12 +501,21 @@ public class ListingServiceImpl implements ListingService {
         @Transactional(readOnly = true)
         public Page<ListingResponse> getMyFavorites(
                         Pageable pageable) {
+                return getMyFavorites(null, pageable);
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public Page<ListingResponse> getMyFavorites(
+                        ListingFilterParams params,
+                        Pageable pageable) {
 
                 UUID userId = SecurityUtils.getCurrentUserId();
 
-                Page<ListingFavorite> page = listingFavoriteRepository
-                                .findAllByUserIdOrderByCreatedAtDesc(userId, pageable);
-                return mapToResponsePage(page.map(ListingFavorite::getListing));
+                Page<Listing> page = listingRepository.findAll(
+                                ListingSpecification.buildFavoriteSpec(userId, params),
+                                pageable);
+                return mapToResponsePage(page);
         }
 
         @Override
