@@ -448,6 +448,34 @@ public class ListingServiceImpl implements ListingService {
         }
 
         @Override
+        @Transactional
+        public ListingResponse markAsSold(String idOrSlug) {
+                Listing listing = getOwnedListing(idOrSlug);
+
+                if (listing.getStatus() == ListingStatus.SOLD) {
+                        throw new ConflictException("Listing is already marked as sold.");
+                }
+
+                if (listing.getStatus() == ListingStatus.DELETED) {
+                        throw new ConflictException("Deleted listings cannot be marked as sold.");
+                }
+
+                OffsetDateTime now = OffsetDateTime.now();
+                listing.setStatus(ListingStatus.SOLD);
+                listing.setSoldAt(now);
+                listing.setAvailableQuantity(0);
+
+                // Close active auction if present
+                auctionRepository.findByListingIdAndStatus(listing.getId(), com.marketplace.marketplace.auction.enums.AuctionStatus.ACTIVE)
+                                .ifPresent(auction -> {
+                                        auction.setStatus(com.marketplace.marketplace.auction.enums.AuctionStatus.CLOSED);
+                                        auctionRepository.save(auction);
+                                });
+
+                return toResponse(listingRepository.save(listing), true);
+        }
+
+        @Override
         @Transactional(readOnly = true)
         public Page<ListingResponse> getMyListings(
                         Pageable pageable) {
@@ -593,6 +621,15 @@ public class ListingServiceImpl implements ListingService {
                                         "Listing not found.");
                 }
 
+                return listing;
+        }
+
+        private Listing getOwnedListing(String idOrSlug) {
+                Listing listing = resolveListing(idOrSlug);
+                UUID userId = SecurityUtils.getCurrentUserId();
+                if (listing.getSeller() == null || !listing.getSeller().getId().equals(userId)) {
+                        throw new ResourceNotFoundException("Listing not found.");
+                }
                 return listing;
         }
 
@@ -989,6 +1026,7 @@ public class ListingServiceImpl implements ListingService {
                                 isFavorited,
                                 images,
                                 listing.getPublishedAt(),
+                                listing.getSoldAt(),
                                 listing.getCreatedAt(),
                                 listing.getUpdatedAt(),
                                 sellerPhoneNumber,

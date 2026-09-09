@@ -429,3 +429,23 @@ export async function toggleBookmarkListing(
 
   return response.data;
 }
+
+export async function markListingAsSold(
+  accessToken: string | undefined | null,
+  idOrSlug: string
+): Promise<Listing> {
+  const headers: Record<string, string> = {};
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
+
+  const response = await apiRequest<ApiResponse<Listing>>(
+    `/listings/${encodeURIComponent(idOrSlug)}/mark-sold`,
+    {
+      method: "POST",
+      headers,
+    }
+  );
+
+  return response.data;
+}

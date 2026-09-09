@@ -189,4 +189,13 @@ public class ListingController {
                 "Listing published successfully.",
                 listingService.publish(id));
     }
+
+    @PostMapping("/{idOrSlug}/mark-sold")
+    public ApiResponse<ListingResponse> markAsSold(
+            @PathVariable String idOrSlug) {
+
+        return ApiResponse.success(
+                "Listing marked as sold successfully.",
+                listingService.markAsSold(idOrSlug));
+    }
 }

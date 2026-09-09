@@ -35,6 +35,9 @@ public interface ListingService {
         ListingResponse publish(
                         UUID id);
 
+        ListingResponse markAsSold(
+                        String idOrSlug);
+
         ListingFavoriteResponse toggleFavorite(
                         String idOrSlug);
 
