@@ -135,79 +135,10 @@ export async function publishListing(
   return response.data;
 }
 
-export async function getMyListings(
-  accessToken?: string | null,
-  page = 0,
-  size = 20
-): Promise<PageResponse<Listing>> {
-
-  const headers: Record<string, string> = {};
-  if (accessToken) {
-    headers.Authorization = `Bearer ${accessToken}`;
-  }
-
-  const response =
-    await apiRequest<
-      ApiResponse<PageResponse<Listing>>
-    >(
-      `/listings/mine?page=${page}&size=${size}`,
-      {
-        headers,
-      }
-    );
-
-  return response.data;
-}
-
-export async function getMyFavorites(
-  accessToken?: string | null,
-  page = 0,
-  size = 20
-): Promise<PageResponse<Listing>> {
-  const headers: Record<string, string> = {};
-  if (accessToken) {
-    headers.Authorization = `Bearer ${accessToken}`;
-  }
-
-  const response =
-    await apiRequest<
-      ApiResponse<PageResponse<Listing>>
-    >(
-      `/listings/favorites?page=${page}&size=${size}`,
-      {
-        headers,
-      }
-    );
-
-  return response.data;
-}
-
-export async function getMyBookmarks(
-  accessToken?: string | null,
-  page = 0,
-  size = 20
-): Promise<PageResponse<Listing>> {
-  const headers: Record<string, string> = {};
-  if (accessToken) {
-    headers.Authorization = `Bearer ${accessToken}`;
-  }
-
-  const response =
-    await apiRequest<
-      ApiResponse<PageResponse<Listing>>
-    >(
-      `/listings/bookmarks?page=${page}&size=${size}`,
-      {
-        headers,
-      }
-    );
-
-  return response.data;
-}
-
 export interface ListingQueryParams {
   page?: number;
   size?: number;
+  status?: string;
   search?: string;
   condition?: string;
   pricingType?: string;
@@ -218,11 +149,7 @@ export interface ListingQueryParams {
   category?: string;
 }
 
-export async function getListings(
-  params?: ListingQueryParams | number,
-  legacySize?: number,
-  accessToken?: string | null
-): Promise<PageResponse<Listing>> {
+function buildListingSearchParams(params?: ListingQueryParams | number, legacySize?: number): URLSearchParams {
   const queryParams: ListingQueryParams =
     typeof params === "number"
       ? { page: params, size: legacySize ?? 20 }
@@ -231,6 +158,7 @@ export async function getListings(
   const {
     page = 0,
     size = 20,
+    status,
     search,
     condition,
     pricingType,
@@ -238,13 +166,15 @@ export async function getListings(
     minPrice,
     maxPrice,
     sortBy,
-    category,
   } = queryParams;
 
   const searchParams = new URLSearchParams();
   searchParams.set("page", String(page));
   searchParams.set("size", String(size));
 
+  if (status && status.trim() && status.trim().toUpperCase() !== "ALL") {
+    searchParams.set("status", status.trim().toUpperCase());
+  }
   if (search && search.trim()) {
     searchParams.set("search", search.trim());
   }
@@ -274,6 +204,88 @@ export async function getListings(
     const sortValue = sortMap[sortBy] || sortBy;
     searchParams.set("sort", sortValue);
   }
+
+  return searchParams;
+}
+
+export async function getMyListings(
+  accessToken?: string | null,
+  params?: ListingQueryParams | number,
+  legacySize?: number
+): Promise<PageResponse<Listing>> {
+  const headers: Record<string, string> = {};
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
+
+  const searchParams = buildListingSearchParams(params, legacySize);
+
+  const response = await apiRequest<ApiResponse<PageResponse<Listing>>>(
+    `/listings/mine?${searchParams.toString()}`,
+    {
+      headers,
+    }
+  );
+
+  return response.data;
+}
+
+export async function getMyFavorites(
+  accessToken?: string | null,
+  params?: ListingQueryParams | number,
+  legacySize?: number
+): Promise<PageResponse<Listing>> {
+  const headers: Record<string, string> = {};
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
+
+  const searchParams = buildListingSearchParams(params, legacySize);
+
+  const response = await apiRequest<ApiResponse<PageResponse<Listing>>>(
+    `/listings/favorites?${searchParams.toString()}`,
+    {
+      headers,
+    }
+  );
+
+  return response.data;
+}
+
+export async function getMyBookmarks(
+  accessToken?: string | null,
+  params?: ListingQueryParams | number,
+  legacySize?: number
+): Promise<PageResponse<Listing>> {
+  const headers: Record<string, string> = {};
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
+
+  const searchParams = buildListingSearchParams(params, legacySize);
+
+  const response = await apiRequest<ApiResponse<PageResponse<Listing>>>(
+    `/listings/bookmarks?${searchParams.toString()}`,
+    {
+      headers,
+    }
+  );
+
+  return response.data;
+}
+
+export async function getListings(
+  params?: ListingQueryParams | number,
+  legacySize?: number,
+  accessToken?: string | null
+): Promise<PageResponse<Listing>> {
+  const queryParams: ListingQueryParams =
+    typeof params === "number"
+      ? { page: params, size: legacySize ?? 20 }
+      : (params ?? {});
+
+  const searchParams = buildListingSearchParams(params, legacySize);
+  const category = queryParams.category;
 
   const endpoint = category
     ? `/listings/category/${encodeURIComponent(category)}?${searchParams.toString()}`
