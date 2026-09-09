@@ -45,11 +45,10 @@ function FilterPill({
     <button
       type="button"
       onClick={onClick}
-      className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-150 ${
-        active
-          ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-500/40"
-          : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60"
-      }`}
+      className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-150 ${active
+        ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-500/40"
+        : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60"
+        }`}
     >
       {label}
     </button>
@@ -89,11 +88,10 @@ function CategoryTreeNode({
         )}
         <Link
           href={`/listings?category=${cat.slug || cat.id}`}
-          className={`flex-1 truncate py-1.5 px-2 rounded-lg text-xs font-medium transition-all ${
-            isActive
-              ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60"
-          }`}
+          className={`flex-1 truncate py-1.5 px-2 rounded-lg text-xs font-medium transition-all ${isActive
+            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+            : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60"
+            }`}
           style={{ paddingLeft: `${depth * 10 + 8}px` }}
         >
           {cat.name}
@@ -120,8 +118,9 @@ interface FilterSidebarProps {
   // Search
   searchQuery: string;
   onSearchChange: (value: string) => void;
-  onSearchSubmit: () => void;
-  
+  onSearchSubmit: (value?: string) => void;
+  onSearchClear?: () => void;
+
   // Filters
   filters: {
     condition: string;
@@ -131,18 +130,18 @@ interface FilterSidebarProps {
     minPrice: string;
     maxPrice: string;
   };
-  onFilterChange: <K extends keyof FilterSidebarProps["filters"]>(
-    key: K,
-    value: FilterSidebarProps["filters"][K]
+  onFilterChange: (
+    key: "condition" | "pricingType" | "listingType" | "sortBy" | "minPrice" | "maxPrice",
+    value: string
   ) => void;
   activeFilterCount: number;
   onClearFilters: () => void;
-  
+
   // Categories
   categories: Category[];
   currentCategoryId: string | null;
   rootCategories: Category[];
-  
+
   // Mobile drawer state
   isMobileOpen?: boolean;
   onMobileClose?: () => void;
@@ -152,6 +151,7 @@ export default function FilterSidebar({
   searchQuery,
   onSearchChange,
   onSearchSubmit,
+  onSearchClear,
   filters,
   onFilterChange,
   activeFilterCount,
@@ -174,15 +174,19 @@ export default function FilterSidebar({
           placeholder="Search listings…"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && onSearchSubmit()}
+          onKeyDown={(e) => e.key === "Enter" && onSearchSubmit(searchQuery)}
           className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition"
         />
         {searchQuery && (
           <button
             type="button"
             onClick={() => {
-              onSearchChange("");
-              // Don't clear all filters, just the search
+              if (onSearchClear) {
+                onSearchClear();
+              } else {
+                onSearchChange("");
+                onSearchSubmit("");
+              }
             }}
             className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600"
           >
@@ -193,7 +197,7 @@ export default function FilterSidebar({
       {searchQuery && (
         <button
           type="button"
-          onClick={onSearchSubmit}
+          onClick={() => onSearchSubmit(searchQuery)}
           className="w-full py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition"
         >
           Apply Search
@@ -295,11 +299,10 @@ export default function FilterSidebar({
         <div className="space-y-0.5">
           <Link
             href="/listings"
-            className={`flex items-center py-1.5 px-2 rounded-lg text-xs font-medium transition-all ${
-              !currentCategoryId
-                ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-                : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60"
-            }`}
+            className={`flex items-center py-1.5 px-2 rounded-lg text-xs font-medium transition-all ${!currentCategoryId
+              ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60"
+              }`}
           >
             All Categories
           </Link>
