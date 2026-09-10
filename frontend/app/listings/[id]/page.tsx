@@ -474,7 +474,7 @@ export default function ListingDetailsPage() {
                 )}
               </div>
 
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white leading-tight">
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white leading-tight">
                 {listing.title}
               </h1>
 
