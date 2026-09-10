@@ -297,3 +297,9 @@ body {
 [data-theme="dark"] .custom-scrollbar:hover {
   scrollbar-color: var(--primary) transparent;
 }
+
+/* Toast progress-bar shrink animation */
+@keyframes toast-shrink {
+  from { width: 100%; }
+  to   { width: 0%; }
+}
