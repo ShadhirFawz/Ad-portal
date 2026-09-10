@@ -830,8 +830,8 @@ export default function ListingDetailsPage() {
         open={loginModalOpen}
         onClose={() => setLoginModalOpen(false)}
         onSuccess={refetchListing}
-        title="Sign in to contact seller"
-        description="Log in to view the seller's mobile number and connect directly."
+        title="Sign in to continue"
+        description="Log in to experience the full features"
       />
 
       {/* Mark As Sold Confirmation Modal */}

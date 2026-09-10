@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
-import { UserPlus, AlertTriangle, Eye, EyeOff } from "lucide-react";
+import Image from "next/image";
+import { UserPlus, AlertTriangle, Eye, EyeOff, HelpCircle } from "lucide-react";
 import { validateRegisterForm, RegisterFormData } from "@/lib/validation/authValidation";
 import { getPasswordStrength } from "@/lib/validation/passwordStrength";
 import { getSafeRedirectUrl } from "@/lib/utils/redirect";
@@ -32,8 +33,7 @@ function RegisterContent() {
   const strength = getPasswordStrength(password);
 
   const fieldClass = (key: string) =>
-    `w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 placeholder:text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all ${
-      fieldErrors[key] ? "border-rose-500 focus:border-rose-500 focus:ring-rose-500/20" : ""
+    `w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 placeholder:text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all ${fieldErrors[key] ? "border-rose-500 focus:border-rose-500 focus:ring-rose-500/20" : ""
     }`;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -72,9 +72,14 @@ function RegisterContent() {
       <div className="w-full max-w-sm space-y-5 glass-panel p-6 md:p-8">
         {/* Header */}
         <div className="text-center space-y-1">
-          <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto mb-2 border border-indigo-500/20">
-            <UserPlus className="w-5 h-5" />
-          </div>
+          <Image
+            src="/Wudo_logo.png"
+            alt="Wudo"
+            width={160}
+            height={160}
+            priority
+            className="h-10 w-auto object-contain mx-auto mb-2"
+          />
           <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
             Create Your Account
           </h1>
@@ -218,9 +223,54 @@ function RegisterContent() {
 
           {/* Password */}
           <div className="space-y-1">
-            <label className="text-[10px] font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-              Password *
-            </label>
+            <div className="flex items-center gap-1.5">
+              <label
+                htmlFor="password"
+                className="text-[10px] font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
+              >
+                Password *
+              </label>
+              <div className="relative group inline-flex items-center">
+                <button
+                  type="button"
+                  tabIndex={0}
+                  aria-label="Password criteria"
+                  className="text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors focus:outline-none focus:text-emerald-600 cursor-help"
+                >
+                  <HelpCircle className="w-3.5 h-3.5" />
+                </button>
+
+                {/* Password Criteria Tooltip Popup */}
+                <div className="absolute left-0 bottom-full mb-1.5 hidden group-hover:flex group-focus-within:flex flex-col w-56 p-3 rounded-xl bg-slate-900/95 dark:bg-slate-800/95 text-white text-xs shadow-2xl border border-slate-700/60 backdrop-blur-md z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
+                  <p className="font-bold text-[11px] text-emerald-400 mb-1.5">
+                    Password Requirements:
+                  </p>
+                  <ul className="space-y-1 text-[11px] text-slate-200">
+                    <li className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                      <span>At least 8 characters</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                      <span>1 uppercase letter (A–Z)</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                      <span>1 lowercase letter (a–z)</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                      <span>1 number (0–9)</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                      <span>1 special character (e.g. !@#$)</span>
+                    </li>
+                  </ul>
+                  <div className="absolute left-2.5 top-full w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-slate-900/95 dark:border-t-slate-800/95" />
+                </div>
+              </div>
+            </div>
             <div className="relative">
               <input
                 id="password"
@@ -253,13 +303,12 @@ function RegisterContent() {
                   />
                 </div>
                 <p
-                  className={`text-[10px] font-medium ${
-                    strength.label === "Very Strong" || strength.label === "Strong"
-                      ? "text-emerald-500"
-                      : strength.label === "Fair"
+                  className={`text-[10px] font-medium ${strength.label === "Very Strong" || strength.label === "Strong"
+                    ? "text-emerald-500"
+                    : strength.label === "Fair"
                       ? "text-amber-500"
                       : "text-rose-500"
-                  }`}
+                    }`}
                 >
                   {strength.label}
                 </p>
