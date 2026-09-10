@@ -3,6 +3,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
+
   :root,
   [data-theme="light"] {
     /* Base Color Tokens (Light Mode) */
@@ -87,7 +88,7 @@
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-family: 'Segoe UI Variable', 'system-ui', sans-serif;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -300,6 +301,11 @@ body {
 
 /* Toast progress-bar shrink animation */
 @keyframes toast-shrink {
-  from { width: 100%; }
-  to   { width: 0%; }
+  from {
+    width: 100%;
+  }
+
+  to {
+    width: 0%;
+  }
 }
