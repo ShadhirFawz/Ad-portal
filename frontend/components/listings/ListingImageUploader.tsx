@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import { useAuth } from "@/providers/AuthProvider";
+import { useToast } from "@/hooks/useToast";
 import {
     addListingImageFromUrl,
     deleteListingImage,
@@ -54,6 +55,7 @@ export default function ListingImageUploader({
     onChange,
 }: Props) {
     const { accessToken } = useAuth();
+    const { warning: toastWarning, success: toastSuccess, error: toastError } = useToast();
     const inputRef = useRef<HTMLInputElement>(null);
 
     const [activeMode, setActiveMode] = useState<Mode>("upload");
@@ -192,7 +194,7 @@ export default function ListingImageUploader({
         const availableSlots = MAX_IMAGES - currentCount;
 
         if (availableSlots <= 0) {
-            alert(`You can only upload up to ${MAX_IMAGES} images.`);
+            toastWarning("Limit Reached", `Maximum ${MAX_IMAGES} images allowed.`);
             return;
         }
 
@@ -273,10 +275,11 @@ export default function ListingImageUploader({
             updateImages((current) => [...current, newImage]);
             setUrlInput("");
             setUrlPreviewStatus("idle");
+            toastSuccess("Photo Added", "Image attached from web URL.");
         } catch (error) {
-            setUrlError(
-                error instanceof Error ? error.message : "Failed to add image from URL."
-            );
+            const msg = error instanceof Error ? error.message : "Failed to add image from URL.";
+            setUrlError(msg);
+            toastError("Failed to Add Photo", "Could not attach image from URL.");
         } finally {
             setIsAddingUrl(false);
         }

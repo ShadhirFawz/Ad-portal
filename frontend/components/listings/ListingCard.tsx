@@ -8,6 +8,7 @@ import type { ListingImage } from "@/types/listing-image";
 import { MapPin, Clock, Tag, Gavel, MoreVertical, Bookmark, Loader2 } from "lucide-react";
 import { toggleBookmarkListing } from "@/lib/api/listings";
 import { useAuth } from "@/providers/AuthProvider";
+import { useToast } from "@/hooks/useToast";
 
 interface ListingCardProps {
   listing: Listing | ListingCardData;
@@ -35,6 +36,7 @@ export default function ListingCard({
   layout = "grid",
 }: ListingCardProps) {
   const { accessToken } = useAuth();
+  const { success: toastSuccess, error: toastError } = useToast();
   const [menuOpen, setMenuOpen] = useState(false);
   const [bookmarking, setBookmarking] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(
@@ -66,17 +68,24 @@ export default function ListingCard({
       if (bookmarking) return;
       setMenuOpen(false);
       setBookmarking(true);
+      const prev = isBookmarked;
       try {
         const idOrSlug = listing.slug || String(listing.id);
         const result = await toggleBookmarkListing(accessToken, idOrSlug);
         setIsBookmarked(result.isBookmarked);
+        if (result.isBookmarked) {
+          toastSuccess("Bookmark Saved", "Listing saved to your bookmarks.");
+        } else {
+          toastSuccess("Bookmark Removed", "Listing removed from your bookmarks.");
+        }
       } catch {
-        // silently fail
+        setIsBookmarked(prev);
+        toastError("Action Failed", "Could not update bookmark.");
       } finally {
         setBookmarking(false);
       }
     },
-    [accessToken, bookmarking, listing]
+    [accessToken, bookmarking, listing, isBookmarked, toastSuccess, toastError]
   );
 
   const handleMenuToggle = (e: React.MouseEvent) => {
