@@ -7,6 +7,7 @@ import { useAuth } from "@/providers/AuthProvider";
 import { updateMyProfile, UserPhoneNumberPayload } from "@/lib/api/users";
 import { validateEditProfileForm } from "@/lib/validation/profileValidation";
 import { getSafeRedirectUrl } from "@/lib/utils/redirect";
+import { useToast } from "@/hooks/useToast";
 import {
   uploadProfileImage,
   registerProfileImage,
@@ -15,7 +16,6 @@ import {
 import { ProfileImageUploader } from "@/components/auth/ProfileImageUploader";
 import {
   UserCog,
-  CheckCircle2,
   AlertTriangle,
   ArrowLeft,
   Phone,
@@ -42,8 +42,8 @@ function EditProfileContent() {
   const [phoneNumbers, setPhoneNumbers] = useState<UserPhoneNumberPayload[]>([]);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { success: toastSuccess, error: toastError } = useToast();
 
   const fieldClass = (key: string) =>
     `input-field ${fieldErrors[key] ? "border-rose-500 focus:border-rose-500 focus:ring-rose-500/20" : ""}`;
@@ -215,7 +215,6 @@ function EditProfileContent() {
     }
 
     setSaving(true);
-    setMessage(null);
     setError(null);
     setFieldErrors({});
 
@@ -266,14 +265,14 @@ function EditProfileContent() {
       }
 
       await syncProfile();
+      toastSuccess("Profile Saved", "Your profile details have been updated.");
       const defaultTarget = (updated && updated.username) || user.username ? `/profile/${(updated && updated.username) || user.username}` : "/profile";
       const target = getSafeRedirectUrl(redirectParam, defaultTarget);
       router.push(target);
-      setMessage("Profile updated successfully!");
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to update profile."
-      );
+      const msg = err instanceof Error ? err.message : "Failed to update profile.";
+      setError(msg);
+      toastError("Update Failed", msg);
     } finally {
       setSaving(false);
     }
@@ -304,13 +303,6 @@ function EditProfileContent() {
         </p>
       </div>
 
-      {/* Alerts */}
-      {message && (
-        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-sm font-medium flex items-center gap-2.5">
-          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />
-          <span>{message}</span>
-        </div>
-      )}
 
       {error && (
         <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-sm font-medium flex items-center gap-2.5">
@@ -338,12 +330,11 @@ function EditProfileContent() {
               onDelete={handleCoverPhotoDelete}
               onSuccess={() => {
                 setError(null);
-                setMessage("Cover photo updated successfully!");
-                setTimeout(() => setMessage(null), 3000);
+                toastSuccess("Cover Photo Updated", "Your cover photo has been saved.");
               }}
               onError={(err) => {
-                setMessage(null);
                 setError(err);
+                toastError("Upload Failed", "Could not update cover photo.");
               }}
             />
           </div>
@@ -360,12 +351,11 @@ function EditProfileContent() {
               onDelete={handleAvatarDelete}
               onSuccess={() => {
                 setError(null);
-                setMessage("Profile picture updated successfully!");
-                setTimeout(() => setMessage(null), 3000);
+                toastSuccess("Profile Picture Updated", "Your avatar has been saved.");
               }}
               onError={(err) => {
-                setMessage(null);
                 setError(err);
+                toastError("Upload Failed", "Could not update profile picture.");
               }}
             />
           </div>

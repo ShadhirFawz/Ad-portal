@@ -8,6 +8,7 @@ import { useAuth } from "@/providers/AuthProvider";
 import { getMyListings, getMyFavorites } from "@/lib/api/listings";
 import { updateMyProfile, checkUsernameAvailability, type UsernameAvailabilityResult } from "@/lib/api/users";
 import { getSafeRedirectUrl } from "@/lib/utils/redirect";
+import { useToast } from "@/hooks/useToast";
 import type { Listing } from "@/types/listing";
 import ListingCard from "@/components/listings/ListingCard";
 import {
@@ -42,6 +43,7 @@ function ProfileContent() {
   const reasonParam = searchParams.get("reason");
 
   const { user, accessToken, loading, syncProfile } = useAuth();
+  const { success: toastSuccess, error: toastError } = useToast();
 
   const [myListings, setMyListings] = useState<Listing[]>([]);
   const [listingsLoading, setListingsLoading] = useState(true);
@@ -55,11 +57,9 @@ function ProfileContent() {
   const [favoritesTotalPages, setFavoritesTotalPages] = useState(0);
   const [favoritesTotalElements, setFavoritesTotalElements] = useState(0);
 
-  // Username prompt state
   const [usernameInput, setUsernameInput] = useState("");
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [usernameSaving, setUsernameSaving] = useState(false);
-  const [usernameSuccess, setUsernameSuccess] = useState<string | null>(null);
   const [checkingUsername, setCheckingUsername] = useState(false);
   const [usernameAvailability, setUsernameAvailability] = useState<UsernameAvailabilityResult | null>(null);
 
@@ -151,7 +151,6 @@ function ProfileContent() {
   const handleSaveUsername = async (e: FormEvent) => {
     e.preventDefault();
     setUsernameError(null);
-    setUsernameSuccess(null);
 
     const clean = usernameInput.trim().toLowerCase();
     if (!clean) {
@@ -168,7 +167,7 @@ function ProfileContent() {
     try {
       await updateMyProfile(accessToken, { username: clean });
       await syncProfile();
-      setUsernameSuccess("Username set successfully!");
+      toastSuccess("Username Saved", "Your username has been successfully set.");
 
       if (redirectParam) {
         setTimeout(() => {
@@ -176,9 +175,9 @@ function ProfileContent() {
         }, 800);
       }
     } catch (err) {
-      setUsernameError(
-        err instanceof Error ? err.message : "Failed to update username. It may already be taken."
-      );
+      const msg = err instanceof Error ? err.message : "Failed to update username.";
+      setUsernameError(msg);
+      toastError("Update Failed", msg);
     } finally {
       setUsernameSaving(false);
     }
@@ -291,15 +290,6 @@ function ProfileContent() {
             </div>
           )}
 
-          {usernameSuccess && (
-            <div className="mb-3.5 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
-              <span>
-                {usernameSuccess}
-                {redirectParam && " Returning to listing..."}
-              </span>
-            </div>
-          )}
 
           <form onSubmit={handleSaveUsername} className="space-y-2.5">
             <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">

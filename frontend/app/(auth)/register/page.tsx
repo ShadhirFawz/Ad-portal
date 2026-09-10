@@ -4,6 +4,7 @@ import { FormEvent, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/providers/AuthProvider";
+import { useToast } from "@/hooks/useToast";
 import { UserPlus, AlertTriangle, Eye, EyeOff } from "lucide-react";
 import { validateRegisterForm, RegisterFormData } from "@/lib/validation/authValidation";
 import { getPasswordStrength } from "@/lib/validation/passwordStrength";
@@ -15,6 +16,7 @@ function RegisterContent() {
   const searchParams = useSearchParams();
   const redirectParam = searchParams.get("redirect") || searchParams.get("returnUrl");
   const { signUp, loginWithGoogle } = useAuth();
+  const { error: toastError } = useToast();
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -26,7 +28,6 @@ function RegisterContent() {
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [googleError, setGoogleError] = useState<string | null>(null);
 
   const strength = getPasswordStrength(password);
 
@@ -82,26 +83,19 @@ function RegisterContent() {
           </p>
         </div>
 
-        {/* Google OAuth Error */}
-        {googleError && (
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-medium flex items-center gap-2">
-            <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-rose-500" />
-            <span>{googleError}</span>
-          </div>
-        )}
 
         {/* Google Sign-Up Button */}
         <button
           type="button"
           disabled={googleLoading || submitting}
           onClick={async () => {
-            setGoogleError(null);
             setGoogleLoading(true);
             try {
               const next = getSafeRedirectUrl(redirectParam, "/");
               await loginWithGoogle(next);
             } catch (err) {
-              setGoogleError(err instanceof Error ? err.message : "Google sign-in failed.");
+              const msg = err instanceof Error ? err.message : "Google sign-in failed.";
+              toastError("Sign-in Failed", msg);
               setGoogleLoading(false);
             }
           }}
