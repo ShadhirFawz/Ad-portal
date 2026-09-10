@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
+import Image from "next/image";
 import { Lock, AlertTriangle, Eye, EyeOff } from "lucide-react";
 import { validateLoginForm } from "@/lib/validation/authValidation";
 import { getSafeRedirectUrl } from "@/lib/utils/redirect";
@@ -25,7 +26,7 @@ function LoginContent() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  const fieldClass = (key: string) => 
+  const fieldClass = (key: string) =>
     `w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 placeholder:text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all ${fieldErrors[key] ? "border-rose-500 focus:border-rose-500 focus:ring-rose-500/20" : ""}`;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -53,9 +54,14 @@ function LoginContent() {
       <div className="w-full max-w-sm space-y-5 glass-panel p-6 md:p-8 relative">
         {/* Header */}
         <div className="text-center space-y-1">
-          <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-2 border border-emerald-500/20">
-            <Lock className="w-5 h-5" />
-          </div>
+          <Image
+            src="/Wudo_logo.png"
+            alt="Wudo"
+            width={160}
+            height={40}
+            priority
+            className="h-10 w-auto object-contain mx-auto mb-2"
+          />
           <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
             Welcome Back
           </h1>
@@ -63,6 +69,7 @@ function LoginContent() {
             Enter your credentials to access your account
           </p>
         </div>
+
 
 
         {/* Google Sign-In Button */}

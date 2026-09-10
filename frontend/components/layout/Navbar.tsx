@@ -211,13 +211,15 @@ export default function Navbar() {
               <div className="hidden md:flex items-center gap-2">
                 <Link
                   href="/login"
-                  className="text-sm font-semibold text-slate-700 hover:text-emerald-600 dark:text-slate-200 dark:hover:text-emerald-400 px-3 py-2 transition-colors"
+                  className="text-sm font-normal text-slate-700 hover:text-emerald-600 dark:text-slate-200 dark:hover:text-emerald-400 px-3 py-2 transition-colors"
+                  style={{ fontFamily: "'PT Sans', 'Tahoma', sans-serif" }}
                 >
                   Log in
                 </Link>
                 <Link
                   href="/register"
                   className="btn-primary text-sm shadow-sm px-4 py-2"
+                  style={{ fontFamily: "'PT Sans', 'Tahoma', sans-serif" }}
                 >
                   Get Started
                 </Link>
@@ -349,6 +351,7 @@ export default function Navbar() {
                     <Link
                       href="/login"
                       className="block w-full px-4 py-3 rounded-xl text-sm font-semibold text-center text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors"
+                      style={{ fontFamily: "'PT Sans', 'Tahoma', sans-serif" }}
                       onClick={() => setIsMenuOpen(false)}
                     >
                       Log In
@@ -356,6 +359,7 @@ export default function Navbar() {
                     <Link
                       href="/register"
                       className="block w-full px-4 py-3 rounded-xl text-sm font-semibold text-center text-white bg-emerald-600 hover:bg-emerald-700 transition-colors"
+                      style={{ fontFamily: "'PT Sans', 'Tahoma', sans-serif" }}
                       onClick={() => setIsMenuOpen(false)}
                     >
                       Get Started

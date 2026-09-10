@@ -4,6 +4,9 @@ import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, Lock, X } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
+import { useToast } from "@/hooks/useToast";
+import { getSafeRedirectUrl } from "@/lib/utils/redirect";
+import GoogleIcon from "@/components/common/GoogleIcon";
 
 interface LoginModalProps {
   open: boolean;
@@ -11,6 +14,8 @@ interface LoginModalProps {
   onSuccess?: () => void;
   title?: string;
   description?: string;
+  /** Optional redirect target after successful login. Defaults to "/". */
+  redirectUrl?: string | null;
 }
 
 export default function LoginModal({
@@ -19,12 +24,15 @@ export default function LoginModal({
   onSuccess,
   title = "Sign in to continue",
   description = "Log in to view seller contact details and connect with the seller.",
+  redirectUrl = null,
 }: LoginModalProps) {
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
+  const { error: toastError } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -44,6 +52,17 @@ export default function LoginModal({
     };
   }, [open, onClose]);
 
+  // Reset transient state when the modal closes/opens
+  useEffect(() => {
+    if (!open) {
+      setEmail("");
+      setPassword("");
+      setError(null);
+      setSubmitting(false);
+      setGoogleLoading(false);
+    }
+  }, [open]);
+
   if (!open) return null;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -61,6 +80,22 @@ export default function LoginModal({
       );
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError(null);
+    setGoogleLoading(true);
+    try {
+      const next = getSafeRedirectUrl(redirectUrl, "/");
+      await loginWithGoogle(next);
+      onSuccess?.();
+      onClose();
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : "Google sign-in failed.";
+      toastError("Sign-in Failed", msg);
+      setGoogleLoading(false);
     }
   };
 
@@ -103,6 +138,30 @@ export default function LoginModal({
           </p>
         </div>
 
+        {/* Google Sign-In Button */}
+        <button
+          type="button"
+          disabled={googleLoading || submitting}
+          onClick={handleGoogleSignIn}
+          className="w-full flex items-center justify-center gap-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+        >
+          {googleLoading ? (
+            <span className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <GoogleIcon />
+          )}
+          Continue with Google
+        </button>
+
+        {/* Divider */}
+        <div className="relative flex items-center gap-3">
+          <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
+          <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider font-medium">
+            or
+          </span>
+          <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
+        </div>
+
         {error && (
           <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-sm font-medium flex items-center gap-2.5">
             <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500" />
@@ -142,7 +201,7 @@ export default function LoginModal({
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || googleLoading}
             className="btn-primary w-full py-3.5 text-base mt-2"
           >
             {submitting ? (

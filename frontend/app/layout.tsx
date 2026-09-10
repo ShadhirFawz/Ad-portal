@@ -7,8 +7,15 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
 export const metadata: Metadata = {
-  title: "Marketplace | Ad Portal",
+  title: "Wudo | Ad Portal",
   description: "Modern peer-to-peer ad marketplace platform",
+  icons: {
+    icon: [
+      { url: "/Wudo_logo.png", type: "image/png" },
+    ],
+    shortcut: "/Wudo_logo.png",
+    apple: "/Wudo_logo.png",
+  },
 };
 
 export default function RootLayout({
