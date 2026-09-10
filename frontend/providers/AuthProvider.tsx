@@ -27,6 +27,7 @@ interface AuthContextValue {
   logout: () => Promise<void>;
   refreshSession: () => Promise<void>;
   syncProfile: () => Promise<UserResponse | null>;
+  updatePassword: (newPassword: string, currentPassword?: string) => Promise<unknown>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -279,6 +280,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return null;
   };
 
+  const updatePassword = async (newPassword: string, currentPassword?: string) => {
+    const supabase = createClient();
+
+    // Verify current password if provided
+    if (currentPassword && user?.email) {
+      const { error: verifyErr } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword,
+      });
+      if (verifyErr) {
+        throw new Error("Current password is incorrect. Please verify your current password.");
+      }
+    }
+
+    const { data, error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -291,6 +317,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         refreshSession,
         syncProfile,
+        updatePassword,
       }}
     >
       {children}
