@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { ThemeProvider, ThemeScript } from "@/providers/ThemeProvider";
+import { ToastProvider } from "@/providers/ToastProvider";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
@@ -23,11 +24,13 @@ export default function RootLayout({
       <body className="bg-slate-50 text-slate-900 dark:bg-[#0b0f19] dark:text-slate-100 min-h-screen flex flex-col selection:bg-emerald-500 selection:text-white transition-colors duration-200">
         <ThemeProvider>
           <AuthProvider>
-            <Navbar />
-            <div className="flex-1 flex flex-col">
-              {children}
-            </div>
-            <Footer />
+            <ToastProvider>
+              <Navbar />
+              <div className="flex-1 flex flex-col">
+                {children}
+              </div>
+              <Footer />
+            </ToastProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

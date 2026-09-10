@@ -4,6 +4,7 @@ import { FormEvent, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/providers/AuthProvider";
+import { useToast } from "@/hooks/useToast";
 import { Lock, AlertTriangle, Eye, EyeOff } from "lucide-react";
 import { validateLoginForm } from "@/lib/validation/authValidation";
 import { getSafeRedirectUrl } from "@/lib/utils/redirect";
@@ -14,6 +15,7 @@ function LoginContent() {
   const searchParams = useSearchParams();
   const redirectParam = searchParams.get("redirect") || searchParams.get("returnUrl");
   const { login, loginWithGoogle } = useAuth();
+  const { error: toastError } = useToast();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,7 +24,6 @@ function LoginContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [googleError, setGoogleError] = useState<string | null>(null);
 
   const fieldClass = (key: string) => 
     `w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 placeholder:text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all ${fieldErrors[key] ? "border-rose-500 focus:border-rose-500 focus:ring-rose-500/20" : ""}`;
@@ -63,26 +64,19 @@ function LoginContent() {
           </p>
         </div>
 
-        {/* Google OAuth Error */}
-        {googleError && (
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-medium flex items-center gap-2">
-            <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-rose-500" />
-            <span>{googleError}</span>
-          </div>
-        )}
 
         {/* Google Sign-In Button */}
         <button
           type="button"
           disabled={googleLoading || submitting}
           onClick={async () => {
-            setGoogleError(null);
             setGoogleLoading(true);
             try {
               const next = getSafeRedirectUrl(redirectParam, "/");
               await loginWithGoogle(next);
             } catch (err) {
-              setGoogleError(err instanceof Error ? err.message : "Google sign-in failed.");
+              const msg = err instanceof Error ? err.message : "Google sign-in failed.";
+              toastError("Sign-in Failed", msg);
               setGoogleLoading(false);
             }
           }}

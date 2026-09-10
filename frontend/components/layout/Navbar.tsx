@@ -4,12 +4,15 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/providers/AuthProvider";
+import { useToast } from "@/hooks/useToast";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 import ProfileAvatar from "@/components/profile/ProfileAvatar";
 import { Menu, X, ChevronDown, LogOut, User, Heart, Bookmark, Package, Settings } from "lucide-react";
+import { createPortal } from "react-dom";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const { info: toastInfo } = useToast();
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
@@ -74,8 +77,8 @@ export default function Navbar() {
             <Link
               href="/listings"
               className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive("/listings")
-                  ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40"
-                  : "text-slate-600 hover:text-emerald-600 dark:text-slate-300 dark:hover:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40"
+                : "text-slate-600 hover:text-emerald-600 dark:text-slate-300 dark:hover:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
                 }`}
             >
               Explore
@@ -85,8 +88,8 @@ export default function Navbar() {
               <Link
                 href="/my-listings"
                 className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive("/my-listings")
-                    ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40"
-                    : "text-slate-600 hover:text-emerald-600 dark:text-slate-300 dark:hover:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                  ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40"
+                  : "text-slate-600 hover:text-emerald-600 dark:text-slate-300 dark:hover:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
                   }`}
               >
                 My Listings
@@ -174,7 +177,10 @@ export default function Navbar() {
                       </Link>
                       <hr className="my-1 border-slate-100 dark:border-slate-800" />
                       <button
-                        onClick={() => logout()}
+                        onClick={async () => {
+                          await logout();
+                          toastInfo("Signed Out", "You have been logged out of your account.");
+                        }}
                         className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors w-full text-left"
                       >
                         <LogOut className="w-4 h-4" />
@@ -216,131 +222,135 @@ export default function Navbar() {
       </div>
 
       {/* Mobile Menu Overlay */}
-      {isMenuOpen && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-40 md:hidden"
-            onClick={() => setIsMenuOpen(false)}
-          />
+      {isMenuOpen &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <>
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-40 md:hidden"
+              onClick={() => setIsMenuOpen(false)}
+            />
 
-          {/* Mobile Menu */}
-          <div className="fixed inset-x-0 top-16 bottom-0 bg-white dark:bg-slate-900 z-40 md:hidden overflow-y-auto animate-in slide-in-from-top duration-200">
-            <div className="flex flex-col p-4 space-y-1">
-              {/* Navigation Links */}
-              <Link
-                href="/listings"
-                className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors ${isActive("/listings")
+            {/* Mobile Menu */}
+            <div className="fixed right-3 top-20 bottom-3 w-80 max-w-[85vw] bg-white dark:bg-slate-900 z-50 md:hidden overflow-y-auto rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 animate-in slide-in-from-right duration-200">
+              <div className="flex flex-col p-4 space-y-1">
+                {/* Navigation Links */}
+                <Link
+                  href="/listings"
+                  className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors ${isActive("/listings")
                     ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40"
                     : "text-slate-600 hover:text-emerald-600 dark:text-slate-300 dark:hover:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                  }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Explore Listings
-              </Link>
+                    }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Explore Listings
+                </Link>
 
-              {user ? (
-                <>
-                  {/* User Profile Section */}
-                  <div className="px-4 py-3 my-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                    <div className="flex items-center gap-3">
-                      <ProfileAvatar
-                        avatarUrl={user.avatarUrl}
-                        firstName={user.firstName}
-                        email={user.email}
-                        size={44}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                          {user.firstName || "User"}
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                          {user.email}
-                        </p>
-                        {!user.emailVerified && (
-                          <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400">
-                            ⚠️ Verify email
-                          </span>
-                        )}
+                {user ? (
+                  <>
+                    {/* User Profile Section */}
+                    <div className="px-4 py-3 my-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                      <div className="flex items-center gap-3">
+                        <ProfileAvatar
+                          avatarUrl={user.avatarUrl}
+                          firstName={user.firstName}
+                          email={user.email}
+                          size={44}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                            {user.firstName || "User"}
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                            {user.email}
+                          </p>
+                          {!user.emailVerified && (
+                            <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400">
+                              ⚠️ Verify email
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <Link
-                    href="/profile"
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <User className="w-5 h-5" />
-                    Profile
-                  </Link>
-                  <Link
-                    href="/my-listings"
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <Package className="w-5 h-5" />
-                    My Listings
-                  </Link>
-                  <Link
-                    href="/favorites"
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <Heart className="w-5 h-5" />
-                    Favorites
-                  </Link>
-                  <Link
-                    href="/bookmarks"
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <Bookmark className="w-5 h-5" />
-                    Bookmarks
-                  </Link>
-                  <Link
-                    href="/settings"
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <Settings className="w-5 h-5" />
-                    Settings
-                  </Link>
-                  <hr className="my-2 border-slate-200 dark:border-slate-800" />
-                  <button
-                    onClick={() => {
-                      logout();
-                      setIsMenuOpen(false);
-                    }}
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors w-full text-left"
-                  >
-                    <LogOut className="w-5 h-5" />
-                    Sign Out
-                  </button>
-                </>
-              ) : (
-                /* Mobile Auth Buttons */
-                <div className="space-y-2 pt-2">
-                  <Link
-                    href="/login"
-                    className="block w-full px-4 py-3 rounded-xl text-sm font-semibold text-center text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Log In
-                  </Link>
-                  <Link
-                    href="/register"
-                    className="block w-full px-4 py-3 rounded-xl text-sm font-semibold text-center text-white bg-emerald-600 hover:bg-emerald-700 transition-colors"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Get Started
-                  </Link>
-                </div>
-              )}
+                    <Link
+                      href="/profile"
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <User className="w-5 h-5" />
+                      Profile
+                    </Link>
+                    <Link
+                      href="/my-listings"
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <Package className="w-5 h-5" />
+                      My Listings
+                    </Link>
+                    <Link
+                      href="/favorites"
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <Heart className="w-5 h-5" />
+                      Favorites
+                    </Link>
+                    <Link
+                      href="/bookmarks"
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <Bookmark className="w-5 h-5" />
+                      Bookmarks
+                    </Link>
+                    <Link
+                      href="/settings"
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <Settings className="w-5 h-5" />
+                      Settings
+                    </Link>
+                    <hr className="my-2 border-slate-200 dark:border-slate-800" />
+                    <button
+                      onClick={async () => {
+                        await logout();
+                        toastInfo("Signed Out", "You have been logged out of your account.");
+                        setIsMenuOpen(false);
+                      }}
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors w-full text-left"
+                    >
+                      <LogOut className="w-5 h-5" />
+                      Sign Out
+                    </button>
+                  </>
+                ) : (
+                  /* Mobile Auth Buttons */
+                  <div className="space-y-2 pt-2">
+                    <Link
+                      href="/login"
+                      className="block w-full px-4 py-3 rounded-xl text-sm font-semibold text-center text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Log In
+                    </Link>
+                    <Link
+                      href="/register"
+                      className="block w-full px-4 py-3 rounded-xl text-sm font-semibold text-center text-white bg-emerald-600 hover:bg-emerald-700 transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Get Started
+                    </Link>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        </>
-      )}
+          </>,
+          document.body
+        )}
     </header>
   );
 }

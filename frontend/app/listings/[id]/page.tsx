@@ -11,6 +11,7 @@ import SimilarListingsColumn from "@/components/listings/SimilarListingsColumn";
 import RelatedCategoryListings from "@/components/listings/RelatedCategoryListings";
 import AuctionPanel from "@/components/listings/AuctionPanel";
 import LoginModal from "@/components/auth/LoginModal";
+import { useToast } from "@/hooks/useToast";
 import { formatTimeAgo } from "@/lib/format/time-ago";
 import {
   formatListingCondition,
@@ -97,6 +98,7 @@ export default function ListingDetailsPage() {
         : "";
 
   const { user, accessToken, loading: authLoading } = useAuth();
+  const { success: toastSuccess, error: toastError } = useToast();
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -106,7 +108,6 @@ export default function ListingDetailsPage() {
   const [markSoldModalOpen, setMarkSoldModalOpen] = useState(false);
   const [markingSold, setMarkingSold] = useState(false);
   const [markSoldError, setMarkSoldError] = useState<string | null>(null);
-  const [soldSuccessMessage, setSoldSuccessMessage] = useState<string | null>(null);
   const [showAdditionalInfo, setShowAdditionalInfo] = useState(false);
 
   useEffect(() => {
@@ -193,6 +194,11 @@ export default function ListingDetailsPage() {
           }
           : null
       );
+      if (newIsFavorited) {
+        toastSuccess("Added to Favorites", "This listing has been added to your favorites.");
+      } else {
+        toastSuccess("Removed from Favorites", "This listing was removed from your favorites.");
+      }
     } catch (err) {
       console.error("Failed to toggle favorite:", err);
       // Revert optimistic update
@@ -205,6 +211,7 @@ export default function ListingDetailsPage() {
           }
           : null
       );
+      toastError("Action Failed", "Could not update your favorites.");
     } finally {
       setFavoriting(false);
     }
@@ -242,6 +249,11 @@ export default function ListingDetailsPage() {
           }
           : null
       );
+      if (newIsBookmarked) {
+        toastSuccess("Bookmark Added", "Listing saved to your bookmarks.");
+      } else {
+        toastSuccess("Bookmark Removed", "Listing removed from your bookmarks.");
+      }
     } catch (err) {
       console.error("Failed to toggle bookmark:", err);
       // Revert optimistic update
@@ -253,6 +265,7 @@ export default function ListingDetailsPage() {
           }
           : null
       );
+      toastError("Action Failed", "Could not update your bookmarks.");
     } finally {
       setBookmarking(false);
     }
@@ -266,11 +279,12 @@ export default function ListingDetailsPage() {
       const updated = await markListingAsSold(accessToken, listing.id);
       setListing(updated);
       setMarkSoldModalOpen(false);
-      setSoldSuccessMessage("Listing has been successfully marked as sold!");
-      setTimeout(() => setSoldSuccessMessage(null), 5000);
+      toastSuccess("Listing Marked as Sold", "Status has been updated to sold.");
     } catch (err) {
       console.error("Failed to mark listing as sold:", err);
-      setMarkSoldError(err instanceof Error ? err.message : "Failed to mark listing as sold. Please try again.");
+      const msg = err instanceof Error ? err.message : "Failed to mark as sold.";
+      setMarkSoldError(msg);
+      toastError("Action Failed", msg);
     } finally {
       setMarkingSold(false);
     }
@@ -383,23 +397,6 @@ export default function ListingDetailsPage() {
             </div>
           )}
         </div>
-
-        {/* Success Alert */}
-        {soldSuccessMessage && (
-          <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-sm font-semibold flex items-center justify-between gap-3 animate-in fade-in duration-200">
-            <div className="flex items-center gap-2.5">
-              <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-500" />
-              <span>{soldSuccessMessage}</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setSoldSuccessMessage(null)}
-              className="p-1 hover:text-emerald-800 dark:hover:text-emerald-200 rounded-lg transition"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
 
         {/* Header & Seller Contact */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
