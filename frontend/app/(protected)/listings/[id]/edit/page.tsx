@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/providers/AuthProvider";
 import { getCategories } from "@/lib/api/categories";
 import { getListing, publishListing, updateListing } from "@/lib/api/listings";
+import { useToast } from "@/hooks/useToast";
 import NestedCategorySelector from "@/components/listings/NestedCategorySelector";
 import ListingImageUploader from "@/components/listings/ListingImageUploader";
 import type { Category } from "@/types/category";
@@ -168,6 +169,7 @@ export default function EditListingPage({ params }: PageProps) {
 
   const router = useRouter();
   const { user, accessToken, loading: authLoading } = useAuth();
+  const { success: toastSuccess, error: toastError } = useToast();
 
   const [listing, setListing] = useState<Listing | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -421,13 +423,13 @@ export default function EditListingPage({ params }: PageProps) {
     try {
       const updated = await updateListing(accessToken, listing.id, payload);
       setListing(updated);
-      setSuccessMessage("Listing details updated successfully!");
+      toastSuccess("Listing Updated", "Your changes have been saved successfully.");
       window.scrollTo({ top: 0, behavior: "smooth" });
       router.push(`/listings/${updated.slug || listing.slug || listing.id}`);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to update listing."
-      );
+      const msg = err instanceof Error ? err.message : "Failed to update listing.";
+      setError(msg);
+      toastError("Update Failed", "Could not save listing changes.");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setSaving(false);
@@ -444,16 +446,16 @@ export default function EditListingPage({ params }: PageProps) {
     try {
       const updated = await publishListing(accessToken, listing.id);
       setListing(updated);
-      setSuccessMessage("Listing published successfully!");
+      toastSuccess("Listing Published", "Your listing is now live for buyers.");
       setTimeout(() => {
         router.push(`/listings/${updated.slug || listing.slug || listing.id}`);
       }, 1200);
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to publish listing. Ensure at least one image is uploaded."
-      );
+      const msg = err instanceof Error
+        ? err.message
+        : "Failed to publish listing. Ensure at least one image is uploaded.";
+      setError(msg);
+      toastError("Publish Failed", "Ensure at least one image is uploaded.");
     } finally {
       setPublishing(false);
     }

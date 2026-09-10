@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/providers/AuthProvider";
+import { useToast } from "@/hooks/useToast";
 import {
   Gavel,
   Loader2,
@@ -109,6 +110,7 @@ export default function AuctionPanel({
 }: AuctionPanelProps) {
   const router = useRouter();
   const { user } = useAuth();
+  const { success: toastSuccess, error: toastError } = useToast();
   const eligible = isAuctionEligible(listing);
   const isLoggedIn = Boolean(accessToken);
   const listingPath = `/listings/${listing.slug || listing.id}`;
@@ -121,7 +123,6 @@ export default function AuctionPanel({
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [bidAmount, setBidAmount] = useState("");
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [bidHistoryModalOpen, setBidHistoryModalOpen] = useState(false);
 
   const floorPrice =
@@ -179,11 +180,11 @@ export default function AuctionPanel({
       setAuction(started);
       const sellerData = await getAuctionSellerView(listingId, accessToken);
       setSellerView(sellerData);
-      setSuccessMessage("24-hour auction started successfully.");
+      toastSuccess("Auction Started", "24-hour auction is now active.");
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to start auction."
-      );
+      const msg = err instanceof Error ? err.message : "Failed to start auction.";
+      setError(msg);
+      toastError("Auction Error", msg);
     } finally {
       setActionLoading(false);
     }
@@ -213,10 +214,12 @@ export default function AuctionPanel({
       setError(null);
       await placeBid(listingId, amount, accessToken);
       setBidAmount("");
-      setSuccessMessage("Bid placed successfully.");
+      toastSuccess("Bid Submitted", "Your bid has been placed successfully.");
       await loadAuction();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to place bid.");
+      const msg = err instanceof Error ? err.message : "Failed to place bid.";
+      setError(msg);
+      toastError("Bid Failed", msg);
     } finally {
       setActionLoading(false);
     }
@@ -427,12 +430,6 @@ export default function AuctionPanel({
         </div>
 
         {/* Messages */}
-        {successMessage && (
-          <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 text-xs px-3 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            {successMessage}
-          </div>
-        )}
         {error && (
           <div className="flex items-center gap-1.5 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-xs px-3 py-1.5 rounded-lg border border-rose-200 dark:border-rose-800">
             <AlertCircle className="w-3.5 h-3.5" />

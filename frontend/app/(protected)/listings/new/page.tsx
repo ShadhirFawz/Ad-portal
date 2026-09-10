@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/providers/AuthProvider";
 import { getCategories } from "@/lib/api/categories";
 import { createListing, publishListing, updateListing } from "@/lib/api/listings";
+import { useToast } from "@/hooks/useToast";
 import NestedCategorySelector from "@/components/listings/NestedCategorySelector";
 import ListingImageUploader from "@/components/listings/ListingImageUploader";
 import type { Category } from "@/types/category";
@@ -140,6 +141,7 @@ const LOCATION_TYPE_OPTIONS: {
 export default function NewListingPage() {
   const router = useRouter();
   const { user, accessToken, loading: authLoading } = useAuth();
+  const { success: toastSuccess, error: toastError } = useToast();
 
   // Reference data
   const [categories, setCategories] = useState<Category[]>([]);
@@ -360,11 +362,11 @@ export default function NewListingPage() {
       setStep(2);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to save listing. Please check your inputs and try again."
-      );
+      const msg = err instanceof Error
+        ? err.message
+        : "Failed to save listing. Please check your inputs and try again.";
+      setError(msg);
+      toastError("Save Failed", "Please check your inputs and try again.");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setSubmitting(false);
@@ -381,15 +383,16 @@ export default function NewListingPage() {
       const updated = await publishListing(accessToken, createdListing.id);
       setCreatedListing(updated);
       setPublishSuccess(true);
+      toastSuccess("Listing Published", "Your listing is now live for buyers.");
       setTimeout(() => {
         router.push(`/listings/${updated.slug || createdListing.slug || createdListing.id}`);
       }, 1200);
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to publish listing. Make sure at least one image is uploaded."
-      );
+      const msg = err instanceof Error
+        ? err.message
+        : "Failed to publish listing. Make sure at least one image is uploaded.";
+      setError(msg);
+      toastError("Publish Failed", "Make sure at least one image is uploaded.");
     } finally {
       setPublishing(false);
     }
