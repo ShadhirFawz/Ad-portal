@@ -9,6 +9,7 @@ import ThemeToggle from "@/components/layout/ThemeToggle";
 import ProfileAvatar from "@/components/profile/ProfileAvatar";
 import { Menu, X, ChevronDown, LogOut, User, Heart, Bookmark, Package, Settings } from "lucide-react";
 import { createPortal } from "react-dom";
+import Image from "next/image";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -58,18 +59,28 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-2 group shrink-0">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white font-bold text-lg sm:text-xl shadow-md group-hover:scale-105 transition-transform">
-              M
-            </div>
-            <div className="hidden xs:flex flex-col">
-              <span className="font-bold text-base sm:text-lg tracking-tight text-slate-900 dark:text-white leading-none">
-                Market<span className="gradient-text-primary">place</span>
-              </span>
-              <span className="text-[9px] sm:text-[10px] font-medium text-slate-500 tracking-wider uppercase">
-                Ad Portal
-              </span>
-            </div>
+          <Link href="/" className="flex items-center shrink-0 group">
+            <Image
+              src="/Wudo_logo.png"
+              alt="Wudo"
+              width={400}
+              height={400}
+              priority
+              className="h-9 sm:h-10 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+            />
+            <span
+              className="
+                ml-0 max-w-0 overflow-hidden whitespace-nowrap
+                text-base sm:text-lg font-bold tracking-[0.2em] uppercase
+                text-slate-900 dark:text-white
+                opacity-0
+                transition-all duration-500 ease-out
+                group-hover:ml-3 group-hover:max-w-[180px] group-hover:opacity-100
+              "
+              style={{ fontFamily: "'Quicksand', 'Calibri Light', sans-serif" }}
+            >
+              Wudo
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -80,6 +91,7 @@ export default function Navbar() {
                 ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40"
                 : "text-slate-600 hover:text-emerald-600 dark:text-slate-300 dark:hover:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
                 }`}
+              style={{ fontFamily: "'PT Sans', 'Tahoma', sans-serif" }}
             >
               Explore
             </Link>
@@ -91,6 +103,7 @@ export default function Navbar() {
                   ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40"
                   : "text-slate-600 hover:text-emerald-600 dark:text-slate-300 dark:hover:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
                   }`}
+                style={{ fontFamily: "'PT Sans', 'Tahoma', sans-serif" }}
               >
                 My Listings
               </Link>
@@ -116,7 +129,10 @@ export default function Navbar() {
                     email={user.email}
                     size={28}
                   />
-                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors hidden lg:inline">
+                  <span
+                    className="text-sm font-normal text-slate-700 dark:text-slate-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors hidden lg:inline"
+                    style={{ fontFamily: "'PT Sans', 'Tahoma', sans-serif" }}
+                  >
                     {user.firstName || user.email?.split("@")[0] || "Account"}
                   </span>
                   <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isProfileDropdownOpen ? "rotate-180" : ""}`} />
