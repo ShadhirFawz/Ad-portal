@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
+import { useTheme } from "@/providers/ThemeProvider";
 import { validatePassword } from "@/lib/validation/authValidation";
 import { getPasswordStrength } from "@/lib/validation/passwordStrength";
 import {
@@ -22,14 +23,20 @@ import {
   ChevronRight,
   Sparkles,
   ExternalLink,
+  Sun,
+  Moon,
+  Monitor,
+  Palette,
+  Check,
 } from "lucide-react";
 
-type SettingsTab = "general" | "security";
+type SettingsTab = "general" | "security" | "appearance";
 
 function SettingsContent() {
   const router = useRouter();
   const { user, loading, updatePassword, logout } = useAuth();
   const { success: toastSuccess, error: toastError } = useToast();
+  const { theme: currentTheme, setTheme } = useTheme();
 
   const [activeTab, setActiveTab] = useState<SettingsTab>("general");
 
@@ -104,7 +111,7 @@ function SettingsContent() {
       setNewPassword("");
       setConfirmPassword("");
       setPasswordSuccess("Your password has been changed successfully. Signing out...");
-      
+
       toastSuccess(
         "Password Changed",
         "You have been signed out. Please log in with your new password."
@@ -175,8 +182,8 @@ function SettingsContent() {
             type="button"
             onClick={() => setActiveTab("general")}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs sm:text-sm font-semibold transition-all text-left ${activeTab === "general"
-                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 shadow-xs font-bold"
-                : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60"
+              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 shadow-xs font-bold"
+              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60"
               }`}
           >
             <KeyRound className="w-4 h-4 shrink-0" />
@@ -187,12 +194,24 @@ function SettingsContent() {
             type="button"
             onClick={() => setActiveTab("security")}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs sm:text-sm font-semibold transition-all text-left ${activeTab === "security"
-                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 shadow-xs font-bold"
-                : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60"
+              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 shadow-xs font-bold"
+              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60"
               }`}
           >
             <ShieldCheck className="w-4 h-4 shrink-0" />
             <span>Security &amp; Privacy</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("appearance")}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs sm:text-sm font-semibold transition-all text-left ${activeTab === "appearance"
+              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 shadow-xs font-bold"
+              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60"
+              }`}
+          >
+            <Palette className="w-4 h-4 shrink-0" />
+            <span>Appearance</span>
           </button>
         </div>
 
@@ -406,11 +425,11 @@ function SettingsContent() {
                         <div className="flex justify-between items-center text-[10px]">
                           <span
                             className={`font-semibold ${strength.label === "Very Strong" ||
-                                strength.label === "Strong"
-                                ? "text-emerald-500"
-                                : strength.label === "Fair"
-                                  ? "text-amber-500"
-                                  : "text-rose-500"
+                              strength.label === "Strong"
+                              ? "text-emerald-500"
+                              : strength.label === "Fair"
+                                ? "text-amber-500"
+                                : "text-rose-500"
                               }`}
                           >
                             Strength: {strength.label}
@@ -552,6 +571,67 @@ function SettingsContent() {
                   </Link>
                 </div>
               </div>
+            </div>
+          )}
+
+          {activeTab === "appearance" && (
+            <div className="glass-panel p-6 sm:p-8 space-y-6">
+              {/* Header */}
+              <div className="flex items-center gap-3 pb-4 border-b border-slate-200 dark:border-slate-800">
+                <div className="w-9 h-9 rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center border border-violet-500/20">
+                  <Palette className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                    Appearance
+                  </h2>
+                </div>
+              </div>
+
+              {/* Theme Cards */}
+              <div className="flex items-center justify-between p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                <div className="flex items-center gap-3">
+                  <Palette className="w-4 h-4 text-slate-500" />
+                  <div>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">Theme</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Select your preferred theme mode
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 p-0.5 bg-white dark:bg-slate-900">
+                  {(
+                    [
+                      { value: "light", Icon: Sun, label: "Light" },
+                      { value: "dark", Icon: Moon, label: "Dark" },
+                      { value: "system", Icon: Monitor, label: "System" },
+                    ] as const
+                  ).map(({ value, Icon, label }) => {
+                    const active = currentTheme === value;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setTheme(value)}
+                        aria-label={label}
+                        aria-pressed={active}
+                        title={label}
+                        className={`p-2 rounded-md transition-colors cursor-pointer ${active
+                          ? "bg-slate-100 dark:bg-slate-800 text-emerald-600 dark:text-emerald-400"
+                          : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                          }`}
+                      >
+                        <Icon className="w-4 h-4" />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                The navbar toggle switches between Light and Dark only. Select <strong>System</strong> here to follow your device&apos;s preference automatically.
+              </p>
             </div>
           )}
         </div>
