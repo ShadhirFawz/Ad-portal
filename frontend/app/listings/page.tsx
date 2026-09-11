@@ -32,7 +32,7 @@ interface Filters {
   sortBy: string;
 }
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 14;
 
 function Pagination({
   current,

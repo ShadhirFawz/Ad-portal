@@ -11,10 +11,19 @@ export const metadata: Metadata = {
   description: "Modern peer-to-peer ad marketplace platform",
   icons: {
     icon: [
-      { url: "/Wudo_logo.png", type: "image/png" },
+      {
+        url: "/Wudo_logo_light.png",
+        media: "(prefers-color-scheme: light)",
+        type: "image/png",
+      },
+      {
+        url: "/Wudo_logo_dark.png",
+        media: "(prefers-color-scheme: dark)",
+        type: "image/png",
+      },
     ],
-    shortcut: "/Wudo_logo.png",
-    apple: "/Wudo_logo.png",
+    shortcut: "/Wudo_logo_light.png",
+    apple: "/Wudo_logo_light.png",
   },
 };
 

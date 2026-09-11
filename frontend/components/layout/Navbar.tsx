@@ -60,13 +60,23 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Brand Logo */}
           <Link href="/" className="flex items-center shrink-0 group">
+            {/* Light mode logo */}
             <Image
-              src="/Wudo_logo.png"
+              src="/Wudo_logo_light.png"
               alt="Wudo"
-              width={400}
-              height={400}
+              width={800}
+              height={1200}
               priority
-              className="h-9 sm:h-10 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+              className="h-12 mb-1 w-auto object-contain transition-transform duration-300 group-hover:scale-105 dark:hidden"
+            />
+            {/* Dark mode logo */}
+            <Image
+              src="/Wudo_logo_dark.png"
+              alt="Wudo"
+              width={800}
+              height={1200}
+              priority
+              className="h-12 mb-1 w-auto object-contain transition-transform duration-300 group-hover:scale-105 hidden dark:block"
             />
             <span
               className="
@@ -75,7 +85,7 @@ export default function Navbar() {
                 text-slate-900 dark:text-white
                 opacity-0
                 transition-all duration-500 ease-out
-                group-hover:ml-3 group-hover:max-w-[180px] group-hover:opacity-100
+                group-hover:ml-1 group-hover:max-w-[180px] group-hover:opacity-100
               "
               style={{ fontFamily: "'Quicksand', 'Calibri Light', sans-serif" }}
             >

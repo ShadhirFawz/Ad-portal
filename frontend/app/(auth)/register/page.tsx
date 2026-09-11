@@ -72,13 +72,23 @@ function RegisterContent() {
       <div className="w-full max-w-sm space-y-5 glass-panel p-6 md:p-8">
         {/* Header */}
         <div className="text-center space-y-1">
+          {/* Light mode logo */}
           <Image
-            src="/Wudo_logo.png"
+            src="/Wudo_logo_light.png"
             alt="Wudo"
             width={160}
             height={160}
             priority
-            className="h-10 w-auto object-contain mx-auto mb-2"
+            className="h-10 w-auto object-contain mx-auto mb-2 dark:hidden"
+          />
+          {/* Dark mode logo */}
+          <Image
+            src="/Wudo_logo_dark.png"
+            alt="Wudo"
+            width={160}
+            height={160}
+            priority
+            className="h-10 w-auto object-contain mx-auto mb-2 hidden dark:block"
           />
           <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
             Create Your Account
