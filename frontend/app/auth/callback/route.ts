@@ -3,13 +3,16 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 /**
- * OAuth callback route — Supabase redirects here after Google sign-in.
- * This route exchanges the authorization `code` for a session, then
- * redirects the user to their intended destination (via `next` param).
+ * Auth callback route — handles both:
+ *   1. OAuth sign-in (Google) — exchanges code for session, redirects to `next`
+ *   2. Password recovery — Supabase sends `type=recovery` with a `code`; we
+ *      exchange it and redirect the user to /reset-password so they can set
+ *      a new password while temporarily authenticated.
  */
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
+  const type = searchParams.get("type"); // "recovery" for password reset emails
   const next = searchParams.get("next") ?? "/";
 
   if (code) {
@@ -40,20 +43,22 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      // Ensure redirect stays on the same origin for security
       const forwardedHost = request.headers.get("x-forwarded-host");
       const isLocalEnv = process.env.NODE_ENV === "development";
 
+      // For password recovery, always redirect to /reset-password
+      const destination = type === "recovery" ? "/reset-password" : next;
+
       if (isLocalEnv) {
-        return NextResponse.redirect(`${origin}${next}`);
+        return NextResponse.redirect(`${origin}${destination}`);
       } else if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${next}`);
+        return NextResponse.redirect(`https://${forwardedHost}${destination}`);
       } else {
-        return NextResponse.redirect(`${origin}${next}`);
+        return NextResponse.redirect(`${origin}${destination}`);
       }
     }
   }
 
   // If code exchange failed, redirect to login with an error indicator
-  return NextResponse.redirect(`${origin}/login?error=oauth_failed`);
+  return NextResponse.redirect(`${origin}/login?error=auth_failed`);
 }
