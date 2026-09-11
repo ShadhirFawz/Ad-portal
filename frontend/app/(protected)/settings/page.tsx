@@ -28,7 +28,7 @@ type SettingsTab = "general" | "security";
 
 function SettingsContent() {
   const router = useRouter();
-  const { user, loading, updatePassword } = useAuth();
+  const { user, loading, updatePassword, logout } = useAuth();
   const { success: toastSuccess, error: toastError } = useToast();
 
   const [activeTab, setActiveTab] = useState<SettingsTab>("general");
@@ -103,11 +103,15 @@ function SettingsContent() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      setPasswordSuccess("Your password has been changed successfully.");
+      setPasswordSuccess("Your password has been changed successfully. Signing out...");
+      
       toastSuccess(
-        "Password Updated",
-        "Your account password has been changed successfully."
+        "Password Changed",
+        "You have been signed out. Please log in with your new password."
       );
+
+      await logout();
+      router.push("/login");
     } catch (err) {
       const msg =
         err instanceof Error ? err.message : "Failed to update password.";
@@ -119,10 +123,9 @@ function SettingsContent() {
   };
 
   const fieldClass = (key: string) =>
-    `w-full rounded-xl border bg-white dark:bg-slate-900 px-3.5 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 placeholder:text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all ${
-      fieldErrors[key]
-        ? "border-rose-500 focus:border-rose-500 focus:ring-rose-500/20"
-        : "border-slate-200 dark:border-slate-800"
+    `w-full rounded-xl border bg-white dark:bg-slate-900 px-3.5 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 placeholder:text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all ${fieldErrors[key]
+      ? "border-rose-500 focus:border-rose-500 focus:ring-rose-500/20"
+      : "border-slate-200 dark:border-slate-800"
     }`;
 
   return (
@@ -171,11 +174,10 @@ function SettingsContent() {
           <button
             type="button"
             onClick={() => setActiveTab("general")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs sm:text-sm font-semibold transition-all text-left ${
-              activeTab === "general"
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs sm:text-sm font-semibold transition-all text-left ${activeTab === "general"
                 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 shadow-xs font-bold"
                 : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60"
-            }`}
+              }`}
           >
             <KeyRound className="w-4 h-4 shrink-0" />
             <span>General &amp; Password</span>
@@ -184,11 +186,10 @@ function SettingsContent() {
           <button
             type="button"
             onClick={() => setActiveTab("security")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs sm:text-sm font-semibold transition-all text-left ${
-              activeTab === "security"
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs sm:text-sm font-semibold transition-all text-left ${activeTab === "security"
                 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 shadow-xs font-bold"
                 : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60"
-            }`}
+              }`}
           >
             <ShieldCheck className="w-4 h-4 shrink-0" />
             <span>Security &amp; Privacy</span>
@@ -279,7 +280,7 @@ function SettingsContent() {
                       htmlFor="currentPassword"
                       className="text-[10px] font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
                     >
-                      Current Password (Optional if OAuth)
+                      Current Password
                     </label>
                     <div className="relative">
                       <input
@@ -404,14 +405,13 @@ function SettingsContent() {
                         </div>
                         <div className="flex justify-between items-center text-[10px]">
                           <span
-                            className={`font-semibold ${
-                              strength.label === "Very Strong" ||
-                              strength.label === "Strong"
+                            className={`font-semibold ${strength.label === "Very Strong" ||
+                                strength.label === "Strong"
                                 ? "text-emerald-500"
                                 : strength.label === "Fair"
-                                ? "text-amber-500"
-                                : "text-rose-500"
-                            }`}
+                                  ? "text-amber-500"
+                                  : "text-rose-500"
+                              }`}
                           >
                             Strength: {strength.label}
                           </span>
@@ -477,7 +477,7 @@ function SettingsContent() {
 
                   <div className="pt-3 flex items-center justify-between flex-wrap gap-3">
                     <p className="text-[11px] text-slate-400">
-                      You will receive a security confirmation email upon update.
+                      You will be automatically signed out and prompted to sign in with your new password.
                     </p>
 
                     <button
