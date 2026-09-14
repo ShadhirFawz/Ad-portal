@@ -28,6 +28,7 @@ interface AuthContextValue {
   refreshSession: () => Promise<void>;
   syncProfile: () => Promise<UserResponse | null>;
   updatePassword: (newPassword: string, currentPassword?: string) => Promise<unknown>;
+  requestPasswordReset: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -142,6 +143,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMounted) return;
+
+      if (event === "PASSWORD_RECOVERY") {
+        setLoading(false);
+        return;
+      }
 
       if (event === "SIGNED_OUT" || !session) {
         setAccessToken(null);
@@ -305,6 +311,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return data;
   };
 
+  const requestPasswordReset = async (email: string) => {
+    const supabase = createClient();
+    const redirectTo = `${window.location.origin}/auth/callback?next=/reset-password`;
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo,
+    });
+    if (error) {
+      throw new Error(error.message);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -318,6 +335,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         refreshSession,
         syncProfile,
         updatePassword,
+        requestPasswordReset,
       }}
     >
       {children}
