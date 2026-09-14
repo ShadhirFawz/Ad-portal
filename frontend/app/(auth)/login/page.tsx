@@ -162,6 +162,14 @@ function LoginContent() {
               </button>
             </div>
             {fieldErrors.password && <p className="text-[10px] text-rose-500 mt-0.5">{fieldErrors.password}</p>}
+            <div className="flex justify-end pt-0.5">
+              <Link
+                href="/forgot-password"
+                className="text-[10px] font-semibold text-emerald-600 hover:text-emerald-500 dark:text-emerald-400 transition-colors"
+              >
+                Forgot password?
+              </Link>
+            </div>
           </div>
 
           <button
