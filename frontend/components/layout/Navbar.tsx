@@ -67,7 +67,7 @@ export default function Navbar() {
               width={800}
               height={1200}
               priority
-              className="h-12 mb-2 w-auto object-contain transition-transform duration-300 group-hover:scale-105 dark:hidden"
+              className="h-auto w-auto max-h-12 mb-2 w-auto object-contain transition-transform duration-300 group-hover:scale-105 dark:hidden"
             />
             {/* Dark mode logo */}
             <Image
@@ -76,7 +76,7 @@ export default function Navbar() {
               width={800}
               height={1200}
               priority
-              className="h-12 mb-2 w-auto object-contain transition-transform duration-300 group-hover:scale-105 hidden dark:block"
+              className="h-auto w-auto max-h-12 mb-2 w-auto object-contain transition-transform duration-300 group-hover:scale-105 hidden dark:block"
             />
             <div
               className="
