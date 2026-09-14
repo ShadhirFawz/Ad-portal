@@ -67,7 +67,7 @@ export default function Navbar() {
               width={800}
               height={1200}
               priority
-              className="h-12 mb-1 w-auto object-contain transition-transform duration-300 group-hover:scale-105 dark:hidden"
+              className="h-12 mb-2 w-auto object-contain transition-transform duration-300 group-hover:scale-105 dark:hidden"
             />
             {/* Dark mode logo */}
             <Image
@@ -76,21 +76,39 @@ export default function Navbar() {
               width={800}
               height={1200}
               priority
-              className="h-12 mb-1 w-auto object-contain transition-transform duration-300 group-hover:scale-105 hidden dark:block"
+              className="h-12 mb-2 w-auto object-contain transition-transform duration-300 group-hover:scale-105 hidden dark:block"
             />
-            <span
+            <div
               className="
-                ml-0 max-w-0 overflow-hidden whitespace-nowrap
-                text-base sm:text-lg font-bold tracking-[0.2em] uppercase
-                text-slate-900 dark:text-white
+                flex flex-col justify-center
+                ml-0 max-w-0 overflow-hidden
                 opacity-0
                 transition-all duration-500 ease-out
-                group-hover:ml-1 group-hover:max-w-[180px] group-hover:opacity-100
+                group-hover:ml-1 group-hover:max-w-[220px] group-hover:opacity-100
               "
-              style={{ fontFamily: "'Quicksand', 'Calibri Light', sans-serif" }}
             >
-              Wudo
-            </span>
+              <span
+                className="
+                  whitespace-nowrap
+                  text-base sm:text-lg font-bold tracking-[0.2em] uppercase leading-none
+                  text-slate-900 dark:text-white
+                "
+                style={{ fontFamily: "'Quicksand', 'Calibri Light', sans-serif" }}
+              >
+                Wudo
+              </span>
+              <span
+                className="
+                  whitespace-nowrap mt-0.5
+                  text-[9px] sm:text-[10px] font-medium tracking-[0.15em] uppercase leading-none
+                  text-slate-500 dark:text-slate-400
+                "
+                style={{ fontFamily: "'PT Sans', 'Tahoma', sans-serif" }}
+              >
+                We Do Deals
+              </span>
+            </div>
+
           </Link>
 
           {/* Desktop Navigation */}
