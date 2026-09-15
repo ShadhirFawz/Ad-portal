@@ -47,4 +47,9 @@ public interface UserService {
      */
     UserResponse syncCurrentUser(SyncUserRequest request);
 
+    /**
+     * Calculates the account setup & onboarding progress for the authenticated user.
+     */
+    com.marketplace.marketplace.user.dto.response.AccountSetupProgressResponse getAccountSetupProgress();
+
 }
