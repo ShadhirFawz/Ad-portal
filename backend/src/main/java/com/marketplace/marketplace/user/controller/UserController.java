@@ -34,6 +34,14 @@ public class UserController {
                 userService.getCurrentUser());
     }
 
+    @GetMapping("/me/account-setup-progress")
+    public ApiResponse<com.marketplace.marketplace.user.dto.response.AccountSetupProgressResponse> getAccountSetupProgress() {
+
+        return ApiResponse.success(
+                "Account setup progress retrieved successfully.",
+                userService.getAccountSetupProgress());
+    }
+
     @PatchMapping("/me")
     public ApiResponse<UserResponse> updateMe(
             @Valid @RequestBody UpdateProfileRequest request) {

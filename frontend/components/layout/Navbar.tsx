@@ -7,6 +7,7 @@ import { useAuth } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 import ProfileAvatar from "@/components/profile/ProfileAvatar";
+import AccountSetupProgressWidget from "@/components/layout/AccountSetupProgressWidget";
 import { Menu, X, ChevronDown, LogOut, User, Heart, Bookmark, Package, Settings } from "lucide-react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
@@ -145,94 +146,93 @@ export default function Navbar() {
 
             {user ? (
               /* Desktop User Menu */
-              <div className="hidden md:block relative profile-dropdown">
-                <button
-                  type="button"
-                  onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 hover:border-emerald-500/50 transition-all group"
-                >
-                  <ProfileAvatar
-                    avatarUrl={user.avatarUrl}
-                    firstName={user.firstName}
-                    email={user.email}
-                    size={28}
-                  />
-                  <span
-                    className="text-sm font-normal text-slate-700 dark:text-slate-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors hidden lg:inline"
-                    style={{ fontFamily: "'PT Sans', 'Tahoma', sans-serif" }}
-                  >
-                    {user.firstName || user.email?.split("@")[0] || "Account"}
-                  </span>
-                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isProfileDropdownOpen ? "rotate-180" : ""}`} />
-                  {!user.emailVerified && (
-                    <span
-                      className="w-2 h-2 rounded-full bg-amber-500 shrink-0"
-                      title="Email verification pending"
-                    />
-                  )}
-                </button>
+              <div className="hidden md:flex items-center gap-2">
+                {/* Profile Circle Icon with Circular Progress Border Ring & Hover Fraction Popout */}
+                <AccountSetupProgressWidget size={36} />
 
-                {/* Dropdown Menu */}
-                {isProfileDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
-                    <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800">
-                      <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
-                        {user.firstName || "User"}
-                      </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                        {user.email}
-                      </p>
+                <div className="relative profile-dropdown">
+                  <button
+                    type="button"
+                    onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 hover:border-emerald-500/50 transition-all group cursor-pointer"
+                  >
+                    <span
+                      className="text-sm font-normal text-slate-700 dark:text-slate-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors hidden lg:inline"
+                      style={{ fontFamily: "'PT Sans', 'Tahoma', sans-serif" }}
+                    >
+                      {user.firstName || user.email?.split("@")[0] || "Account"}
+                    </span>
+                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isProfileDropdownOpen ? "rotate-180" : ""}`} />
+                    {!user.emailVerified && (
+                      <span
+                        className="w-2 h-2 rounded-full bg-amber-500 shrink-0"
+                        title="Email verification pending"
+                      />
+                    )}
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {isProfileDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+                      <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800">
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                          {user.firstName || "User"}
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                          {user.email}
+                        </p>
+                      </div>
+                      <div className="py-1">
+                        <Link
+                          href="/profile"
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                        >
+                          <User className="w-4 h-4" />
+                          Profile
+                        </Link>
+                        <Link
+                          href="/my-listings"
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                        >
+                          <Package className="w-4 h-4" />
+                          My Listings
+                        </Link>
+                        <Link
+                          href="/favorites"
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                        >
+                          <Heart className="w-4 h-4" />
+                          Favorites
+                        </Link>
+                        <Link
+                          href="/bookmarks"
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                        >
+                          <Bookmark className="w-4 h-4" />
+                          Bookmarks
+                        </Link>
+                        <Link
+                          href="/settings"
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                        >
+                          <Settings className="w-4 h-4" />
+                          Settings
+                        </Link>
+                        <hr className="my-1 border-slate-100 dark:border-slate-800" />
+                        <button
+                          onClick={async () => {
+                            await logout();
+                            toastInfo("Signed Out", "You have been logged out of your account.");
+                          }}
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors w-full text-left cursor-pointer"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          Sign Out
+                        </button>
+                      </div>
                     </div>
-                    <div className="py-1">
-                      <Link
-                        href="/profile"
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                      >
-                        <User className="w-4 h-4" />
-                        Profile
-                      </Link>
-                      <Link
-                        href="/my-listings"
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                      >
-                        <Package className="w-4 h-4" />
-                        My Listings
-                      </Link>
-                      <Link
-                        href="/favorites"
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                      >
-                        <Heart className="w-4 h-4" />
-                        Favorites
-                      </Link>
-                      <Link
-                        href="/bookmarks"
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                      >
-                        <Bookmark className="w-4 h-4" />
-                        Bookmarks
-                      </Link>
-                      <Link
-                        href="/settings"
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                      >
-                        <Settings className="w-4 h-4" />
-                        Settings
-                      </Link>
-                      <hr className="my-1 border-slate-100 dark:border-slate-800" />
-                      <button
-                        onClick={async () => {
-                          await logout();
-                          toastInfo("Signed Out", "You have been logged out of your account.");
-                        }}
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors w-full text-left"
-                      >
-                        <LogOut className="w-4 h-4" />
-                        Sign Out
-                      </button>
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             ) : (
               /* Desktop Auth Buttons */
@@ -295,14 +295,12 @@ export default function Navbar() {
 
                 {user ? (
                   <>
-                    {/* User Profile Section */}
+                    {/* User Profile Section with Account Setup Progress */}
                     <div className="px-4 py-3 my-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                       <div className="flex items-center gap-3">
-                        <ProfileAvatar
-                          avatarUrl={user.avatarUrl}
-                          firstName={user.firstName}
-                          email={user.email}
+                        <AccountSetupProgressWidget
                           size={44}
+                          onNavigate={() => setIsMenuOpen(false)}
                         />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-bold text-slate-900 dark:text-white truncate">

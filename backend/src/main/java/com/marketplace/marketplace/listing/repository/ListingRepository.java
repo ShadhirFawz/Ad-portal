@@ -52,4 +52,7 @@ public interface ListingRepository
 
         boolean existsBySlug(
                         String slug);
+
+        boolean existsBySellerId(
+                        UUID sellerId);
 }

@@ -10,6 +10,10 @@ import com.marketplace.marketplace.common.exception.ResourceNotFoundException;
 import com.marketplace.marketplace.common.security.util.SecurityUtils;
 import com.marketplace.marketplace.user.dto.request.ChangePasswordRequest;
 import com.marketplace.marketplace.user.dto.request.UpdateProfileRequest;
+import com.marketplace.marketplace.auction.repository.AuctionBidRepository;
+import com.marketplace.marketplace.listing.repository.ListingRepository;
+import com.marketplace.marketplace.user.dto.response.AccountSetupProgressResponse;
+import com.marketplace.marketplace.user.dto.response.AccountSetupStepItem;
 import com.marketplace.marketplace.user.dto.response.UsernameAvailabilityResponse;
 import com.marketplace.marketplace.user.entity.User;
 import com.marketplace.marketplace.user.entity.UserPhoneNumber;
@@ -24,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -40,6 +45,8 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final UserPhoneNumberRepository userPhoneNumberRepository;
+    private final ListingRepository listingRepository;
+    private final AuctionBidRepository auctionBidRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
 
@@ -237,7 +244,8 @@ public class UserServiceImpl implements UserService {
 
                 String primaryPhone = null;
                 boolean primaryAssigned = false;
-                record PhoneConfig(boolean isPrimary, boolean isWhatsapp) {}
+                record PhoneConfig(boolean isPrimary, boolean isWhatsapp) {
+                }
                 java.util.Map<String, PhoneConfig> requestedNumberConfigMap = new java.util.LinkedHashMap<>();
 
                 for (int i = 0; i < request.phoneNumbers().size(); i++) {
@@ -262,7 +270,8 @@ public class UserServiceImpl implements UserService {
                 }
 
                 // 1. Remove phone numbers that are no longer present in the request
-                user.getPhoneNumbers().removeIf(existing -> !requestedNumberConfigMap.containsKey(existing.getPhoneNumber()));
+                user.getPhoneNumbers()
+                        .removeIf(existing -> !requestedNumberConfigMap.containsKey(existing.getPhoneNumber()));
 
                 // 2. Update existing entries or add new ones
                 for (java.util.Map.Entry<String, PhoneConfig> entry : requestedNumberConfigMap.entrySet()) {
@@ -359,7 +368,8 @@ public class UserServiceImpl implements UserService {
     /**
      * Upserts the Supabase user into the local DB.
      * If the user already exists, it is returned as-is.
-     * If not, a new local record is seeded from the JWT sub + optional profile hints.
+     * If not, a new local record is seeded from the JWT sub + optional profile
+     * hints.
      */
     @Override
     @Transactional
@@ -377,7 +387,8 @@ public class UserServiceImpl implements UserService {
         return userMapper.toResponse(
                 userRepository.findById(userId)
                         .map(existingUser -> {
-                            // If existing user had a temporary placeholder email, update to their real email
+                            // If existing user had a temporary placeholder email, update to their real
+                            // email
                             if (existingUser.getEmail() != null
                                     && existingUser.getEmail().startsWith("user-")
                                     && !resolvedEmail.startsWith("user-")) {
@@ -396,7 +407,8 @@ public class UserServiceImpl implements UserService {
                                     boolean alreadyExists = existingUser.getPhoneNumbers().stream()
                                             .anyMatch(p -> p.getPhoneNumber().equalsIgnoreCase(cleanPhone));
                                     if (!alreadyExists && existingUser.getPhoneNumbers().size() < 3) {
-                                        boolean isFirst = existingUser.getPhoneNumbers().isEmpty() || existingUser.getPhoneNumber() == null;
+                                        boolean isFirst = existingUser.getPhoneNumbers().isEmpty()
+                                                || existingUser.getPhoneNumber() == null;
                                         UserPhoneNumber upn = UserPhoneNumber.builder()
                                                 .user(existingUser)
                                                 .phoneNumber(cleanPhone)
@@ -410,7 +422,8 @@ public class UserServiceImpl implements UserService {
                                 }
                                 if (request.username() != null && !request.username().isBlank()) {
                                     String uname = request.username().trim().toLowerCase();
-                                    if (!uname.equals(existingUser.getUsername()) && !userRepository.existsByUsername(uname)) {
+                                    if (!uname.equals(existingUser.getUsername())
+                                            && !userRepository.existsByUsername(uname)) {
                                         existingUser.setUsername(uname);
                                     }
                                 }
@@ -422,8 +435,8 @@ public class UserServiceImpl implements UserService {
                             String firstName = (request != null
                                     && request.firstName() != null
                                     && !request.firstName().isBlank())
-                                    ? request.firstName().trim()
-                                    : "User";
+                                            ? request.firstName().trim()
+                                            : "User";
 
                             String lastName = (request != null) ? trimToNull(request.lastName()) : null;
                             String phoneNumber = (request != null) ? trimToNull(request.phoneNumber()) : null;
@@ -502,8 +515,81 @@ public class UserServiceImpl implements UserService {
                 });
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public AccountSetupProgressResponse getAccountSetupProgress() {
+        User user = getAuthenticatedUser();
+        UUID userId = user.getId();
+
+        List<AccountSetupStepItem> steps = new ArrayList<>();
+
+        // Step 1: Create your own username
+        boolean hasUsername = user.getUsername() != null && !user.getUsername().isBlank();
+        steps.add(new AccountSetupStepItem(
+                "USERNAME",
+                "Create your own username",
+                "Set a custom handle to personalize your profile and listings",
+                hasUsername,
+                "/profile",
+                "Set Username"));
+
+        // Step 2: Add at least one phone number
+        boolean hasPhone = (user.getPhoneNumber() != null && !user.getPhoneNumber().isBlank())
+                || (user.getPhoneNumbers() != null && !user.getPhoneNumbers().isEmpty());
+        steps.add(new AccountSetupStepItem(
+                "PHONE_NUMBER",
+                "Add a contact phone number",
+                "Add at least one phone number for buyer inquiries and fast communication",
+                hasPhone,
+                "/profile/edit",
+                "Add Phone"));
+
+        // Step 3: Add a description / bio
+        boolean hasBio = user.getBio() != null && !user.getBio().isBlank();
+        steps.add(new AccountSetupStepItem(
+                "DESCRIPTION",
+                "Add a profile bio / description",
+                "Introduce yourself or your business to build trust with the community",
+                hasBio,
+                "/profile/edit",
+                "Add Bio"));
+
+        // Step 4: Post your first ad (listing)
+        boolean hasListing = listingRepository.existsBySellerId(userId);
+        steps.add(new AccountSetupStepItem(
+                "FIRST_LISTING",
+                "Post your first ad",
+                "Publish an item or service to start buying and selling on Wudo",
+                hasListing,
+                "/listings/new",
+                "Post Ad"));
+
+        // Step 5: Participate in an auction
+        boolean hasAuctionBid = auctionBidRepository.existsByBidderId(userId);
+        steps.add(new AccountSetupStepItem(
+                "AUCTION_PARTICIPATION",
+                "Participate in an auction",
+                "Explore live auctions and place a bid on an item you like",
+                hasAuctionBid,
+                "/listings",
+                "Explore Auctions"));
+
+        int completedCount = (int) steps.stream().filter(AccountSetupStepItem::completed).count();
+        int totalCount = steps.size();
+        double percentage = totalCount > 0 ? ((double) completedCount / totalCount) * 100.0 : 0.0;
+        boolean isFullyCompleted = completedCount == totalCount;
+
+        return new AccountSetupProgressResponse(
+                completedCount,
+                totalCount,
+                percentage,
+                isFullyCompleted,
+                steps);
+    }
+
     private String trimToNull(String value) {
-        if (value == null) return null;
+        if (value == null)
+            return null;
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
     }
