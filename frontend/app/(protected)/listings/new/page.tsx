@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/providers/AuthProvider";
@@ -43,56 +44,70 @@ import {
   ArrowLeft,
   Check,
   CheckCircle2,
-  Sparkles,
   Camera,
   Eye,
   Rocket,
   LucideIcon,
   Link2,
+  Pin,
 } from "lucide-react";
 import { generateSlug } from "@/lib/format/slug";
+import type { SelectedLocationData } from "@/components/listings/LocationMapPicker";
+
+const LocationMapPicker = dynamic(
+  () => import("@/components/listings/LocationMapPicker"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="p-12 flex flex-col items-center justify-center gap-3 text-slate-400 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+        <div className="w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+        <span className="text-xs font-medium">Loading interactive map...</span>
+      </div>
+    ),
+  }
+);
 
 const CONDITION_OPTIONS: {
   value: ListingCondition;
   label: string;
   description: string;
 }[] = [
-  {
-    value: "NEW",
-    label: "Brand New",
-    description: "Unopened, unused, in original packaging",
-  },
-  {
-    value: "LIKE_NEW",
-    label: "Like New",
-    description: "Used once or twice, flawless appearance",
-  },
-  {
-    value: "GOOD",
-    label: "Good",
-    description: "Fully functional with normal minor signs of wear",
-  },
-  {
-    value: "FAIR",
-    label: "Fair",
-    description: "Working condition with visible cosmetic blemishes",
-  },
-  {
-    value: "POOR",
-    label: "Poor / For Parts",
-    description: "Needs repair or sold for replacement parts",
-  },
-  {
-    value: "REFURBISHED",
-    label: "Refurbished",
-    description: "Inspected, tested, and restored to full working order",
-  },
-  {
-    value: "NOT_APPLICABLE",
-    label: "Not Applicable",
-    description: "For services, digital items, or non-physical offerings",
-  },
-];
+    {
+      value: "NEW",
+      label: "Brand New",
+      description: "Unopened, unused, in original packaging",
+    },
+    {
+      value: "LIKE_NEW",
+      label: "Like New",
+      description: "Used once or twice, flawless appearance",
+    },
+    {
+      value: "GOOD",
+      label: "Good",
+      description: "Fully functional with normal minor signs of wear",
+    },
+    {
+      value: "FAIR",
+      label: "Fair",
+      description: "Working condition with visible cosmetic blemishes",
+    },
+    {
+      value: "POOR",
+      label: "Poor / For Parts",
+      description: "Needs repair or sold for replacement parts",
+    },
+    {
+      value: "REFURBISHED",
+      label: "Refurbished",
+      description: "Inspected, tested, and restored to full working order",
+    },
+    {
+      value: "NOT_APPLICABLE",
+      label: "Not Applicable",
+      description: "For services, digital items, or non-physical offerings",
+    },
+  ];
 
 const PRICING_TYPE_OPTIONS: {
   value: PricingType;
@@ -100,43 +115,43 @@ const PRICING_TYPE_OPTIONS: {
   icon: LucideIcon;
   description: string;
 }[] = [
-  {
-    value: "FIXED",
-    label: "Fixed Price",
-    icon: Tag,
-    description: "Set a definite non-negotiable price",
-  },
-  {
-    value: "NEGOTIABLE",
-    label: "Negotiable",
-    icon: Handshake,
-    description: "Allow buyers to submit offers",
-  },
-  {
-    value: "FREE",
-    label: "Free / Giveaway",
-    icon: Gift,
-    description: "No payment required",
-  },
-  {
-    value: "CONTACT_FOR_PRICE",
-    label: "Contact for Price",
-    icon: PhoneCall,
-    description: "Price disclosed upon inquiry",
-  },
-];
+    {
+      value: "FIXED",
+      label: "Fixed Price",
+      icon: Tag,
+      description: "Set a definite non-negotiable price",
+    },
+    {
+      value: "NEGOTIABLE",
+      label: "Negotiable",
+      icon: Handshake,
+      description: "Allow buyers to submit offers",
+    },
+    {
+      value: "FREE",
+      label: "Free / Giveaway",
+      icon: Gift,
+      description: "No payment required",
+    },
+    {
+      value: "CONTACT_FOR_PRICE",
+      label: "Contact for Price",
+      icon: PhoneCall,
+      description: "Price disclosed upon inquiry",
+    },
+  ];
 
 const LOCATION_TYPE_OPTIONS: {
   value: ListingLocationType;
   label: string;
   icon: LucideIcon;
 }[] = [
-  { value: "CITY", label: "Specific City", icon: MapPin },
-  { value: "DISTRICT", label: "District Wide", icon: Map },
-  { value: "PROVINCE", label: "Province Wide", icon: Landmark },
-  { value: "NATIONWIDE", label: "Islandwide Delivery", icon: Truck },
-  { value: "ONLINE", label: "Online / Digital", icon: Globe },
-];
+    { value: "CITY", label: "Specific City", icon: MapPin },
+    { value: "DISTRICT", label: "District Wide", icon: Map },
+    { value: "PROVINCE", label: "Province Wide", icon: Landmark },
+    { value: "NATIONWIDE", label: "Islandwide Delivery", icon: Truck },
+    { value: "ONLINE", label: "Online / Digital", icon: Globe },
+  ];
 
 export default function NewListingPage() {
   const router = useRouter();
@@ -167,6 +182,9 @@ export default function NewListingPage() {
   const [district, setDistrict] = useState("");
   const [province, setProvince] = useState("");
   const [postalCode, setPostalCode] = useState("");
+  const [streetNumber, setStreetNumber] = useState("");
+  const [showMapModal, setShowMapModal] = useState(false);
+  const [locationSetFromMap, setLocationSetFromMap] = useState(false);
 
   // Custom Attributes (Key - Value pairs)
   const [customAttributes, setCustomAttributes] = useState<
@@ -332,8 +350,8 @@ export default function NewListingPage() {
         pricingType === "NEGOTIABLE"
           ? true
           : pricingType === "FIXED"
-          ? negotiable
-          : false,
+            ? negotiable
+            : false,
       minimumOfferPrice:
         negotiable && minimumOfferPrice !== ""
           ? Number(minimumOfferPrice)
@@ -344,6 +362,7 @@ export default function NewListingPage() {
       city: city.trim() || undefined,
       district: district.trim() || undefined,
       province: province.trim() || undefined,
+      streetNumber: streetNumber.trim() || undefined,
       postalCode: postalCode.trim() || undefined,
       customAttributes:
         Object.keys(customAttributesMap).length > 0
@@ -439,7 +458,7 @@ export default function NewListingPage() {
           </div>
 
           <div className="flex items-center gap-2 text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-3.5 py-1.5 rounded-full w-fit">
-            <Sparkles className="w-3.5 h-3.5 text-emerald-500 animate-pulse" />
+            <Pin className="w-3.5 h-3.5 text-emerald-500 animate-pulse rotate-45" />
             <span>{step === 1 ? "Photos added in step 2" : "Auto-saved as draft"}</span>
           </div>
         </div>
@@ -453,20 +472,18 @@ export default function NewListingPage() {
             if (createdListing) setStep(1);
           }}
           disabled={step === 1}
-          className={`flex items-center justify-center gap-2.5 py-2.5 px-3 rounded-xl transition-all ${
-            step === 1
-              ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm ring-1 ring-emerald-500/20"
-              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-          }`}
+          className={`flex items-center justify-center gap-2.5 py-2.5 px-3 rounded-xl transition-all ${step === 1
+            ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm ring-1 ring-emerald-500/20"
+            : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
         >
           <span
-            className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold ${
-              createdListing && step === 2
-                ? "bg-emerald-500 text-white"
-                : step === 1
+            className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold ${createdListing && step === 2
+              ? "bg-emerald-500 text-white"
+              : step === 1
                 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                 : "bg-slate-200 dark:bg-slate-700 text-slate-500"
-            }`}
+              }`}
           >
             {createdListing && step === 2 ? <Check className="w-3 h-3" /> : "1"}
           </span>
@@ -479,20 +496,18 @@ export default function NewListingPage() {
           onClick={() => {
             if (createdListing) setStep(2);
           }}
-          className={`flex items-center justify-center gap-2.5 py-2.5 px-3 rounded-xl transition-all ${
-            step === 2
-              ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm ring-1 ring-emerald-500/20"
-              : createdListing
+          className={`flex items-center justify-center gap-2.5 py-2.5 px-3 rounded-xl transition-all ${step === 2
+            ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm ring-1 ring-emerald-500/20"
+            : createdListing
               ? "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               : "text-slate-400 dark:text-slate-600 cursor-not-allowed opacity-60"
-          }`}
+            }`}
         >
           <span
-            className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold ${
-              step === 2
-                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                : "bg-slate-200 dark:bg-slate-700 text-slate-500"
-            }`}
+            className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold ${step === 2
+              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+              : "bg-slate-200 dark:bg-slate-700 text-slate-500"
+              }`}
           >
             2
           </span>
@@ -526,650 +541,701 @@ export default function NewListingPage() {
       {/* STEP 1: ITEM DETAILS FORM */}
       {step === 1 && (
         <form onSubmit={handleSubmit} className="space-y-8" noValidate>
-        {/* Section 1: Classification (Type & Category) */}
-        <section className="glass-panel p-6 sm:p-8 space-y-6">
-          <div className="flex items-center gap-2.5 pb-4 border-b border-slate-200 dark:border-slate-800">
-            <Layers className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-            <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">
-                1. Classification &amp; Category
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Specify what type of offering you are listing
-              </p>
+          {/* Section 1: Classification (Type & Category) */}
+          <section className="glass-panel p-6 sm:p-8 space-y-6">
+            <div className="flex items-center gap-2.5 pb-4 border-b border-slate-200 dark:border-slate-800">
+              <Layers className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <div>
+                <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                  1. Classification &amp; Category
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Specify what type of offering you are listing
+                </p>
+              </div>
             </div>
-          </div>
 
-          {/* Listing Type: Item vs Service */}
-          <div className="space-y-2">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-              Offering Type *
-            </label>
-            <div className="grid grid-cols-2 gap-3 max-w-md">
-              <button
-                type="button"
-                onClick={() => setListingType("ITEM")}
-                className={`flex items-center justify-center gap-2.5 p-3 rounded-xl border text-sm font-semibold transition-all ${
-                  listingType === "ITEM"
-                    ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-sm"
-                    : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300"
-                }`}
-              >
-                <ShoppingBag className="w-4 h-4" />
-                <span>Physical Item</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setListingType("SERVICE")}
-                className={`flex items-center justify-center gap-2.5 p-3 rounded-xl border text-sm font-semibold transition-all ${
-                  listingType === "SERVICE"
-                    ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-sm"
-                    : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300"
-                }`}
-              >
-                <Wrench className="w-4 h-4" />
-                <span>Service / Skill</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Nested Cascading Category Selector */}
-          <NestedCategorySelector
-            categories={categories}
-            selectedCategoryId={categoryId}
-            onSelect={(id) => {
-              setCategoryId(id);
-              setFieldErrors((prev) => ({ ...prev, categoryId: "" }));
-            }}
-            error={fieldErrors.categoryId}
-            disabled={loadingCategories}
-          />
-        </section>
-
-        {/* Section 2: Basic Information */}
-        <section className="glass-panel p-6 sm:p-8 space-y-6">
-          <div className="flex items-center gap-2.5 pb-4 border-b border-slate-200 dark:border-slate-800">
-            <FileText className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-            <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">
-                2. General Details
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Provide an attractive title and honest condition summary
-              </p>
-            </div>
-          </div>
-
-          {/* Title */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label
-                htmlFor="listingTitle"
-                className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
-              >
-                Listing Title *
+            {/* Listing Type: Item vs Service */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                Offering Type *
               </label>
-              <span
-                className={`text-xs ${
-                  title.length > 150
+              <div className="grid grid-cols-2 gap-3 max-w-md">
+                <button
+                  type="button"
+                  onClick={() => setListingType("ITEM")}
+                  className={`flex items-center justify-center gap-2.5 p-3 rounded-xl border text-sm font-semibold transition-all ${listingType === "ITEM"
+                    ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-sm"
+                    : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300"
+                    }`}
+                >
+                  <ShoppingBag className="w-4 h-4" />
+                  <span>Physical Item</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setListingType("SERVICE")}
+                  className={`flex items-center justify-center gap-2.5 p-3 rounded-xl border text-sm font-semibold transition-all ${listingType === "SERVICE"
+                    ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-sm"
+                    : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300"
+                    }`}
+                >
+                  <Wrench className="w-4 h-4" />
+                  <span>Service / Skill</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Nested Cascading Category Selector */}
+            <NestedCategorySelector
+              categories={categories}
+              selectedCategoryId={categoryId}
+              onSelect={(id) => {
+                setCategoryId(id);
+                setFieldErrors((prev) => ({ ...prev, categoryId: "" }));
+              }}
+              error={fieldErrors.categoryId}
+              disabled={loadingCategories}
+            />
+          </section>
+
+          {/* Section 2: Basic Information */}
+          <section className="glass-panel p-6 sm:p-8 space-y-6">
+            <div className="flex items-center gap-2.5 pb-4 border-b border-slate-200 dark:border-slate-800">
+              <FileText className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <div>
+                <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                  2. General Details
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Provide an attractive title and honest condition summary
+                </p>
+              </div>
+            </div>
+
+            {/* Title */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor="listingTitle"
+                  className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
+                >
+                  Listing Title *
+                </label>
+                <span
+                  className={`text-xs ${title.length > 150
                     ? "text-rose-500 font-bold"
                     : "text-slate-400"
-                }`}
+                    }`}
+                >
+                  {title.length}/150
+                </span>
+              </div>
+              <input
+                id="listingTitle"
+                type="text"
+                placeholder="e.g. Sony WH-1000XM5 Wireless Headphones (Midnight Blue)"
+                value={title}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  setFieldErrors((prev) => ({ ...prev, title: "" }));
+                }}
+                maxLength={150}
+                className={`input-field ${fieldErrors.title ? "border-rose-500" : ""
+                  }`}
+                required
+              />
+              {fieldErrors.title && (
+                <p className="text-xs text-rose-500 mt-1">{fieldErrors.title}</p>
+              )}
+
+              {/* Real-time Slug Preview (Immutable / Read-Only Information) */}
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 text-xs text-slate-500 dark:text-slate-400 select-none">
+                <Link2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                <span className="text-slate-400 dark:text-slate-500 font-mono text-[11px] shrink-0">
+                  /listings/
+                </span>
+                <span className="font-mono font-medium text-emerald-600 dark:text-emerald-400 truncate">
+                  {generateSlug(title) || "your-listing-slug"}
+                </span>
+                <span className="ml-auto text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-slate-200/70 dark:bg-slate-700/70 text-slate-500 dark:text-slate-400 shrink-0">
+                  URL Preview
+                </span>
+              </div>
+            </div>
+
+            {/* Condition Selector (Segmented Radio) */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                Item Condition *
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {CONDITION_OPTIONS.map((opt) => {
+                  const isSelected = condition === opt.value;
+                  return (
+                    <button
+                      type="button"
+                      key={opt.value}
+                      onClick={() => setCondition(opt.value)}
+                      className={`text-left p-3.5 rounded-xl border transition-all flex flex-col justify-between ${isSelected
+                        ? "border-emerald-500 bg-emerald-500/10 text-slate-900 dark:text-white shadow-sm ring-1 ring-emerald-500/30"
+                        : "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                        }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-semibold text-sm">{opt.label}</span>
+                        {isSelected && (
+                          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                        )}
+                      </div>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        {opt.description}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Quantity */}
+            <div className="max-w-xs space-y-1.5">
+              <label
+                htmlFor="quantityInput"
+                className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
               >
-                {title.length}/150
-              </span>
+                Quantity Available *
+              </label>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                  className="w-10 h-10 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-base font-bold transition-colors select-none"
+                >
+                  -
+                </button>
+                <input
+                  id="quantityInput"
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={quantity}
+                  onChange={(e) => {
+                    setQuantity(Math.max(1, parseInt(e.target.value) || 1));
+                    setFieldErrors((prev) => ({ ...prev, quantity: "" }));
+                  }}
+                  className={`input-field text-center font-bold ${fieldErrors.quantity ? "border-rose-500" : ""
+                    }`}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setQuantity((q) => q + 1)}
+                  className="w-10 h-10 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-base font-bold transition-colors select-none"
+                >
+                  +
+                </button>
+              </div>
+              {fieldErrors.quantity && (
+                <p className="text-xs text-rose-500 mt-1">
+                  {fieldErrors.quantity}
+                </p>
+              )}
             </div>
-            <input
-              id="listingTitle"
-              type="text"
-              placeholder="e.g. Sony WH-1000XM5 Wireless Headphones (Midnight Blue)"
-              value={title}
-              onChange={(e) => {
-                setTitle(e.target.value);
-                setFieldErrors((prev) => ({ ...prev, title: "" }));
-              }}
-              maxLength={150}
-              className={`input-field ${
-                fieldErrors.title ? "border-rose-500" : ""
-              }`}
-              required
-            />
-            {fieldErrors.title && (
-              <p className="text-xs text-rose-500 mt-1">{fieldErrors.title}</p>
-            )}
+          </section>
 
-            {/* Real-time Slug Preview (Immutable / Read-Only Information) */}
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 text-xs text-slate-500 dark:text-slate-400 select-none">
-              <Link2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-              <span className="text-slate-400 dark:text-slate-500 font-mono text-[11px] shrink-0">
-                /listings/
-              </span>
-              <span className="font-mono font-medium text-emerald-600 dark:text-emerald-400 truncate">
-                {generateSlug(title) || "your-listing-slug"}
-              </span>
-              <span className="ml-auto text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-slate-200/70 dark:bg-slate-700/70 text-slate-500 dark:text-slate-400 shrink-0">
-                URL Preview
-              </span>
+          {/* Section 3: Pricing & Offers */}
+          <section className="glass-panel p-6 sm:p-8 space-y-6">
+            <div className="flex items-center gap-2.5 pb-4 border-b border-slate-200 dark:border-slate-800">
+              <DollarSign className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <div>
+                <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                  3. Pricing &amp; Negotiation
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Choose how you want to price this item
+                </p>
+              </div>
             </div>
-          </div>
 
-          {/* Condition Selector (Segmented Radio) */}
-          <div className="space-y-2">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-              Item Condition *
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {CONDITION_OPTIONS.map((opt) => {
-                const isSelected = condition === opt.value;
+            {/* Pricing Type Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+              {PRICING_TYPE_OPTIONS.map((opt) => {
+                const isSelected = pricingType === opt.value;
+                const Icon = opt.icon;
                 return (
                   <button
                     type="button"
                     key={opt.value}
-                    onClick={() => setCondition(opt.value)}
-                    className={`text-left p-3.5 rounded-xl border transition-all flex flex-col justify-between ${
-                      isSelected
-                        ? "border-emerald-500 bg-emerald-500/10 text-slate-900 dark:text-white shadow-sm ring-1 ring-emerald-500/30"
-                        : "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/40"
-                    }`}
+                    onClick={() => handlePricingTypeChange(opt.value)}
+                    className={`p-4 rounded-xl border text-left flex flex-col justify-between transition-all ${isSelected
+                      ? "border-emerald-500 bg-emerald-500/10 text-slate-900 dark:text-white shadow-sm ring-1 ring-emerald-500/30"
+                      : "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                      }`}
                   >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-semibold text-sm">{opt.label}</span>
-                      {isSelected && (
-                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                      )}
+                    <div>
+                      <span className="w-8 h-8 rounded-lg bg-white dark:bg-slate-800 flex items-center justify-center mb-2.5 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
+                        <Icon className="w-4 h-4" />
+                      </span>
+                      <h3 className="font-semibold text-sm">{opt.label}</h3>
                     </div>
-                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
                       {opt.description}
-                    </span>
+                    </p>
                   </button>
                 );
               })}
             </div>
-          </div>
 
-          {/* Quantity */}
-          <div className="max-w-xs space-y-1.5">
-            <label
-              htmlFor="quantityInput"
-              className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
-            >
-              Quantity Available *
-            </label>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                className="w-10 h-10 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-base font-bold transition-colors select-none"
-              >
-                -
-              </button>
-              <input
-                id="quantityInput"
-                type="number"
-                min="1"
-                step="1"
-                value={quantity}
-                onChange={(e) => {
-                  setQuantity(Math.max(1, parseInt(e.target.value) || 1));
-                  setFieldErrors((prev) => ({ ...prev, quantity: "" }));
-                }}
-                className={`input-field text-center font-bold ${
-                  fieldErrors.quantity ? "border-rose-500" : ""
-                }`}
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setQuantity((q) => q + 1)}
-                className="w-10 h-10 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-base font-bold transition-colors select-none"
-              >
-                +
-              </button>
-            </div>
-            {fieldErrors.quantity && (
-              <p className="text-xs text-rose-500 mt-1">
-                {fieldErrors.quantity}
-              </p>
-            )}
-          </div>
-        </section>
-
-        {/* Section 3: Pricing & Offers */}
-        <section className="glass-panel p-6 sm:p-8 space-y-6">
-          <div className="flex items-center gap-2.5 pb-4 border-b border-slate-200 dark:border-slate-800">
-            <DollarSign className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-            <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">
-                3. Pricing &amp; Negotiation
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Choose how you want to price this item
-              </p>
-            </div>
-          </div>
-
-          {/* Pricing Type Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-            {PRICING_TYPE_OPTIONS.map((opt) => {
-              const isSelected = pricingType === opt.value;
-              const Icon = opt.icon;
-              return (
-                <button
-                  type="button"
-                  key={opt.value}
-                  onClick={() => handlePricingTypeChange(opt.value)}
-                  className={`p-4 rounded-xl border text-left flex flex-col justify-between transition-all ${
-                    isSelected
-                      ? "border-emerald-500 bg-emerald-500/10 text-slate-900 dark:text-white shadow-sm ring-1 ring-emerald-500/30"
-                      : "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/40"
-                  }`}
-                >
-                  <div>
-                    <span className="w-8 h-8 rounded-lg bg-white dark:bg-slate-800 flex items-center justify-center mb-2.5 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
-                      <Icon className="w-4 h-4" />
-                    </span>
-                    <h3 className="font-semibold text-sm">{opt.label}</h3>
-                  </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-                    {opt.description}
-                  </p>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Conditional Price Input */}
-          {(pricingType === "FIXED" || pricingType === "NEGOTIABLE") && (
-            <div className="space-y-4 pt-2">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                {/* Asking Price */}
-                <div className="space-y-1.5">
-                  <label
-                    htmlFor="listingPrice"
-                    className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
-                  >
-                    Price (LKR) *
-                  </label>
-                  <div className={`flex items-center rounded-xl border bg-white dark:bg-slate-900 transition-colors focus-within:ring-2 focus-within:ring-emerald-500/40 focus-within:border-emerald-500 ${fieldErrors.price ? "border-rose-500" : "border-slate-200 dark:border-slate-800"}`}>
-                    <span className="px-3.5 text-sm font-bold text-slate-500 dark:text-slate-400 select-none border-r border-slate-200 dark:border-slate-800 h-full flex items-center py-3 shrink-0">
-                      Rs.
-                    </span>
-                    <input
-                      id="listingPrice"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={price}
-                      onChange={(e) => {
-                        setPrice(e.target.value);
-                        setFieldErrors((prev) => ({ ...prev, price: "" }));
-                      }}
-                      className="flex-1 bg-transparent outline-none border-none px-3.5 py-3 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 min-w-0"
-                      required
-                    />
-                  </div>
-                  {fieldErrors.price && (
-                    <p className="text-xs text-rose-500 mt-1">
-                      {fieldErrors.price}
-                    </p>
-                  )}
-                </div>
-
-                {/* Minimum Offer Price (if negotiable) */}
-                {negotiable && (
-                  <div className="space-y-1.5 animate-fadeIn">
+            {/* Conditional Price Input */}
+            {(pricingType === "FIXED" || pricingType === "NEGOTIABLE") && (
+              <div className="space-y-4 pt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  {/* Asking Price */}
+                  <div className="space-y-1.5">
                     <label
-                      htmlFor="minOfferPrice"
-                      className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center justify-between"
+                      htmlFor="listingPrice"
+                      className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
                     >
-                      <span>Minimum Acceptable Offer</span>
-                      <span className="text-xs font-normal text-slate-400 normal-case">
-                        (Optional)
-                      </span>
+                      Price (LKR) *
                     </label>
-                    <div className={`flex items-center rounded-xl border bg-white dark:bg-slate-900 transition-colors focus-within:ring-2 focus-within:ring-emerald-500/40 focus-within:border-emerald-500 ${fieldErrors.minimumOfferPrice ? "border-rose-500" : "border-slate-200 dark:border-slate-800"}`}>
+                    <div className={`flex items-center rounded-xl border bg-white dark:bg-slate-900 transition-colors focus-within:ring-2 focus-within:ring-emerald-500/40 focus-within:border-emerald-500 ${fieldErrors.price ? "border-rose-500" : "border-slate-200 dark:border-slate-800"}`}>
                       <span className="px-3.5 text-sm font-bold text-slate-500 dark:text-slate-400 select-none border-r border-slate-200 dark:border-slate-800 h-full flex items-center py-3 shrink-0">
                         Rs.
                       </span>
                       <input
-                        id="minOfferPrice"
+                        id="listingPrice"
                         type="number"
                         min="0"
                         step="0.01"
-                        placeholder="e.g. 5000.00"
-                        value={minimumOfferPrice}
+                        placeholder="0.00"
+                        value={price}
                         onChange={(e) => {
-                          setMinimumOfferPrice(e.target.value);
-                          setFieldErrors((prev) => ({
-                            ...prev,
-                            minimumOfferPrice: "",
-                          }));
+                          setPrice(e.target.value);
+                          setFieldErrors((prev) => ({ ...prev, price: "" }));
                         }}
                         className="flex-1 bg-transparent outline-none border-none px-3.5 py-3 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 min-w-0"
+                        required
                       />
                     </div>
-                    {fieldErrors.minimumOfferPrice ? (
+                    {fieldErrors.price && (
                       <p className="text-xs text-rose-500 mt-1">
-                        {fieldErrors.minimumOfferPrice}
-                      </p>
-                    ) : (
-                      <p className="text-xs text-slate-400">
-                        Offers below this amount can be auto-declined
+                        {fieldErrors.price}
                       </p>
                     )}
                   </div>
+
+                  {/* Minimum Offer Price (if negotiable) */}
+                  {negotiable && (
+                    <div className="space-y-1.5 animate-fadeIn">
+                      <label
+                        htmlFor="minOfferPrice"
+                        className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center justify-between"
+                      >
+                        <span>Minimum Acceptable Offer</span>
+                        <span className="text-xs font-normal text-slate-400 normal-case">
+                          (Optional)
+                        </span>
+                      </label>
+                      <div className={`flex items-center rounded-xl border bg-white dark:bg-slate-900 transition-colors focus-within:ring-2 focus-within:ring-emerald-500/40 focus-within:border-emerald-500 ${fieldErrors.minimumOfferPrice ? "border-rose-500" : "border-slate-200 dark:border-slate-800"}`}>
+                        <span className="px-3.5 text-sm font-bold text-slate-500 dark:text-slate-400 select-none border-r border-slate-200 dark:border-slate-800 h-full flex items-center py-3 shrink-0">
+                          Rs.
+                        </span>
+                        <input
+                          id="minOfferPrice"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="e.g. 5000.00"
+                          value={minimumOfferPrice}
+                          onChange={(e) => {
+                            setMinimumOfferPrice(e.target.value);
+                            setFieldErrors((prev) => ({
+                              ...prev,
+                              minimumOfferPrice: "",
+                            }));
+                          }}
+                          className="flex-1 bg-transparent outline-none border-none px-3.5 py-3 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 min-w-0"
+                        />
+                      </div>
+                      {fieldErrors.minimumOfferPrice ? (
+                        <p className="text-xs text-rose-500 mt-1">
+                          {fieldErrors.minimumOfferPrice}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-slate-400">
+                          Offers below this amount can be auto-declined
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Negotiable Toggle (Only visible if FIXED pricing type) */}
+                {pricingType === "FIXED" && (
+                  <div className="pt-2">
+                    <label className="inline-flex items-center gap-3 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={negotiable}
+                        onChange={(e) => setNegotiable(e.target.checked)}
+                        className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300"
+                      />
+                      <div>
+                        <span className="text-sm font-medium text-slate-800 dark:text-slate-200">
+                          Allow price negotiations &amp; counter-offers
+                        </span>
+                        <p className="text-xs text-slate-400">
+                          Interested buyers will be able to send custom offer
+                          proposals
+                        </p>
+                      </div>
+                    </label>
+                  </div>
                 )}
               </div>
+            )}
+          </section>
 
-              {/* Negotiable Toggle (Only visible if FIXED pricing type) */}
-              {pricingType === "FIXED" && (
-                <div className="pt-2">
-                  <label className="inline-flex items-center gap-3 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={negotiable}
-                      onChange={(e) => setNegotiable(e.target.checked)}
-                      className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300"
-                    />
-                    <div>
-                      <span className="text-sm font-medium text-slate-800 dark:text-slate-200">
-                        Allow price negotiations &amp; counter-offers
-                      </span>
-                      <p className="text-xs text-slate-400">
-                        Interested buyers will be able to send custom offer
-                        proposals
-                      </p>
-                    </div>
-                  </label>
-                </div>
-              )}
+          {/* Section 4: Description */}
+          <section className="glass-panel p-6 sm:p-8 space-y-4">
+            <div className="flex items-center gap-2.5 pb-4 border-b border-slate-200 dark:border-slate-800">
+              <AlignLeft className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <div>
+                <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                  4. Description
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Detailed description of features, specifications, and history
+                </p>
+              </div>
             </div>
-          )}
-        </section>
 
-        {/* Section 4: Description */}
-        <section className="glass-panel p-6 sm:p-8 space-y-4">
-          <div className="flex items-center gap-2.5 pb-4 border-b border-slate-200 dark:border-slate-800">
-            <AlignLeft className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-            <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">
-                4. Description
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Detailed description of features, specifications, and history
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label
-                htmlFor="listingDesc"
-                className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
-              >
-                Detailed Description *
-              </label>
-              <span
-                className={`text-xs ${
-                  description.length > 5000
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor="listingDesc"
+                  className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
+                >
+                  Detailed Description *
+                </label>
+                <span
+                  className={`text-xs ${description.length > 5000
                     ? "text-rose-500 font-bold"
                     : "text-slate-400"
-                }`}
-              >
-                {description.length}/5000
-              </span>
+                    }`}
+                >
+                  {description.length}/5000
+                </span>
+              </div>
+              <textarea
+                id="listingDesc"
+                rows={6}
+                placeholder="Describe what you are selling in detail:&#10;• Key specifications, dimensions, or inclusions (boxes, cables)&#10;• How long it has been used and its cosmetic/functional state&#10;• Reason for selling or warranty coverage"
+                value={description}
+                onChange={(e) => {
+                  setDescription(e.target.value);
+                  setFieldErrors((prev) => ({ ...prev, description: "" }));
+                }}
+                maxLength={5000}
+                className={`input-field resize-y font-normal leading-relaxed ${fieldErrors.description ? "border-rose-500" : ""
+                  }`}
+                required
+              />
+              {fieldErrors.description && (
+                <p className="text-xs text-rose-500 mt-1">
+                  {fieldErrors.description}
+                </p>
+              )}
             </div>
-            <textarea
-              id="listingDesc"
-              rows={6}
-              placeholder="Describe what you are selling in detail:&#10;• Key specifications, dimensions, or inclusions (boxes, cables)&#10;• How long it has been used and its cosmetic/functional state&#10;• Reason for selling or warranty coverage"
-              value={description}
-              onChange={(e) => {
-                setDescription(e.target.value);
-                setFieldErrors((prev) => ({ ...prev, description: "" }));
-              }}
-              maxLength={5000}
-              className={`input-field resize-y font-normal leading-relaxed ${
-                fieldErrors.description ? "border-rose-500" : ""
-              }`}
-              required
-            />
-            {fieldErrors.description && (
-              <p className="text-xs text-rose-500 mt-1">
-                {fieldErrors.description}
-              </p>
-            )}
-          </div>
-        </section>
+          </section>
 
-        {/* Section 5: Location & Availability */}
-        <section className="glass-panel p-6 sm:p-8 space-y-6">
-          <div className="flex items-center gap-2.5 pb-4 border-b border-slate-200 dark:border-slate-800">
-            <MapPin className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-            <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">
-                5. Location &amp; Scope
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Where is this item located or available for pickup/delivery?
-              </p>
+          {/* Section 5: Location & Availability */}
+          <section className="glass-panel p-6 sm:p-8 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <MapPin className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <div>
+                  <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                    5. Location &amp; Scope
+                  </h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Pin on map to auto-fill address, or enter details manually
+                  </p>
+                </div>
+              </div>
+
+              {locationType !== "ONLINE" && (
+                <button
+                  type="button"
+                  onClick={() => setShowMapModal(true)}
+                  className="btn-outline text-xs px-3.5 py-2 rounded-xl flex items-center justify-center gap-2 border-emerald-500/30 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 font-semibold cursor-pointer shadow-xs self-start sm:self-auto"
+                >
+                  <MapPin className="w-3.5 h-3.5 text-emerald-500 animate-bounce" />
+                  <span>Pick on Map &amp; Auto-fill</span>
+                </button>
+              )}
             </div>
-          </div>
 
-          {/* Location Scope Pills */}
-          <div className="space-y-2">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-              Location Scope
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
-              {LOCATION_TYPE_OPTIONS.map((loc) => {
-                const isSelected = locationType === loc.value;
-                const Icon = loc.icon;
-                return (
-                  <button
-                    type="button"
-                    key={loc.value}
-                    onClick={() => setLocationType(loc.value)}
-                    className={`p-3 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1.5 ${
-                      isSelected
+            {/* Location Scope Pills */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                Location Scope
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
+                {LOCATION_TYPE_OPTIONS.map((loc) => {
+                  const isSelected = locationType === loc.value;
+                  const Icon = loc.icon;
+                  return (
+                    <button
+                      type="button"
+                      key={loc.value}
+                      onClick={() => setLocationType(loc.value)}
+                      className={`p-3 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1.5 ${isSelected
                         ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold shadow-sm"
                         : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300"
-                    }`}
-                  >
-                    <Icon className="w-5 h-5" />
-                    <span className="text-xs">{loc.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Specific Location Fields */}
-          {locationType !== "ONLINE" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-2">
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="cityInput"
-                  className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
-                >
-                  City / Town
-                </label>
-                <input
-                  id="cityInput"
-                  type="text"
-                  placeholder="e.g. Colombo 03"
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  maxLength={100}
-                  className="input-field"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="districtInput"
-                  className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
-                >
-                  District
-                </label>
-                <input
-                  id="districtInput"
-                  type="text"
-                  placeholder="e.g. Colombo"
-                  value={district}
-                  onChange={(e) => setDistrict(e.target.value)}
-                  maxLength={100}
-                  className="input-field"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="provinceInput"
-                  className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
-                >
-                  Province
-                </label>
-                <input
-                  id="provinceInput"
-                  type="text"
-                  placeholder="e.g. Western Province"
-                  value={province}
-                  onChange={(e) => setProvince(e.target.value)}
-                  maxLength={100}
-                  className="input-field"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="postalCodeInput"
-                  className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
-                >
-                  Postal Code
-                </label>
-                <input
-                  id="postalCodeInput"
-                  type="text"
-                  placeholder="e.g. 00300"
-                  value={postalCode}
-                  onChange={(e) => setPostalCode(e.target.value)}
-                  maxLength={20}
-                  className="input-field"
-                />
+                        }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="text-xs">{loc.label}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
-          )}
-        </section>
 
-        {/* Section 6: Additional Specifications / Custom Attributes (Optional) */}
-        <section className="glass-panel p-6 sm:p-8 space-y-6">
-          <div className="flex items-center gap-2.5 pb-4 border-b border-slate-200 dark:border-slate-800">
-            <SlidersHorizontal className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-            <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">
-                6. Custom Specifications &amp; Key Highlights
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Optional: Add key-value attributes (e.g. Brand, Model, Color,
-                Warranty)
-              </p>
-            </div>
-          </div>
-
-          {/* Existing Attributes List */}
-          {customAttributes.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {customAttributes.map((attr, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-sm"
-                >
-                  <div className="truncate mr-2">
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">
-                      {attr.key}:
-                    </span>{" "}
-                    <span className="text-slate-600 dark:text-slate-400">
-                      {attr.value}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveAttribute(idx)}
-                    className="text-slate-400 hover:text-rose-500 transition-colors p-1"
-                    title="Remove specification"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
+            {/* Map Notification banner if filled from map */}
+            {locationType !== "ONLINE" && locationSetFromMap && (
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-700 dark:text-emerald-300 flex items-center justify-between gap-3 animate-fadeIn">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>Location fields auto-populated from map. You can edit any field below.</span>
                 </div>
-              ))}
-            </div>
-          )}
+                <button
+                  type="button"
+                  onClick={() => setShowMapModal(true)}
+                  className="text-[11px] font-bold underline hover:no-underline cursor-pointer shrink-0"
+                >
+                  Change Pin
+                </button>
+              </div>
+            )}
 
-          {/* Add New Attribute Inputs */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-2">
-            <input
-              type="text"
-              placeholder="Attribute (e.g. Brand, Color, Year)"
-              value={newAttrKey}
-              onChange={(e) => setNewAttrKey(e.target.value)}
-              className="input-field sm:w-1/3"
-            />
-            <input
-              type="text"
-              placeholder="Value (e.g. Sony, Matte Black, 2024)"
-              value={newAttrValue}
-              onChange={(e) => setNewAttrValue(e.target.value)}
-              className="input-field sm:w-1/2"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleAddAttribute();
-                }
-              }}
-            />
-            <button
-              type="button"
-              onClick={handleAddAttribute}
-              disabled={!newAttrKey.trim() || !newAttrValue.trim()}
-              className="btn-outline px-4 py-2.5 text-xs font-semibold whitespace-nowrap self-stretch sm:self-auto disabled:opacity-50 flex items-center justify-center gap-1.5"
+            {/* Specific Location Fields */}
+            {locationType !== "ONLINE" && (
+              <div className="space-y-4 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Optional Street / House No. (supports alphanumeric strings e.g. 256/2B) */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label
+                        htmlFor="streetNumberInput"
+                        className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
+                      >
+                        Street / House No.
+                      </label>
+                      <span className="text-[11px] text-slate-400 font-normal">
+                        (Optional)
+                      </span>
+                    </div>
+                    <input
+                      id="streetNumberInput"
+                      type="text"
+                      placeholder="e.g. 256/2B or No. 42"
+                      value={streetNumber}
+                      onChange={(e) => setStreetNumber(e.target.value)}
+                      maxLength={100}
+                      className="input-field"
+                    />
+                    <p className="text-[11px] text-slate-400">
+                    </p>
+                  </div>
+
+                  {/* City / Town */}
+                  <div className="space-y-1.5">
+                    <label
+                      htmlFor="cityInput"
+                      className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
+                    >
+                      City / Town
+                    </label>
+                    <input
+                      id="cityInput"
+                      type="text"
+                      placeholder="e.g. Colombo 03 or Nawala"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      maxLength={100}
+                      className="input-field"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-1.5">
+                    <label
+                      htmlFor="districtInput"
+                      className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
+                    >
+                      District
+                    </label>
+                    <input
+                      id="districtInput"
+                      type="text"
+                      placeholder="e.g. Colombo"
+                      value={district}
+                      onChange={(e) => setDistrict(e.target.value)}
+                      maxLength={100}
+                      className="input-field"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label
+                      htmlFor="provinceInput"
+                      className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
+                    >
+                      Province
+                    </label>
+                    <input
+                      id="provinceInput"
+                      type="text"
+                      placeholder="e.g. Western Province"
+                      value={province}
+                      onChange={(e) => setProvince(e.target.value)}
+                      maxLength={100}
+                      className="input-field"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label
+                      htmlFor="postalCodeInput"
+                      className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
+                    >
+                      Postal Code
+                    </label>
+                    <input
+                      id="postalCodeInput"
+                      type="text"
+                      placeholder="e.g. 00300"
+                      value={postalCode}
+                      onChange={(e) => setPostalCode(e.target.value)}
+                      maxLength={20}
+                      className="input-field"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* Section 6: Additional Specifications / Custom Attributes (Optional) */}
+          <section className="glass-panel p-6 sm:p-8 space-y-6">
+            <div className="flex items-center gap-2.5 pb-4 border-b border-slate-200 dark:border-slate-800">
+              <SlidersHorizontal className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <div>
+                <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                  6. Custom Specifications &amp; Key Highlights
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Optional: Add key-value attributes (e.g. Brand, Model, Color,
+                  Warranty)
+                </p>
+              </div>
+            </div>
+
+            {/* Existing Attributes List */}
+            {customAttributes.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {customAttributes.map((attr, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-sm"
+                  >
+                    <div className="truncate mr-2">
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">
+                        {attr.key}:
+                      </span>{" "}
+                      <span className="text-slate-600 dark:text-slate-400">
+                        {attr.value}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveAttribute(idx)}
+                      className="text-slate-400 hover:text-rose-500 transition-colors p-1"
+                      title="Remove specification"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add New Attribute Inputs */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <input
+                type="text"
+                placeholder="Attribute (e.g. Brand, Color, Year)"
+                value={newAttrKey}
+                onChange={(e) => setNewAttrKey(e.target.value)}
+                className="input-field sm:w-1/3"
+              />
+              <input
+                type="text"
+                placeholder="Value (e.g. Sony, Matte Black, 2024)"
+                value={newAttrValue}
+                onChange={(e) => setNewAttrValue(e.target.value)}
+                className="input-field sm:w-1/2"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddAttribute();
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={handleAddAttribute}
+                disabled={!newAttrKey.trim() || !newAttrValue.trim()}
+                className="btn-outline px-4 py-2.5 text-xs font-semibold whitespace-nowrap self-stretch sm:self-auto disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Spec</span>
+              </button>
+            </div>
+          </section>
+
+          {/* Submit Actions Bar */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+            <Link
+              href="/profile"
+              className="btn-outline w-full sm:w-auto text-center text-sm py-3 px-6"
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Add Spec</span>
+              Cancel
+            </Link>
+
+            <button
+              type="submit"
+              disabled={submitting}
+              className="btn-primary w-full sm:w-auto text-sm py-3.5 px-8 font-semibold shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+            >
+              {submitting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>{createdListing ? "Updating Details..." : "Saving Draft..."}</span>
+                </>
+              ) : (
+                <>
+                  <span>{createdListing ? "Update & Go to Photos" : "Save Draft & Continue to Photos"}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
           </div>
-        </section>
-
-        {/* Submit Actions Bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-200 dark:border-slate-800">
-          <Link
-            href="/profile"
-            className="btn-outline w-full sm:w-auto text-center text-sm py-3 px-6"
-          >
-            Cancel
-          </Link>
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="btn-primary w-full sm:w-auto text-sm py-3.5 px-8 font-semibold shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
-          >
-            {submitting ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span>{createdListing ? "Updating Details..." : "Saving Draft..."}</span>
-              </>
-            ) : (
-              <>
-                <span>{createdListing ? "Update & Go to Photos" : "Save Draft & Continue to Photos"}</span>
-                <ArrowRight className="w-4 h-4" />
-              </>
-            )}
-          </button>
-        </div>
-      </form>
+        </form>
       )}
 
       {/* STEP 2: PHOTOS & PUBLISH VIEW */}
@@ -1191,8 +1257,8 @@ export default function NewListingPage() {
                 {createdListing.pricingType === "FREE"
                   ? "Free"
                   : createdListing.pricingType === "CONTACT_FOR_PRICE"
-                  ? "Contact for price"
-                  : `Rs. ${Number(createdListing.price).toLocaleString()}`}
+                    ? "Contact for price"
+                    : `Rs. ${Number(createdListing.price).toLocaleString()}`}
                 {createdListing.negotiable ? " (Negotiable)" : ""} • {createdListing.condition}
               </p>
             </div>
@@ -1269,6 +1335,42 @@ export default function NewListingPage() {
                 )}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Map Picker Modal Dialog (Rendered outside of the main form to avoid nested form hydration issues) */}
+      {showMapModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/75 backdrop-blur-sm animate-fadeIn overscroll-contain select-none"
+          onClick={() => setShowMapModal(false)}
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+        >
+          <div
+            className="w-full max-w-3xl max-h-[92vh] flex flex-col rounded-2xl overflow-hidden shadow-2xl animate-scaleUp select-text"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <LocationMapPicker
+              initialLocation={{
+                city,
+                district,
+                province,
+                postalCode,
+                streetNumber,
+              }}
+              onSelectLocation={(loc: SelectedLocationData) => {
+                if (loc.city) setCity(loc.city);
+                if (loc.district) setDistrict(loc.district);
+                if (loc.province) setProvince(loc.province);
+                if (loc.postalCode) setPostalCode(loc.postalCode);
+                if (loc.streetNumber) setStreetNumber(loc.streetNumber);
+                setLocationSetFromMap(true);
+                setShowMapModal(false);
+                toastSuccess("Location Applied", "Address fields have been populated from the map.");
+              }}
+              onClose={() => setShowMapModal(false)}
+            />
           </div>
         </div>
       )}

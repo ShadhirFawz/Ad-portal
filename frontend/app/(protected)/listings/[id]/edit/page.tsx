@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState, use } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/providers/AuthProvider";
@@ -44,6 +45,20 @@ import {
   Rocket,
   Save,
 } from "lucide-react";
+import type { SelectedLocationData } from "@/components/listings/LocationMapPicker";
+
+const LocationMapPicker = dynamic(
+  () => import("@/components/listings/LocationMapPicker"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="p-12 flex flex-col items-center justify-center gap-3 text-slate-400 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+        <div className="w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+        <span className="text-xs font-medium">Loading interactive map...</span>
+      </div>
+    ),
+  }
+);
 
 interface PageProps {
   params: Promise<{
@@ -192,6 +207,9 @@ export default function EditListingPage({ params }: PageProps) {
   const [district, setDistrict] = useState("");
   const [province, setProvince] = useState("");
   const [postalCode, setPostalCode] = useState("");
+  const [streetNumber, setStreetNumber] = useState("");
+  const [showMapModal, setShowMapModal] = useState(false);
+  const [locationSetFromMap, setLocationSetFromMap] = useState(false);
 
   const [customAttributes, setCustomAttributes] = useState<
     { key: string; value: string }[]
@@ -257,6 +275,7 @@ export default function EditListingPage({ params }: PageProps) {
           setDistrict(listingData.district || "");
           setProvince(listingData.province || "");
           setPostalCode(listingData.postalCode || "");
+          setStreetNumber(listingData.streetNumber || "");
 
           if (listingData.customAttributes) {
             const attrArray = Object.entries(listingData.customAttributes).map(
@@ -413,6 +432,7 @@ export default function EditListingPage({ params }: PageProps) {
       city: city.trim() || undefined,
       district: district.trim() || undefined,
       province: province.trim() || undefined,
+      streetNumber: streetNumber.trim() || undefined,
       postalCode: postalCode.trim() || undefined,
       customAttributes:
         Object.keys(customAttributesMap).length > 0
@@ -947,16 +967,29 @@ export default function EditListingPage({ params }: PageProps) {
 
         {/* Section 5: Location Details */}
         <section className="glass-panel p-6 sm:p-8 space-y-6">
-          <div className="flex items-center gap-2.5 pb-4 border-b border-slate-200 dark:border-slate-800">
-            <MapPin className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-            <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">
-                5. Location &amp; Delivery Scope
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Where is this item available or shipped from?
-              </p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-2.5">
+              <MapPin className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <div>
+                <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                  5. Location &amp; Delivery Scope
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Where is this item available or shipped from?
+                </p>
+              </div>
             </div>
+
+            {locationType !== "ONLINE" && (
+              <button
+                type="button"
+                onClick={() => setShowMapModal(true)}
+                className="btn-outline text-xs px-3.5 py-2 rounded-xl flex items-center justify-center gap-2 border-emerald-500/30 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 font-semibold cursor-pointer shadow-xs self-start sm:self-auto"
+              >
+                <MapPin className="w-3.5 h-3.5 text-emerald-500 animate-bounce" />
+                <span>Pick on Map &amp; Auto-fill</span>
+              </button>
+            )}
           </div>
 
           <div className="space-y-3">
@@ -987,58 +1020,100 @@ export default function EditListingPage({ params }: PageProps) {
             </div>
           </div>
 
+          {locationType !== "ONLINE" && locationSetFromMap && (
+            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-700 dark:text-emerald-300 flex items-center justify-between gap-3 animate-fadeIn">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                <span>Location fields auto-populated from map. You can edit any field below.</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowMapModal(true)}
+                className="text-[11px] font-bold underline hover:no-underline cursor-pointer shrink-0"
+              >
+                Change Pin
+              </button>
+            </div>
+          )}
+
           {locationType !== "ONLINE" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2 animate-fadeIn">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                  City / Town
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Colombo 03"
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  className="input-field"
-                />
+            <div className="space-y-4 pt-1 animate-fadeIn">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                      Street / House No.
+                    </label>
+                    <span className="text-[11px] text-slate-400 font-normal">
+                      (Optional)
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="e.g. 256/2B or No. 42"
+                    value={streetNumber}
+                    onChange={(e) => setStreetNumber(e.target.value)}
+                    maxLength={100}
+                    className="input-field"
+                  />
+                  <p className="text-[11px] text-slate-400">
+                    Auto-filled from map or entered manually (supports letters and numbers)
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    City / Town
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Colombo 03 or Nawala"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="input-field"
+                  />
+                </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                  District
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Colombo"
-                  value={district}
-                  onChange={(e) => setDistrict(e.target.value)}
-                  className="input-field"
-                />
-              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    District
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Colombo"
+                    value={district}
+                    onChange={(e) => setDistrict(e.target.value)}
+                    className="input-field"
+                  />
+                </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                  Province
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Western"
-                  value={province}
-                  onChange={(e) => setProvince(e.target.value)}
-                  className="input-field"
-                />
-              </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    Province
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Western Province"
+                    value={province}
+                    onChange={(e) => setProvince(e.target.value)}
+                    className="input-field"
+                  />
+                </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                  Postal Code
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. 00300"
-                  value={postalCode}
-                  onChange={(e) => setPostalCode(e.target.value)}
-                  className="input-field"
-                />
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    Postal Code
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 00300"
+                    value={postalCode}
+                    onChange={(e) => setPostalCode(e.target.value)}
+                    className="input-field"
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -1184,6 +1259,42 @@ export default function EditListingPage({ params }: PageProps) {
           </div>
         </div>
       </form>
+
+      {/* Map Picker Modal Dialog (Rendered outside of the main form to avoid nested form hydration issues) */}
+      {showMapModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/75 backdrop-blur-sm animate-fadeIn overscroll-contain select-none"
+          onClick={() => setShowMapModal(false)}
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+        >
+          <div
+            className="w-full max-w-3xl max-h-[92vh] flex flex-col rounded-2xl overflow-hidden shadow-2xl animate-scaleUp select-text"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <LocationMapPicker
+              initialLocation={{
+                city,
+                district,
+                province,
+                postalCode,
+                streetNumber,
+              }}
+              onSelectLocation={(loc: SelectedLocationData) => {
+                if (loc.city) setCity(loc.city);
+                if (loc.district) setDistrict(loc.district);
+                if (loc.province) setProvince(loc.province);
+                if (loc.postalCode) setPostalCode(loc.postalCode);
+                if (loc.streetNumber) setStreetNumber(loc.streetNumber);
+                setLocationSetFromMap(true);
+                setShowMapModal(false);
+                toastSuccess("Location Applied", "Address fields have been populated from the map.");
+              }}
+              onClose={() => setShowMapModal(false)}
+            />
+          </div>
+        </div>
+      )}
     </main>
   );
 }
