@@ -109,6 +109,9 @@ public class Listing {
     @Column(length = 100)
     private String city;
 
+    @Column(name = "street_number", length = 100)
+    private String streetNumber;
+
     @Column(name = "postal_code", length = 20)
     private String postalCode;
 

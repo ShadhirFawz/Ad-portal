@@ -78,6 +78,7 @@ export interface Listing {
   district: string | null;
   province: string | null;
   city: string | null;
+  streetNumber?: string | null;
   postalCode: string | null;
 
   customAttributes: Record<string, unknown>;
@@ -124,6 +125,7 @@ export interface CreateListingRequest {
   district?: string;
   province?: string;
   city?: string;
+  streetNumber?: string;
   postalCode?: string;
   customAttributes?: Record<string, unknown>;
 }
@@ -144,6 +146,7 @@ export interface UpdateListingRequest {
   district?: string;
   province?: string;
   city?: string;
+  streetNumber?: string;
   postalCode?: string;
   customAttributes?: Record<string, unknown>;
 }
@@ -175,6 +178,7 @@ export interface ListingCardData {
   district?: string | null;
   province?: string | null;
   city?: string | null;
+  streetNumber?: string | null;
   status?: ListingStatus;
   primaryImage?: ListingCardImage | null;
   images?: ListingImage[];
