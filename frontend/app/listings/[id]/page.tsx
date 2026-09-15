@@ -341,9 +341,12 @@ export default function ListingDetailsPage() {
   );
   const isLoggedIn = Boolean(user);
 
-  const locationParts = [listing.city, listing.district, listing.province].filter(
-    Boolean
-  );
+  const locationParts = [
+    listing.streetNumber,
+    listing.city,
+    listing.district,
+    listing.province,
+  ].filter(Boolean);
   const locationString = locationParts.join(", ");
 
   const customAttributeEntries = Object.entries(listing.customAttributes ?? {}).filter(
@@ -764,6 +767,9 @@ export default function ListingDetailsPage() {
                 />
                 {listing.locationType !== "ONLINE" && (
                   <>
+                    {listing.streetNumber && (
+                      <DetailRow label="Street / House No." value={listing.streetNumber} />
+                    )}
                     <DetailRow label="City" value={listing.city} />
                     <DetailRow label="District" value={listing.district} />
                     <DetailRow label="Province" value={listing.province} />
