@@ -40,6 +40,8 @@ public record UpdateListingRequest(
 
         @Size(max = 100) String city,
 
+        @Size(max = 100) String streetNumber,
+
         @Size(max = 20) String postalCode,
 
         @Size(max = 150) String location,

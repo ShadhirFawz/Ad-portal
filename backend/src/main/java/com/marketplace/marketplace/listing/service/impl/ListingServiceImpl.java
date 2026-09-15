@@ -133,6 +133,9 @@ public class ListingServiceImpl implements ListingService {
                 listing.setCity(
                                 trimToNull(request.city()));
 
+                listing.setStreetNumber(
+                                trimToNull(request.streetNumber()));
+
                 listing.setPostalCode(
                                 trimToNull(request.postalCode()));
 
@@ -359,6 +362,10 @@ public class ListingServiceImpl implements ListingService {
 
                 if (request.city() != null) {
                         listing.setCity(trimToNull(request.city()));
+                }
+
+                if (request.streetNumber() != null) {
+                        listing.setStreetNumber(trimToNull(request.streetNumber()));
                 }
 
                 if (request.district() != null) {
@@ -1037,6 +1044,7 @@ public class ListingServiceImpl implements ListingService {
                                 listing.getDistrict(),
                                 listing.getProvince(),
                                 listing.getCity(),
+                                listing.getStreetNumber(),
                                 listing.getPostalCode(),
                                 listing.getCustomAttributes(),
                                 listing.getStatus(),
