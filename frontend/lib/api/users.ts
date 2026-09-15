@@ -149,3 +149,21 @@ export async function checkUsernameAvailability(
 
   return response.data;
 }
+
+export async function getAccountSetupProgress(
+  accessToken?: string | null
+): Promise<import("@/types/accountSetup").AccountSetupProgress> {
+  const headers: Record<string, string> = {};
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
+
+  const response = await apiRequest<ApiResponse<import("@/types/accountSetup").AccountSetupProgress>>(
+    "/users/me/account-setup-progress",
+    {
+      headers,
+    }
+  );
+
+  return response.data;
+}
