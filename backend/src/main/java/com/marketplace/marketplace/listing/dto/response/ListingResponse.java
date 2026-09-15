@@ -60,6 +60,8 @@ public record ListingResponse(
 
         String city,
 
+        String streetNumber,
+
         String postalCode,
 
         Map<String, Object> customAttributes,

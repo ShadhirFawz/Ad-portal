@@ -41,6 +41,8 @@ public record CreateListingRequest(
 
                 @Size(max = 100) String city,
 
+                @Size(max = 100) String streetNumber,
+
                 @Size(max = 20) String postalCode,
 
                 Map<String, Object> customAttributes
