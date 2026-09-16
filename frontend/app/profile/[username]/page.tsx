@@ -80,13 +80,13 @@ export default async function PublicProfilePage({ params }: PageProps) {
           {/* Avatar Badge Overlapping Banner */}
           <div className="-mt-16 sm:-mt-20 mb-4 flex items-end justify-between flex-wrap gap-4">
             {user.avatarUrl ? (
-              <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl bg-slate-200 dark:bg-slate-700 text-white font-bold text-4xl sm:text-5xl flex items-center justify-center border-4 border-white dark:border-[#0b0f19] shadow-xl overflow-hidden relative">
+              <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl bg-slate-100 dark:bg-slate-800 text-white font-bold text-4xl sm:text-5xl flex items-center justify-center border-4 border-white dark:border-[#0b0f19] shadow-xl overflow-hidden relative">
                 <Image
                   src={user.avatarUrl}
                   alt="Profile picture"
                   width={128}
                   height={128}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                 />
               </div>
             ) : (
