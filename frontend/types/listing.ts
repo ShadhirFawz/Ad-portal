@@ -187,6 +187,7 @@ export interface ListingCardData {
   isFavorited?: boolean;
   isBookmarked?: boolean;
   hasActiveAuction?: boolean;
+  customAttributes?: Record<string, unknown>;
   publishedAt?: string | null;
   soldAt?: string | null;
   createdAt?: string;

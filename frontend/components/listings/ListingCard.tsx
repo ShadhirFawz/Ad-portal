@@ -29,6 +29,124 @@ function formatTimeAgo(dateStr?: string | null): string {
   return `${Math.floor(diff / 2592000)}mo ago`;
 }
 
+const INVALID_SPEC_VALUES = new Set([
+  // Booleans and pseudo-booleans
+  "true", "false", "yes", "no", "y", "n", "t", "f",
+  // Generic existence and presence words
+  "has", "got", "present", "available", "is available", "not available",
+  "included", "includes", "including", "not included", "exists", "existing",
+  "have", "having", "with", "without",
+  // Placeholders, nulls, and blanks
+  "none", "nil", "n/a", "na", "null", "undefined", "unknown", "other",
+  "any", "all", "not applicable", "not specified", "unspecified",
+  // Vague filler / status
+  "ok", "okay", "good", "fine", "normal", "standard", "default",
+  "sample", "test", "demo", "something", "etc", "item", "product", "value",
+]);
+
+function isValidSpecValue(val: unknown): boolean {
+  if (val === null || val === undefined) return false;
+  if (typeof val === "boolean" || typeof val === "number") return false;
+  if (typeof val !== "string") return false;
+
+  const clean = val.trim();
+  if (clean.length < 2 || clean.length > 40) {
+    // Exception for 1-letter clothing/spec sizes: S, M, L, X
+    if (!/^[SMLX]$/i.test(clean)) {
+      return false;
+    }
+  }
+
+  const lower = clean.toLowerCase();
+
+  if (INVALID_SPEC_VALUES.has(lower)) {
+    return false;
+  }
+
+  if (!/\p{L}/u.test(clean)) {
+    return false;
+  }
+
+  if (/^[^a-zA-Z0-9\p{L}]+$/u.test(clean)) {
+    return false;
+  }
+
+  return true;
+}
+
+function getSpecsSummary(listing: Listing | ListingCardData, maxItems = 4): string | null {
+  const customAttrs = "customAttributes" in listing ? listing.customAttributes : undefined;
+  if (!customAttrs || typeof customAttrs !== "object") {
+    return null;
+  }
+
+  const entries = Object.entries(customAttrs);
+  if (entries.length === 0) {
+    return null;
+  }
+
+  const values: string[] = [];
+  const seen = new Set<string>();
+
+  for (const [key, rawVal] of entries) {
+    if (rawVal === null || rawVal === undefined) continue;
+
+    if (typeof rawVal === "boolean") {
+      if (rawVal && isValidSpecValue(key)) {
+        const cleanKey = key.trim();
+        const lowerKey = cleanKey.toLowerCase();
+        if (!seen.has(lowerKey)) {
+          seen.add(lowerKey);
+          values.push(cleanKey);
+        }
+      }
+      continue;
+    }
+
+    if (Array.isArray(rawVal)) {
+      const validArrayItems = rawVal
+        .map((v) => (v !== null && v !== undefined ? String(v).trim() : ""))
+        .filter((s) => isValidSpecValue(s));
+
+      for (const item of validArrayItems) {
+        const lower = item.toLowerCase();
+        if (!seen.has(lower)) {
+          seen.add(lower);
+          values.push(item);
+          if (values.length >= maxItems) break;
+        }
+      }
+      continue;
+    }
+
+    if (typeof rawVal === "object") {
+      continue;
+    }
+
+    if (!isValidSpecValue(rawVal)) {
+      continue;
+    }
+
+    const cleanVal = String(rawVal).trim();
+    const lowerVal = cleanVal.toLowerCase();
+
+    if (!seen.has(lowerVal)) {
+      seen.add(lowerVal);
+      values.push(cleanVal);
+    }
+
+    if (values.length >= maxItems) {
+      break;
+    }
+  }
+
+  if (values.length === 0) {
+    return null;
+  }
+
+  return values.join(" | ");
+}
+
 export default function ListingCard({
   listing,
   href,
@@ -138,6 +256,7 @@ export default function ListingCard({
     .join(", ");
 
   const conditionLabel = formatCondition(listing.condition);
+  const specsSummary = getSpecsSummary(listing);
   const timeAgoStr = formatTimeAgo(
     ("publishedAt" in listing && listing.publishedAt
       ? listing.publishedAt
@@ -155,8 +274,8 @@ export default function ListingCard({
         >
           <Bookmark
             className={`w-4 h-4 shrink-0 ${isBookmarked
-                ? "fill-slate-800 text-slate-800 dark:fill-slate-100 dark:text-slate-100"
-                : "text-slate-500 dark:text-slate-400"
+              ? "fill-slate-800 text-slate-800 dark:fill-slate-100 dark:text-slate-100"
+              : "text-slate-500 dark:text-slate-400"
               }`}
           />
           <span>{isBookmarked ? "Bookmarked" : "Bookmark"}</span>
@@ -290,12 +409,16 @@ export default function ListingCard({
                 {listing.title}
               </h3>
 
-              {/* Description */}
-              {"description" in listing && listing.description && (
+              {/* Specs or Description */}
+              {specsSummary ? (
+                <p className="line-clamp-1 sm:line-clamp-2 text-[11px] sm:text-xs font-medium text-slate-600 dark:text-slate-300 leading-snug break-words">
+                  {specsSummary}
+                </p>
+              ) : "description" in listing && listing.description ? (
                 <p className="line-clamp-1 sm:line-clamp-2 text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 leading-snug break-words hidden xs:block">
                   {listing.description}
                 </p>
-              )}
+              ) : null}
             </div>
 
             {/* Bottom Row: Price & Metadata */}
@@ -446,12 +569,16 @@ export default function ListingCard({
               {listing.title}
             </h3>
 
-            {/* Description */}
-            {"description" in listing && listing.description && (
+            {/* Specs or Description */}
+            {specsSummary ? (
+              <p className="line-clamp-2 min-h-[2.5rem] text-[11px] font-medium text-slate-600 dark:text-slate-300 leading-normal break-words">
+                {specsSummary}
+              </p>
+            ) : "description" in listing && listing.description ? (
               <p className="line-clamp-2 min-h-[2.5rem] text-[11px] text-slate-500 dark:text-slate-400 leading-normal break-words">
                 {listing.description}
               </p>
-            )}
+            ) : null}
           </div>
 
           {/* Footer Metadata - Replaced username with time ago */}
