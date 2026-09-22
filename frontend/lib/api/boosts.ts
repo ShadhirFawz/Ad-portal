@@ -48,3 +48,20 @@ export async function cancelScheduledBoost(boostId: string): Promise<void> {
     method: "POST",
   });
 }
+
+export async function confirmBoostPayment(
+  orderId: string,
+  paymentId?: string | null
+): Promise<AdBoost> {
+  const query = new URLSearchParams({ orderId });
+  if (paymentId) {
+    query.set("paymentId", paymentId);
+  }
+  const res = await apiRequest<ApiResponse<AdBoost>>(
+    `/boosts/confirm-payment?${query.toString()}`,
+    {
+      method: "POST",
+    }
+  );
+  return res.data;
+}
