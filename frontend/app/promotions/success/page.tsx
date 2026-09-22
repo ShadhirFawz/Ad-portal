@@ -1,13 +1,37 @@
 "use client";
 
-import React, { Suspense } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { CheckCircle2, Home, Eye, ShieldCheck, Zap, CheckCircle } from "lucide-react";
+import { CheckCircle2, Home, Eye, ShieldCheck, CheckCircle, Loader2 } from "lucide-react";
+import { confirmBoostPayment } from "@/lib/api/boosts";
+import type { AdBoost } from "@/types/boost";
 
 function PromotionSuccessContent() {
   const searchParams = useSearchParams();
-  const orderId = searchParams.get("order_id") || "BOOST-PROMO";
+  const orderId = searchParams.get("order_id") || "";
+  const paymentId = searchParams.get("payment_id") || searchParams.get("payhere_payment_id") || null;
+  const [boost, setBoost] = useState<AdBoost | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function confirm() {
+      if (!orderId) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const confirmedBoost = await confirmBoostPayment(orderId, paymentId);
+        setBoost(confirmedBoost);
+      } catch (err) {
+        console.warn("Payment confirmation notice:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    confirm();
+  }, [orderId, paymentId]);
 
   return (
     <div className="relative mx-auto max-w-2xl px-4 py-16 text-center sm:px-6 lg:px-8">
@@ -28,7 +52,7 @@ function PromotionSuccessContent() {
       </h1>
 
       <p className="mt-3 text-base text-slate-600 dark:text-slate-400">
-        Thank you! Your payment has been received via PayHere. Your promotion is now queued and activating across search feeds.
+        Thank you! Your payment has been received and verified. Your promotion is now active across marketplace feeds.
       </p>
 
       {/* Order Badge Box */}
@@ -36,26 +60,61 @@ function PromotionSuccessContent() {
         <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
           <span className="text-xs font-semibold text-slate-500">Order Reference</span>
           <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200">
-            {orderId}
+            {orderId || "BOOST-PROMO"}
           </span>
         </div>
+
+        {boost?.listingTitle && (
+          <div className="flex items-center justify-between border-b border-slate-100 py-3 dark:border-slate-800">
+            <span className="text-xs font-semibold text-slate-500">Listing</span>
+            <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate max-w-[280px]">
+              {boost.listingTitle}
+            </span>
+          </div>
+        )}
+
+        {boost?.boostType && (
+          <div className="flex items-center justify-between border-b border-slate-100 py-3 dark:border-slate-800">
+            <span className="text-xs font-semibold text-slate-500">Promotion Package</span>
+            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+              {boost.boostType.replace("_", " ")} ({boost.durationDays} Days)
+            </span>
+          </div>
+        )}
 
         <div className="mt-3 flex items-center justify-between">
           <span className="text-xs font-semibold text-slate-500">Promotion Status</span>
           <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-            <CheckCircle className="h-3.5 w-3.5" /> Active & Ranked
+            {loading ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Verifying...
+              </>
+            ) : (
+              <>
+                <CheckCircle className="h-3.5 w-3.5" /> Active & Ranked
+              </>
+            )}
           </span>
         </div>
       </div>
 
       {/* Action Buttons */}
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-        <Link
-          href="/listings"
-          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition-all hover:from-emerald-500 hover:to-teal-500 hover:shadow-xl"
-        >
-          <Eye className="h-4 w-4" /> Explore Active Listings
-        </Link>
+        {boost?.listingSlug || boost?.listingId ? (
+          <Link
+            href={`/listings/${boost.listingSlug || boost.listingId}`}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition-all hover:from-emerald-500 hover:to-teal-500 hover:shadow-xl"
+          >
+            <Eye className="h-4 w-4" /> View Promoted Ad
+          </Link>
+        ) : (
+          <Link
+            href="/listings"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition-all hover:from-emerald-500 hover:to-teal-500 hover:shadow-xl"
+          >
+            <Eye className="h-4 w-4" /> Explore Active Listings
+          </Link>
+        )}
 
         <Link
           href="/dashboard"

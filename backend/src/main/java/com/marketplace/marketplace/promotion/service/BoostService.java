@@ -23,6 +23,8 @@ public interface BoostService {
 
     void cancelScheduledBoost(UUID boostId);
 
+    AdBoostResponse confirmPayment(String orderId, String paymentId);
+
     void activateDueScheduledBoosts();
 
     void expireCompletedBoosts();

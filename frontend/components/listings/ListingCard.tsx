@@ -293,10 +293,15 @@ export default function ListingCard({
     </div>
   );
 
+  const isSpotlight = Boolean(listing.isSpotlight);
+
   if (layout === "row") {
     return (
       <article
-        className={`group relative flex overflow-hidden rounded-xl sm:rounded-2xl border border-slate-200/80 bg-white transition-all duration-300 hover:border-emerald-500/40 hover:shadow-md dark:border-slate-800 dark:bg-slate-900/90 dark:hover:border-emerald-500/30 w-full ${className}`}
+        className={`group relative flex overflow-hidden rounded-xl sm:rounded-2xl border transition-all duration-300 w-full ${isSpotlight
+          ? "border-amber-400/90 dark:border-amber-500/80 bg-gradient-to-r from-amber-500/[0.05] via-white to-transparent dark:from-amber-500/[0.08] dark:via-slate-900 dark:to-slate-900/90 shadow-md shadow-amber-500/10 hover:border-amber-500 hover:shadow-amber-500/15 ring-1 ring-amber-400/40"
+          : "border-slate-200/80 bg-white hover:border-emerald-500/40 hover:shadow-md dark:border-slate-800 dark:bg-slate-900/90 dark:hover:border-emerald-500/30"
+          } ${className}`}
       >
         {/* Live Auction Badge - Top Right Corner of Card */}
         {listing.hasActiveAuction && (
@@ -459,7 +464,10 @@ export default function ListingCard({
   // Grid Layout
   return (
     <article
-      className={`group relative flex flex-col overflow-hidden rounded-xl sm:rounded-2xl border border-slate-200/80 bg-white transition-all duration-300 hover:-translate-y-0.5 hover:border-emerald-500/40 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900/90 dark:hover:border-emerald-500/30 h-full w-full ${className}`}
+      className={`group relative flex flex-col overflow-hidden rounded-xl sm:rounded-2xl border transition-all duration-300 hover:-translate-y-0.5 h-full w-full ${isSpotlight
+        ? "border-amber-400/90 dark:border-amber-500/80 bg-gradient-to-b from-amber-500/[0.05] via-white to-amber-500/[0.01] dark:from-amber-500/[0.08] dark:via-slate-900/95 dark:to-slate-900 shadow-md shadow-amber-500/10 hover:border-amber-500 hover:shadow-amber-500/15 ring-1 ring-amber-400/40"
+        : "border-slate-200/80 bg-white hover:border-emerald-500/40 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900/90 dark:hover:border-emerald-500/30"
+        } ${className}`}
     >
       {/* Ellipsis Menu - Grid layout */}
       <div

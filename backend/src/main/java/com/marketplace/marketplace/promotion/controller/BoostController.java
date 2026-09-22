@@ -97,6 +97,16 @@ public class BoostController {
         return ResponseEntity.ok(ApiResponse.success(boosts));
     }
 
+    @PostMapping("/confirm-payment")
+    @Operation(summary = "Confirm and activate payment upon return from PayHere checkout")
+    public ResponseEntity<ApiResponse<AdBoostResponse>> confirmPayment(
+            @RequestParam String orderId,
+            @RequestParam(required = false) String paymentId
+    ) {
+        AdBoostResponse boost = boostService.confirmPayment(orderId, paymentId);
+        return ResponseEntity.ok(ApiResponse.success("Payment confirmed and boost activated", boost));
+    }
+
     @PostMapping("/{boostId}/cancel")
     @Operation(summary = "Cancel a scheduled boost before it becomes active")
     public ResponseEntity<ApiResponse<Void>> cancelScheduledBoost(

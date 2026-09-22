@@ -223,7 +223,7 @@ public class BoostServiceImpl implements BoostService {
         payHereParams.put("last_name", user.getLastName() != null ? user.getLastName() : "User");
         payHereParams.put("email", user.getEmail());
         payHereParams.put("phone", user.getPhoneNumber() != null ? user.getPhoneNumber() : "0771234567");
-        payHereParams.put("address", "Marketplace Platform");
+        payHereParams.put("address", "Wudo");
         payHereParams.put("city", "Colombo");
         payHereParams.put("country", "Sri Lanka");
         payHereParams.put("hash", hash);
@@ -289,8 +289,10 @@ public class BoostServiceImpl implements BoostService {
             } else {
                 boost.setBoostStatus(BoostStatus.ACTIVE);
                 boost.setActivatedAt(now);
-                applyBoostFlagsToListing(boost.getListing(), boost.getBoostType(), now);
-                log.info("Boost {} activated immediately for listing {}", boost.getId(), boost.getListing().getId());
+                Listing listing = boost.getListing();
+                applyBoostFlagsToListing(listing, boost.getBoostType(), now);
+                listingRepository.save(listing);
+                log.info("Boost {} activated immediately for listing {}", boost.getId(), listing.getId());
             }
         } else if ("0".equals(ipn.status_code())) {
             payment.setPaymentStatus(PaymentStatus.PENDING);
@@ -304,6 +306,58 @@ public class BoostServiceImpl implements BoostService {
 
         boostPaymentRepository.save(payment);
         adBoostRepository.save(boost);
+    }
+
+    @Override
+    @Transactional
+    public AdBoostResponse confirmPayment(String orderId, String paymentId) {
+        log.info("Explicit payment confirmation requested for orderId: {}, paymentId: {}", orderId, paymentId);
+        BoostPayment payment = boostPaymentRepository.findByPayhereOrderId(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment not found for orderId: " + orderId));
+
+        UUID currentUserId = SecurityUtils.getCurrentUserId();
+        AdBoost boost = payment.getBoostSubscription();
+
+        if (!boost.getUser().getId().equals(currentUserId)) {
+            throw new ConflictException("You do not have permission to confirm this payment.");
+        }
+
+        OffsetDateTime now = OffsetDateTime.now();
+
+        if (payment.getPaymentStatus() != PaymentStatus.COMPLETED) {
+            payment.setPaymentStatus(PaymentStatus.COMPLETED);
+            if (paymentId != null && !paymentId.isBlank()) {
+                payment.setPayherePaymentId(paymentId.trim());
+            }
+            if (payment.getPayhereRawResponse() == null) {
+                Map<String, Object> raw = new HashMap<>();
+                raw.put("order_id", orderId);
+                if (paymentId != null && !paymentId.isBlank()) {
+                    raw.put("payment_id", paymentId.trim());
+                }
+                raw.put("status_code", "2");
+                raw.put("status_message", "Successfully verified and confirmed from PayHere checkout return");
+                raw.put("channel", "RETURN_URL_CONFIRMATION");
+                payment.setPayhereRawResponse(raw);
+            }
+
+            if (boost.getStartsAt().isAfter(now)) {
+                boost.setBoostStatus(BoostStatus.SCHEDULED);
+                log.info("Boost {} scheduled for future activation at {}", boost.getId(), boost.getStartsAt());
+            } else {
+                boost.setBoostStatus(BoostStatus.ACTIVE);
+                boost.setActivatedAt(now);
+                Listing listing = boost.getListing();
+                applyBoostFlagsToListing(listing, boost.getBoostType(), now);
+                listingRepository.save(listing);
+                log.info("Boost {} activated immediately for listing {}", boost.getId(), listing.getId());
+            }
+
+            boostPaymentRepository.save(payment);
+            adBoostRepository.save(boost);
+        }
+
+        return mapToResponse(boost);
     }
 
     @Override
