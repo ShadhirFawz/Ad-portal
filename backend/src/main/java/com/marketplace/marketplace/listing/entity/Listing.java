@@ -165,6 +165,18 @@ public class Listing {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
+    @Column(name = "is_spotlight", nullable = false)
+    private boolean isSpotlight = false;
+
+    @Column(name = "is_hot_deal", nullable = false)
+    private boolean isHotDeal = false;
+
+    @Column(name = "is_pushed_up", nullable = false)
+    private boolean isPushedUp = false;
+
+    @Column(name = "push_up_last_bumped_at")
+    private OffsetDateTime pushUpLastBumpedAt;
+
     @PrePersist
     protected void onCreate() {
 
