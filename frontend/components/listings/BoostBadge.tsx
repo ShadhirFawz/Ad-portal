@@ -1,6 +1,133 @@
 import React from "react";
-import { Star, Flame, ArrowUpCircle, Zap } from "lucide-react";
+import { Star, Flame, TrendingUp, Crown } from "lucide-react";
 import type { BoostType } from "@/types/boost";
+
+/* POWER PACK — Full-width banner at the very top of the card */
+export function PowerPackBadge() {
+  return (
+    <div
+      title="Power Pack — Maximum visibility: Spotlight + Hot Deal + Push Up"
+      aria-label="Power Pack — Maximum visibility: Spotlight + Hot Deal + Push Up"
+      className="pointer-events-auto cursor-help flex items-center justify-center gap-2 px-3 py-[6px] shrink-0"
+      style={{
+        background: "linear-gradient(90deg, #581c87 0%, #7c3aed 35%, #a855f7 65%, #be185d 100%)",
+        boxShadow: "0 3px 16px rgba(168,85,247,0.5)",
+      }}
+    >
+      <Crown
+        style={{ width: 11, height: 11, color: "#fde68a", fill: "#fde68a", flexShrink: 0 }}
+      />
+      <span
+        style={{
+          fontSize: 9,
+          fontWeight: 900,
+          color: "white",
+          letterSpacing: "0.14em",
+          textTransform: "uppercase",
+          lineHeight: 1,
+        }}
+      >
+        Power Pack
+      </span>
+      <Crown
+        style={{ width: 11, height: 11, color: "#fde68a", fill: "#fde68a", flexShrink: 0 }}
+      />
+    </div>
+  );
+}
+
+/* SPOTLIGHT — Corner ribbon fold on the card frame */
+export function SpotlightBadge() {
+  return (
+    <div
+      title="Spotlight — Pinned to the top of search results"
+      aria-label="Spotlight — Pinned to the top of search results"
+      className="absolute top-0 right-0 pointer-events-auto cursor-help overflow-hidden"
+      style={{ width: 130, height: 130, zIndex: 25 }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          top: -40,
+          left: -15,
+          width: 200,
+          height: 30,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-end",
+          paddingRight: 14,
+          background: "linear-gradient(225deg, #fbbf24 0%, #f59e0b 50%, #b45309 100%)",
+          transform: "rotate(45deg)",
+          transformOrigin: "center",
+          boxShadow: "0 2px 12px rgba(245,158,11,0.55)",
+        }}
+      >
+      </div>
+    </div>
+  );
+}
+
+/* HOT DEAL — Divider bar between image and card content */
+export function HotDealBadge() {
+  return (
+    <div
+      title="Hot Deal — Limited-time price offer"
+      aria-label="Hot Deal — Limited-time price offer"
+      className="pointer-events-auto cursor-help flex items-center justify-center gap-2 px-3 py-[5px] shrink-0 w-full"
+      style={{
+        background: "linear-gradient(90deg, #9f1239 0%, #e11d48 30%, #ef4444 65%, #c2410c 100%)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12)",
+      }}
+    >
+      <Flame
+        style={{ width: 10, height: 10, color: "white", fill: "white", flexShrink: 0 }}
+      />
+      <span
+        style={{
+          fontSize: 9,
+          fontWeight: 800,
+          color: "white",
+          letterSpacing: "0.12em",
+          textTransform: "uppercase",
+          lineHeight: 1,
+        }}
+      >
+        Hot Deal
+      </span>
+    </div>
+  );
+}
+
+/* PUSH UP — Thin bar at the bottom of the entire card */
+export function PushUpBadge() {
+  return (
+    <div
+      title="Push Up — Bumped to the top of the listings feed today"
+      aria-label="Push Up — Bumped to the top of the listings feed today"
+      className="pointer-events-auto cursor-help flex items-center justify-center gap-2 px-3 py-[4px] shrink-0 w-full"
+      style={{
+        background: "linear-gradient(90deg, rgba(4,120,87,0.95) 0%, rgba(6,182,212,0.9) 100%)",
+        borderTop: "1px solid rgba(52,211,153,0.3)",
+      }}
+    >
+      <TrendingUp
+        style={{ width: 9, height: 9, color: "#6ee7b7", flexShrink: 0 }}
+      />
+      <span
+        style={{
+          fontSize: 8,
+          fontWeight: 700,
+          color: "white",
+          letterSpacing: "0.1em",
+          textTransform: "uppercase",
+          lineHeight: 1,
+        }}
+      >
+        Trending Up Today
+      </span>
+    </div>
+  );
+}
 
 interface BoostBadgeProps {
   type: BoostType;
@@ -13,70 +140,62 @@ export const BoostBadge: React.FC<BoostBadgeProps> = ({
   type,
   size = "sm",
   className = "",
-  showIconOnly = true,
+  showIconOnly = false,
 }) => {
-  const sizeClasses = {
-    sm: showIconOnly ? "p-1 sm:p-1.5" : "px-2 py-0.5 text-[10px] font-semibold gap-1",
-    md: showIconOnly ? "p-1.5 sm:p-2" : "px-2.5 py-1 text-xs font-semibold gap-1.5",
-    lg: showIconOnly ? "p-2 sm:p-2.5" : "px-3 py-1.5 text-sm font-bold gap-2",
-  };
+  const iconPx: Record<string, number> = { sm: 12, md: 14, lg: 16 };
+  const px = iconPx[size] ?? 12;
 
-  const iconSizes = {
-    sm: "w-3 h-3 sm:w-3.5 sm:h-3.5",
-    md: "w-3.5 h-3.5 sm:w-4 sm:h-4",
-    lg: "w-4 h-4 sm:w-5 sm:h-5",
-  };
+  const pill =
+    "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-bold text-[10px] uppercase tracking-wide cursor-help border select-none";
 
   switch (type) {
     case "SPOTLIGHT":
       return (
         <span
-          title="Spotlight Ad — Top showcase visibility"
-          aria-label="Spotlight Ad — Top showcase visibility"
-          className={`inline-flex items-center justify-center rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold shadow-[0_0_12px_rgba(245,158,11,0.45)] border border-amber-300/50 tracking-wide uppercase cursor-help ${sizeClasses[size]} ${className}`}
+          title="Spotlight — Pinned to the top of search results"
+          aria-label="Spotlight — Pinned to the top of search results"
+          className={`${pill} bg-gradient-to-r from-amber-400 to-amber-600 text-slate-900 border-amber-300/50 shadow-[0_0_10px_rgba(245,158,11,0.35)] ${className}`}
         >
-          <Star className={`${iconSizes[size]} shrink-0 fill-slate-950`} />
-          {!showIconOnly && <span>Spotlight</span>}
+          <Star style={{ width: px, height: px, fill: "#1c1917", flexShrink: 0 }} />
+          {!showIconOnly && "Spotlight"}
         </span>
       );
-
     case "HOT_DEAL":
       return (
         <span
-          title="Hot Deal — Urgent price offer promotion"
-          aria-label="Hot Deal — Urgent price offer promotion"
-          className={`inline-flex items-center justify-center rounded-full bg-gradient-to-r from-rose-500 via-red-500 to-orange-500 text-white font-bold shadow-[0_0_12px_rgba(239,68,68,0.4)] border border-rose-300/40 tracking-wide uppercase cursor-help ${sizeClasses[size]} ${className}`}
+          title="Hot Deal — Limited-time price offer"
+          aria-label="Hot Deal — Limited-time price offer"
+          className={`${pill} bg-gradient-to-r from-rose-500 to-orange-500 text-white border-rose-300/40 shadow-[0_0_10px_rgba(239,68,68,0.35)] ${className}`}
         >
-          <Flame className={`${iconSizes[size]} shrink-0 fill-white`} />
-          {!showIconOnly && <span>Hot Deal</span>}
+          <Flame style={{ width: px, height: px, fill: "white", flexShrink: 0 }} />
+          {!showIconOnly && "Hot Deal"}
         </span>
       );
-
     case "PUSH_UP":
       return (
         <span
-          title="Push Up — Daily bumped to top of regular listings"
-          aria-label="Push Up — Daily bumped to top of regular listings"
-          className={`inline-flex items-center justify-center rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold shadow-[0_0_10px_rgba(16,185,129,0.35)] border border-emerald-300/40 tracking-wide uppercase cursor-help ${sizeClasses[size]} ${className}`}
+          title="Push Up — Bumped to top of results today"
+          aria-label="Push Up — Bumped to top of results today"
+          className={`${pill} bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-emerald-300/40 shadow-[0_0_10px_rgba(16,185,129,0.3)] ${className}`}
         >
-          <ArrowUpCircle className={`${iconSizes[size]} shrink-0`} />
-          {!showIconOnly && <span>Top Ranked</span>}
+          <TrendingUp style={{ width: px, height: px, flexShrink: 0 }} />
+          {!showIconOnly && "Push Up"}
         </span>
       );
-
     case "POWER_PACK":
       return (
         <span
-          title="Power Pack — Spotlight, Push Up & Hot Deal all-in-one boost"
-          aria-label="Power Pack — Spotlight, Push Up & Hot Deal all-in-one boost"
-          className={`inline-flex items-center justify-center rounded-full bg-gradient-to-r from-violet-600 via-purple-600 to-pink-500 text-white font-bold shadow-[0_0_14px_rgba(168,85,247,0.45)] border border-purple-300/50 tracking-wide uppercase cursor-help ${sizeClasses[size]} ${className}`}
+          title="Power Pack — Spotlight + Hot Deal + Push Up combined"
+          aria-label="Power Pack — Spotlight + Hot Deal + Push Up combined"
+          className={`${pill} bg-gradient-to-r from-violet-600 via-purple-600 to-pink-500 text-white border-purple-300/40 shadow-[0_0_12px_rgba(168,85,247,0.4)] ${className}`}
         >
-          <Zap className={`${iconSizes[size]} shrink-0 fill-white`} />
-          {!showIconOnly && <span>Power Boost</span>}
+          <Crown style={{ width: px, height: px, fill: "#fde68a", flexShrink: 0 }} />
+          {!showIconOnly && "Power Pack"}
         </span>
       );
-
     default:
       return null;
   }
 };
+
+
