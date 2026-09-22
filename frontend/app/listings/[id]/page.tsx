@@ -42,6 +42,7 @@ import {
   X,
   ChevronDown,
   ChevronUp,
+  TrendingUp,
 } from "lucide-react";
 import WhatsAppIcon from "@/components/common/WhatsAppIcon";
 
@@ -390,6 +391,13 @@ export default function ListingDetailsPage() {
                   Item Sold
                 </span>
               )}
+              <Link
+                href={`/listings/${listing.id}/boost`}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-500/40 bg-gradient-to-r from-amber-500/10 to-orange-500/10 text-amber-700 hover:from-amber-500/20 hover:to-orange-500/20 dark:text-amber-300 dark:border-amber-700/60 font-bold text-xs transition shadow-xs"
+              >
+                <TrendingUp className="w-3.5 h-3.5 text-amber-500" />
+                Boost Ad
+              </Link>
               <Link
                 href={`/listings/${listing.id}/edit`}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 font-semibold text-xs transition"
