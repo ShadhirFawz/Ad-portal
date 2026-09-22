@@ -268,14 +268,14 @@ export default function BoostListingPage({ params }: PageProps) {
                       key={plan.boostType}
                       onClick={() => setSelectedType(plan.boostType)}
                       className={`relative flex cursor-pointer flex-col justify-between rounded-2xl border-2 p-5 transition-all duration-200 ${isSelected
-                          ? plan.boostType === "SPOTLIGHT"
-                            ? "border-amber-500 bg-amber-500/5 shadow-lg shadow-amber-500/10 dark:border-amber-400 dark:bg-amber-400/5"
-                            : plan.boostType === "PUSH_UP"
-                              ? "border-emerald-500 bg-emerald-500/5 shadow-lg shadow-emerald-500/10 dark:border-emerald-400 dark:bg-emerald-400/5"
-                              : plan.boostType === "HOT_DEAL"
-                                ? "border-rose-500 bg-rose-500/5 shadow-lg shadow-rose-500/10 dark:border-rose-400 dark:bg-rose-400/5"
-                                : "border-purple-500 bg-purple-500/5 shadow-lg shadow-purple-500/10 dark:border-purple-400 dark:bg-purple-400/5"
-                          : "border-slate-200/90 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700"
+                        ? plan.boostType === "SPOTLIGHT"
+                          ? "border-amber-500 bg-amber-500/5 shadow-lg shadow-amber-500/10 dark:border-amber-400 dark:bg-amber-400/5"
+                          : plan.boostType === "PUSH_UP"
+                            ? "border-emerald-500 bg-emerald-500/5 shadow-lg shadow-emerald-500/10 dark:border-emerald-400 dark:bg-emerald-400/5"
+                            : plan.boostType === "HOT_DEAL"
+                              ? "border-rose-500 bg-rose-500/5 shadow-lg shadow-rose-500/10 dark:border-rose-400 dark:bg-rose-400/5"
+                              : "border-purple-500 bg-purple-500/5 shadow-lg shadow-purple-500/10 dark:border-purple-400 dark:bg-purple-400/5"
+                        : "border-slate-200/90 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700"
                         }`}
                     >
                       {/* Selection Checkmark & Badge */}
@@ -311,8 +311,8 @@ export default function BoostListingPage({ params }: PageProps) {
 
                         <div
                           className={`flex h-5 w-5 items-center justify-center rounded-full border ${isSelected
-                              ? "border-emerald-500 bg-emerald-500 text-white"
-                              : "border-slate-300 dark:border-slate-600"
+                            ? "border-emerald-500 bg-emerald-500 text-white"
+                            : "border-slate-300 dark:border-slate-600"
                             }`}
                         >
                           {isSelected && <CheckCircle2 className="h-4 w-4" />}
@@ -388,15 +388,15 @@ export default function BoostListingPage({ params }: PageProps) {
                       type="button"
                       onClick={() => setSelectedDuration(opt.key)}
                       className={`relative flex flex-col items-center rounded-2xl border-2 p-4 text-center transition-all ${isSelected
-                          ? "border-emerald-500 bg-emerald-500/5 shadow-md dark:border-emerald-400 dark:bg-emerald-400/5"
-                          : "border-slate-200/90 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700"
+                        ? "border-emerald-500 bg-emerald-500/5 shadow-md dark:border-emerald-400 dark:bg-emerald-400/5"
+                        : "border-slate-200/90 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700"
                         }`}
                     >
                       {tagText && (
                         <span
                           className={`absolute -top-2.5 rounded-full px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider shadow-xs ${optDiscount > 0
-                              ? "bg-gradient-to-r from-rose-600 to-orange-500 text-white"
-                              : "bg-gradient-to-r from-emerald-600 to-teal-600 text-white"
+                            ? "bg-gradient-to-r from-rose-600 to-orange-500 text-white"
+                            : "bg-gradient-to-r from-emerald-600 to-teal-600 text-white"
                             }`}
                         >
                           {tagText}
@@ -612,7 +612,7 @@ export default function BoostListingPage({ params }: PageProps) {
                 ) : (
                   <>
                     <CreditCard className="h-5 w-5" />
-                    Pay Rs {finalPrice.toLocaleString()} with PayHere
+                    Pay LKR {finalPrice.toLocaleString()}
                   </>
                 )}
               </button>

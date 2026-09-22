@@ -365,10 +365,20 @@ export default function ListingCard({
             )}
 
             {/* Badges Overlay */}
-            <div className="absolute top-1.5 left-1.5 flex flex-col gap-1 pointer-events-none z-10">
-              {listing.isSpotlight && <BoostBadge type="SPOTLIGHT" size="sm" />}
-              {listing.isHotDeal && <BoostBadge type="HOT_DEAL" size="sm" />}
-              {listing.isPushedUp && !listing.isSpotlight && <BoostBadge type="PUSH_UP" size="sm" />}
+            <div className="absolute top-1.5 left-1.5 flex flex-col gap-1 z-10 pointer-events-none">
+              <div className="flex flex-wrap gap-1 pointer-events-auto">
+                {listing.isSpotlight && listing.isHotDeal && listing.isPushedUp ? (
+                  <BoostBadge type="POWER_PACK" size="sm" showIconOnly />
+                ) : (
+                  <>
+                    {listing.isSpotlight && <BoostBadge type="SPOTLIGHT" size="sm" showIconOnly />}
+                    {listing.isHotDeal && <BoostBadge type="HOT_DEAL" size="sm" showIconOnly />}
+                    {listing.isPushedUp && !listing.isSpotlight && (
+                      <BoostBadge type="PUSH_UP" size="sm" showIconOnly />
+                    )}
+                  </>
+                )}
+              </div>
               {conditionLabel && (
                 <span className="rounded bg-slate-900/85 px-1 py-0.5 text-[9px] font-semibold text-white backdrop-blur-md shadow-xs">
                   {conditionLabel}
@@ -522,9 +532,19 @@ export default function ListingCard({
 
           {/* Badges */}
           <div className="absolute top-2 left-2 flex flex-wrap gap-1 pointer-events-none z-10 max-w-[80%]">
-            {listing.isSpotlight && <BoostBadge type="SPOTLIGHT" size="sm" />}
-            {listing.isHotDeal && <BoostBadge type="HOT_DEAL" size="sm" />}
-            {listing.isPushedUp && !listing.isSpotlight && <BoostBadge type="PUSH_UP" size="sm" />}
+            <div className="flex flex-wrap gap-1 pointer-events-auto">
+              {listing.isSpotlight && listing.isHotDeal && listing.isPushedUp ? (
+                <BoostBadge type="POWER_PACK" size="sm" showIconOnly />
+              ) : (
+                <>
+                  {listing.isSpotlight && <BoostBadge type="SPOTLIGHT" size="sm" showIconOnly />}
+                  {listing.isHotDeal && <BoostBadge type="HOT_DEAL" size="sm" showIconOnly />}
+                  {listing.isPushedUp && !listing.isSpotlight && (
+                    <BoostBadge type="PUSH_UP" size="sm" showIconOnly />
+                  )}
+                </>
+              )}
+            </div>
             {conditionLabel && (
               <span className="rounded bg-slate-900/85 px-1.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur-md shadow-xs">
                 {conditionLabel}

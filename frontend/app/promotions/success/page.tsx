@@ -105,14 +105,14 @@ function PromotionSuccessContent() {
             href={`/listings/${boost.listingSlug || boost.listingId}`}
             className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition-all hover:from-emerald-500 hover:to-teal-500 hover:shadow-xl"
           >
-            <Eye className="h-4 w-4" /> View Promoted Ad
+            View Promoted Ad
           </Link>
         ) : (
           <Link
             href="/listings"
             className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition-all hover:from-emerald-500 hover:to-teal-500 hover:shadow-xl"
           >
-            <Eye className="h-4 w-4" /> Explore Active Listings
+            Explore Active Listings
           </Link>
         )}
 
