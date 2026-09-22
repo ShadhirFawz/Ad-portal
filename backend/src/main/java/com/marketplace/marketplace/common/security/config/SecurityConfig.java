@@ -124,6 +124,19 @@ public class SecurityConfig {
                                 .requestMatchers(HttpMethod.GET, "/api/v1/listings", "/api/v1/listings/**")
                                 .permitAll()
 
+                                // ── Boosts & Promotions ────────────────────────
+                                .requestMatchers(HttpMethod.POST, "/api/v1/boosts/notify")
+                                .permitAll()
+
+                                .requestMatchers(HttpMethod.GET, "/api/v1/boosts/plans")
+                                .permitAll()
+
+                                .requestMatchers(HttpMethod.GET, "/api/v1/boosts/listing/**")
+                                .permitAll()
+
+                                .requestMatchers("/api/v1/boosts/**")
+                                .authenticated()
+
                                 // ── Deny everything else ──────────────────────
                                 .anyRequest()
                                 .authenticated())
