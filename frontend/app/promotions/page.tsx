@@ -39,17 +39,24 @@ export default function PromotionsOverviewPage() {
     load();
   }, []);
 
-  const spotlightPlan = plans.find((p) => p.boostType === "SPOTLIGHT");
-  const spotlightStarting = spotlightPlan?.pricing?.THREE_DAYS ?? 490;
+  const getStartingPrice = (boostType: string): number => {
+    const plan = plans.find((p) => p.boostType === boostType);
+    if (!plan) return 0;
+    if (plan.pricingTiers && plan.pricingTiers.length > 0) {
+      const prices = plan.pricingTiers.map((t) => t.finalPrice).filter((p) => p > 0);
+      if (prices.length > 0) return Math.min(...prices);
+    }
+    if (plan.pricing) {
+      const prices = Object.values(plan.pricing).filter((p) => p > 0);
+      if (prices.length > 0) return Math.min(...prices);
+    }
+    return 0;
+  };
 
-  const pushUpPlan = plans.find((p) => p.boostType === "PUSH_UP");
-  const pushUpStarting = pushUpPlan?.pricing?.THREE_DAYS ?? 290;
-
-  const hotDealPlan = plans.find((p) => p.boostType === "HOT_DEAL");
-  const hotDealStarting = hotDealPlan?.pricing?.THREE_DAYS ?? 190;
-
-  const powerPackPlan = plans.find((p) => p.boostType === "POWER_PACK");
-  const powerPackStarting = powerPackPlan?.pricing?.THREE_DAYS ?? 790;
+  const spotlightStarting = getStartingPrice("SPOTLIGHT");
+  const pushUpStarting = getStartingPrice("PUSH_UP");
+  const hotDealStarting = getStartingPrice("HOT_DEAL");
+  const powerPackStarting = getStartingPrice("POWER_PACK");
 
   return (
     <div className="min-h-screen bg-slate-50/50 pb-24 pt-10 dark:bg-slate-950">
@@ -57,7 +64,7 @@ export default function PromotionsOverviewPage() {
         {/* Hero Section */}
         <div className="text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-emerald-600 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-400">
-            <Sparkles className="h-3.5 w-3.5" /> Promotion Center
+            <Zap className="h-3.5 w-3.5" /> Promotion Center
           </div>
 
           <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
@@ -84,7 +91,7 @@ export default function PromotionsOverviewPage() {
           <div className="relative flex flex-col justify-between rounded-3xl border border-amber-500/30 bg-white p-7 shadow-lg shadow-amber-500/5 dark:border-amber-400/30 dark:bg-slate-900">
             <div>
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:bg-amber-400/10 dark:text-amber-400">
-                <Sparkles className="h-6 w-6" />
+                <Award className="h-6 w-6" />
               </div>
               <h3 className="mt-5 text-xl font-bold text-slate-900 dark:text-white">Spotlight Ad</h3>
               <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">

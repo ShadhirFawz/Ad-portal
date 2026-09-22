@@ -98,13 +98,13 @@ export default function BoostListingPage({ params }: PageProps) {
     (t) => t.duration === selectedDuration
   );
 
-  const basePrice = currentTier?.basePrice ?? currentPlan?.pricing?.[selectedDuration] ?? 890;
+  const basePrice = currentTier?.basePrice ?? currentPlan?.pricing?.[selectedDuration] ?? 0;
   const discountPercentage = currentTier?.discountPercentage ?? 0;
   const discountAmount = currentTier?.discountAmount ?? 0;
   const priceAfterDiscount = currentTier?.priceAfterDiscount ?? (basePrice - discountAmount);
   const taxPercentage = currentTier?.taxPercentage ?? 0;
   const taxAmount = currentTier?.taxAmount ?? 0;
-  const finalPrice = currentTier?.finalPrice ?? currentPlan?.pricing?.[selectedDuration] ?? 890;
+  const finalPrice = currentTier?.finalPrice ?? currentPlan?.pricing?.[selectedDuration] ?? 0;
 
   const currentDays = DURATION_OPTIONS.find((d) => d.key === selectedDuration)?.days || 7;
   const pricePerDay = Math.round(finalPrice / currentDays);

@@ -6,7 +6,6 @@ import com.marketplace.marketplace.common.security.util.SecurityUtils;
 import com.marketplace.marketplace.listing.entity.Listing;
 import com.marketplace.marketplace.listing.enums.ListingStatus;
 import com.marketplace.marketplace.listing.repository.ListingRepository;
-import com.marketplace.marketplace.promotion.config.BoostPricingProperties;
 import com.marketplace.marketplace.promotion.config.PayHereProperties;
 import com.marketplace.marketplace.promotion.dto.request.BoostCheckoutRequest;
 import com.marketplace.marketplace.promotion.dto.request.BoostIpnRequest;
@@ -48,7 +47,6 @@ public class BoostServiceImpl implements BoostService {
     private final ListingRepository listingRepository;
     private final UserRepository userRepository;
     private final PayHereProperties payHereProperties;
-    private final BoostPricingProperties boostPricingProperties;
 
     @Override
     @Transactional(readOnly = true)
@@ -89,8 +87,7 @@ public class BoostServiceImpl implements BoostService {
                                 "Up to 5x more clicks & engagement",
                                 "Equal round-robin rotation among top slots"),
                         "amber",
-                        pricingByType.getOrDefault(BoostType.SPOTLIGHT,
-                                boostPricingProperties.getPricing().get(BoostType.SPOTLIGHT)),
+                        pricingByType.getOrDefault(BoostType.SPOTLIGHT, Collections.emptyMap()),
                         tiersByType.getOrDefault(BoostType.SPOTLIGHT, Collections.emptyList())),
                 new BoostPlanResponse(
                         BoostType.PUSH_UP,
@@ -103,8 +100,7 @@ public class BoostServiceImpl implements BoostService {
                                 "Keeps your ad consistently discoverable",
                                 "Ideal for fast-moving categories"),
                         "emerald",
-                        pricingByType.getOrDefault(BoostType.PUSH_UP,
-                                boostPricingProperties.getPricing().get(BoostType.PUSH_UP)),
+                        pricingByType.getOrDefault(BoostType.PUSH_UP, Collections.emptyMap()),
                         tiersByType.getOrDefault(BoostType.PUSH_UP, Collections.emptyList())),
                 new BoostPlanResponse(
                         BoostType.HOT_DEAL,
@@ -117,8 +113,7 @@ public class BoostServiceImpl implements BoostService {
                                 "Encourages immediate buyer inquiries",
                                 "Pairs perfectly with discounts & quick sales"),
                         "rose",
-                        pricingByType.getOrDefault(BoostType.HOT_DEAL,
-                                boostPricingProperties.getPricing().get(BoostType.HOT_DEAL)),
+                        pricingByType.getOrDefault(BoostType.HOT_DEAL, Collections.emptyMap()),
                         tiersByType.getOrDefault(BoostType.HOT_DEAL, Collections.emptyList())),
                 new BoostPlanResponse(
                         BoostType.POWER_PACK,
@@ -131,8 +126,7 @@ public class BoostServiceImpl implements BoostService {
                                 "Up to 10x higher buyer engagement",
                                 "Best value for high-value items"),
                         "purple",
-                        pricingByType.getOrDefault(BoostType.POWER_PACK,
-                                boostPricingProperties.getPricing().get(BoostType.POWER_PACK)),
+                        pricingByType.getOrDefault(BoostType.POWER_PACK, Collections.emptyMap()),
                         tiersByType.getOrDefault(BoostType.POWER_PACK, Collections.emptyList())));
     }
 
@@ -167,11 +161,13 @@ public class BoostServiceImpl implements BoostService {
                     "This listing already has an active or scheduled " + request.boostType() + " boost.");
         }
 
-        // Calculate amount dynamically from database
+        // Calculate amount dynamically from database pricing plan
         BigDecimal amount = boostPricingPlanRepository
                 .findByBoostTypeAndDurationAndIsActiveTrue(request.boostType(), request.duration())
                 .map(BoostPricingPlan::getFinalPrice)
-                .orElseGet(() -> boostPricingProperties.getPrice(request.boostType(), request.duration()));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Active pricing plan not found in database for boost type " + request.boostType()
+                                + " and duration " + request.duration()));
 
         String currency = payHereProperties.getCurrency() != null ? payHereProperties.getCurrency() : "LKR";
 
