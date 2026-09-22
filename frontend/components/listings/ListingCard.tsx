@@ -9,6 +9,7 @@ import { MapPin, Clock, Tag, Gavel, MoreVertical, Bookmark, Loader2 } from "luci
 import { toggleBookmarkListing } from "@/lib/api/listings";
 import { useAuth } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
+import { BoostBadge } from "@/components/listings/BoostBadge";
 
 interface ListingCardProps {
   listing: Listing | ListingCardData;
@@ -360,6 +361,9 @@ export default function ListingCard({
 
             {/* Badges Overlay */}
             <div className="absolute top-1.5 left-1.5 flex flex-col gap-1 pointer-events-none z-10">
+              {listing.isSpotlight && <BoostBadge type="SPOTLIGHT" size="sm" />}
+              {listing.isHotDeal && <BoostBadge type="HOT_DEAL" size="sm" />}
+              {listing.isPushedUp && !listing.isSpotlight && <BoostBadge type="PUSH_UP" size="sm" />}
               {conditionLabel && (
                 <span className="rounded bg-slate-900/85 px-1 py-0.5 text-[9px] font-semibold text-white backdrop-blur-md shadow-xs">
                   {conditionLabel}
@@ -509,7 +513,10 @@ export default function ListingCard({
           )}
 
           {/* Badges */}
-          <div className="absolute top-2 left-2 flex flex-wrap gap-1 pointer-events-none z-10">
+          <div className="absolute top-2 left-2 flex flex-wrap gap-1 pointer-events-none z-10 max-w-[80%]">
+            {listing.isSpotlight && <BoostBadge type="SPOTLIGHT" size="sm" />}
+            {listing.isHotDeal && <BoostBadge type="HOT_DEAL" size="sm" />}
+            {listing.isPushedUp && !listing.isSpotlight && <BoostBadge type="PUSH_UP" size="sm" />}
             {conditionLabel && (
               <span className="rounded bg-slate-900/85 px-1.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur-md shadow-xs">
                 {conditionLabel}
