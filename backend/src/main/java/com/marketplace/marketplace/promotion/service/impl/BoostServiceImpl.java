@@ -149,17 +149,75 @@ public class BoostServiceImpl implements BoostService {
         }
 
         OffsetDateTime now = OffsetDateTime.now();
-        OffsetDateTime startsAt = request.scheduledStartTime() != null && request.scheduledStartTime().isAfter(now)
-                ? request.scheduledStartTime()
-                : now;
+        OffsetDateTime startsAt;
+        OffsetDateTime expiresAt;
 
-        OffsetDateTime expiresAt = startsAt.plusDays(request.duration().getDays());
+        // Validate boost conflicts and calculate startsAt
+        if (request.boostType() == BoostType.POWER_PACK) {
+            // Check if Power Pack already has a scheduled queue
+            if (adBoostRepository.existsScheduledBoost(listing.getId(), BoostType.POWER_PACK, now)) {
+                throw new ConflictException("This listing already has a scheduled Power Pack promotion in queue.");
+            }
 
-        // Validate conflicts
-        if (adBoostRepository.existsActiveOrScheduledBoost(listing.getId(), request.boostType(), now)) {
-            throw new ConflictException(
-                    "This listing already has an active or scheduled " + request.boostType() + " boost.");
+            // Check if Power Pack is currently active -> allow 1 scheduled extension
+            // starting at the end date of active Power Pack
+            List<AdBoost> activePowerPacks = adBoostRepository.findActiveByListingIdAndBoostType(listing.getId(),
+                    BoostType.POWER_PACK, now);
+            if (!activePowerPacks.isEmpty()) {
+                AdBoost activePowerPack = activePowerPacks.get(0);
+                startsAt = (request.scheduledStartTime() != null
+                        && request.scheduledStartTime().isAfter(activePowerPack.getExpiresAt()))
+                                ? request.scheduledStartTime()
+                                : activePowerPack.getExpiresAt();
+            } else {
+                // If other individual boosts exist (active or scheduled), Power Pack cannot be
+                // combined
+                if (adBoostRepository.existsAnyActiveOrScheduledBoost(listing.getId(), now)) {
+                    throw new ConflictException(
+                            "This listing already has active or scheduled promotions. Power Pack cannot be combined with existing individual boosts.");
+                }
+                startsAt = request.scheduledStartTime() != null && request.scheduledStartTime().isAfter(now)
+                        ? request.scheduledStartTime()
+                        : now;
+            }
+        } else {
+            // Individual boost (SPOTLIGHT, URGENT, PUSH_UP)
+            // Cannot activate or schedule if Power Pack is already active/scheduled
+            if (adBoostRepository.existsActiveOrScheduledBoost(listing.getId(), BoostType.POWER_PACK, now)) {
+                throw new ConflictException(
+                        "This listing already has an active or scheduled Power Pack VIP promotion, which includes all boost features.");
+            }
+
+            // Check if this same boost type ALREADY has a scheduled boost in queue
+            if (adBoostRepository.existsScheduledBoost(listing.getId(), request.boostType(), now)) {
+                throw new ConflictException(
+                        "This listing already has a scheduled " + request.boostType().name().replace("_", " ")
+                                + " boost in queue. Only one scheduled extension is allowed at a time.");
+            }
+
+            // Check if this boost type is currently ACTIVE on the listing
+            List<AdBoost> activeSameBoosts = adBoostRepository.findActiveByListingIdAndBoostType(listing.getId(),
+                    request.boostType(), now);
+            if (!activeSameBoosts.isEmpty()) {
+                // Listing already has 1 active boost of this type -> allow second chance
+                // (scheduled extension)
+                AdBoost activeBoost = activeSameBoosts.get(0);
+                startsAt = (request.scheduledStartTime() != null
+                        && request.scheduledStartTime().isAfter(activeBoost.getExpiresAt()))
+                                ? request.scheduledStartTime()
+                                : activeBoost.getExpiresAt();
+                log.info(
+                        "Chaining duplicate extension for boost type {} on listing {}. Active ends at {}, new startsAt set to {}",
+                        request.boostType(), listing.getId(), activeBoost.getExpiresAt(), startsAt);
+            } else {
+                // First activation for this boost type
+                startsAt = request.scheduledStartTime() != null && request.scheduledStartTime().isAfter(now)
+                        ? request.scheduledStartTime()
+                        : now;
+            }
         }
+
+        expiresAt = startsAt.plusDays(request.duration().getDays());
 
         // Calculate amount dynamically from database pricing plan
         BigDecimal amount = boostPricingPlanRepository
@@ -213,7 +271,8 @@ public class BoostServiceImpl implements BoostService {
         Map<String, String> payHereParams = new HashMap<>();
         payHereParams.put("merchant_id", payHereProperties.getMerchantId());
         payHereParams.put("return_url", payHereProperties.getReturnUrl() + "?order_id=" + orderId);
-        payHereParams.put("cancel_url", payHereProperties.getCancelUrl() + "?order_id=" + orderId + "&listing_id=" + listing.getId());
+        payHereParams.put("cancel_url",
+                payHereProperties.getCancelUrl() + "?order_id=" + orderId + "&listing_id=" + listing.getId());
         payHereParams.put("notify_url", payHereProperties.getNotifyUrl());
         payHereParams.put("order_id", orderId);
         payHereParams.put("items", itemsValue);
@@ -484,6 +543,15 @@ public class BoostServiceImpl implements BoostService {
     }
 
     private AdBoostResponse mapToResponse(AdBoost b) {
+        BoostPayment payment = boostPaymentRepository.findByBoostSubscriptionId(b.getId()).orElse(null);
+        String paymentMethod = null;
+        if (payment != null && payment.getPayhereRawResponse() != null) {
+            Object method = payment.getPayhereRawResponse().get("method");
+            if (method != null) {
+                paymentMethod = method.toString();
+            }
+        }
+
         return new AdBoostResponse(
                 b.getId(),
                 b.getListing().getId(),
@@ -495,6 +563,13 @@ public class BoostServiceImpl implements BoostService {
                 b.getStartsAt(),
                 b.getExpiresAt(),
                 b.getActivatedAt(),
-                b.getCreatedAt());
+                b.getCreatedAt(),
+                payment != null ? payment.getId() : null,
+                payment != null ? payment.getPayhereOrderId() : null,
+                payment != null ? payment.getPayherePaymentId() : null,
+                payment != null ? payment.getAmount() : null,
+                payment != null ? payment.getCurrency() : "LKR",
+                payment != null ? payment.getPaymentStatus() : null,
+                paymentMethod);
     }
 }
