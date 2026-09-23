@@ -10,8 +10,8 @@ export function PowerPackBadge() {
       aria-label="Power Pack — Maximum visibility: Spotlight + Hot Deal + Push Up"
       className="pointer-events-auto cursor-help flex items-center justify-center gap-2 px-3 py-[6px] shrink-0"
       style={{
-        background: "linear-gradient(90deg, #581c87 0%, #7c3aed 35%, #a855f7 65%, #be185d 100%)",
-        boxShadow: "0 3px 16px rgba(168,85,247,0.5)",
+        background: "#5b21b6",
+        boxShadow: "0 3px 14px rgba(91,33,182,0.45)",
       }}
     >
       <Crown
@@ -62,6 +62,15 @@ export function SpotlightBadge() {
           boxShadow: "0 2px 12px rgba(245,158,11,0.55)",
         }}
       >
+        <Star
+          style={{
+            width: 10,
+            height: 10,
+            fill: "#fffbeb",
+            color: "#fffbeb",
+            flexShrink: 0,
+          }}
+        />
       </div>
     </div>
   );
@@ -75,13 +84,10 @@ export function HotDealBadge() {
       aria-label="Hot Deal — Limited-time price offer"
       className="pointer-events-auto cursor-help flex items-center justify-center gap-2 px-3 py-[5px] shrink-0 w-full"
       style={{
-        background: "linear-gradient(90deg, #9f1239 0%, #e11d48 30%, #ef4444 65%, #c2410c 100%)",
+        background: "#dc2626",
         boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12)",
       }}
     >
-      <Flame
-        style={{ width: 10, height: 10, color: "white", fill: "white", flexShrink: 0 }}
-      />
       <span
         style={{
           fontSize: 9,
@@ -92,7 +98,7 @@ export function HotDealBadge() {
           lineHeight: 1,
         }}
       >
-        Hot Deal
+        Urgent
       </span>
     </div>
   );
@@ -106,12 +112,12 @@ export function PushUpBadge() {
       aria-label="Push Up — Bumped to the top of the listings feed today"
       className="pointer-events-auto cursor-help flex items-center justify-center gap-2 px-3 py-[4px] shrink-0 w-full"
       style={{
-        background: "linear-gradient(90deg, rgba(4,120,87,0.95) 0%, rgba(6,182,212,0.9) 100%)",
-        borderTop: "1px solid rgba(52,211,153,0.3)",
+        background: "#059669",
+        borderTop: "1px solid rgba(255,255,255,0.12)",
       }}
     >
       <TrendingUp
-        style={{ width: 9, height: 9, color: "#6ee7b7", flexShrink: 0 }}
+        style={{ width: 9, height: 9, color: "#d1fae5", flexShrink: 0 }}
       />
       <span
         style={{
@@ -154,9 +160,9 @@ export const BoostBadge: React.FC<BoostBadgeProps> = ({
         <span
           title="Spotlight — Pinned to the top of search results"
           aria-label="Spotlight — Pinned to the top of search results"
-          className={`${pill} bg-gradient-to-r from-amber-400 to-amber-600 text-slate-900 border-amber-300/50 shadow-[0_0_10px_rgba(245,158,11,0.35)] ${className}`}
+          className={`${pill} bg-amber-500 text-white border-amber-600/40 shadow-sm ${className}`}
         >
-          <Star style={{ width: px, height: px, fill: "#1c1917", flexShrink: 0 }} />
+          <Star style={{ width: px, height: px, fill: "white", flexShrink: 0 }} />
           {!showIconOnly && "Spotlight"}
         </span>
       );
@@ -165,7 +171,7 @@ export const BoostBadge: React.FC<BoostBadgeProps> = ({
         <span
           title="Hot Deal — Limited-time price offer"
           aria-label="Hot Deal — Limited-time price offer"
-          className={`${pill} bg-gradient-to-r from-rose-500 to-orange-500 text-white border-rose-300/40 shadow-[0_0_10px_rgba(239,68,68,0.35)] ${className}`}
+          className={`${pill} bg-red-600 text-white border-red-700/40 shadow-sm ${className}`}
         >
           <Flame style={{ width: px, height: px, fill: "white", flexShrink: 0 }} />
           {!showIconOnly && "Hot Deal"}
@@ -176,7 +182,7 @@ export const BoostBadge: React.FC<BoostBadgeProps> = ({
         <span
           title="Push Up — Bumped to top of results today"
           aria-label="Push Up — Bumped to top of results today"
-          className={`${pill} bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-emerald-300/40 shadow-[0_0_10px_rgba(16,185,129,0.3)] ${className}`}
+          className={`${pill} bg-emerald-600 text-white border-emerald-700/40 shadow-sm ${className}`}
         >
           <TrendingUp style={{ width: px, height: px, flexShrink: 0 }} />
           {!showIconOnly && "Push Up"}
@@ -187,7 +193,7 @@ export const BoostBadge: React.FC<BoostBadgeProps> = ({
         <span
           title="Power Pack — Spotlight + Hot Deal + Push Up combined"
           aria-label="Power Pack — Spotlight + Hot Deal + Push Up combined"
-          className={`${pill} bg-gradient-to-r from-violet-600 via-purple-600 to-pink-500 text-white border-purple-300/40 shadow-[0_0_12px_rgba(168,85,247,0.4)] ${className}`}
+          className={`${pill} bg-violet-700 text-white border-violet-800/40 shadow-sm ${className}`}
         >
           <Crown style={{ width: px, height: px, fill: "#fde68a", flexShrink: 0 }} />
           {!showIconOnly && "Power Pack"}
@@ -197,5 +203,3 @@ export const BoostBadge: React.FC<BoostBadgeProps> = ({
       return null;
   }
 };
-
-
