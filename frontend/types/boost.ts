@@ -67,5 +67,10 @@ export interface AdBoost {
   currency?: string | null;
   paymentStatus?: PaymentStatus | null;
   paymentMethod?: string | null;
+  listingImageUrl?: string | null;
+  listingPrice?: number | null;
+  listingCurrency?: string | null;
+  listingCategory?: string | null;
+  listingLocation?: string | null;
 }
 

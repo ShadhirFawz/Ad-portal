@@ -6,6 +6,8 @@ import com.marketplace.marketplace.common.security.util.SecurityUtils;
 import com.marketplace.marketplace.listing.entity.Listing;
 import com.marketplace.marketplace.listing.enums.ListingStatus;
 import com.marketplace.marketplace.listing.repository.ListingRepository;
+import com.marketplace.marketplace.listing.repository.ListingImageRepository;
+import com.marketplace.marketplace.listing.mapper.ListingImageMapper;
 import com.marketplace.marketplace.promotion.config.PayHereProperties;
 import com.marketplace.marketplace.promotion.dto.request.BoostCheckoutRequest;
 import com.marketplace.marketplace.promotion.dto.request.BoostIpnRequest;
@@ -45,6 +47,8 @@ public class BoostServiceImpl implements BoostService {
     private final BoostPaymentRepository boostPaymentRepository;
     private final BoostPricingPlanRepository boostPricingPlanRepository;
     private final ListingRepository listingRepository;
+    private final ListingImageRepository listingImageRepository;
+    private final ListingImageMapper listingImageMapper;
     private final UserRepository userRepository;
     private final PayHereProperties payHereProperties;
 
@@ -552,11 +556,24 @@ public class BoostServiceImpl implements BoostService {
             }
         }
 
+        Listing listing = b.getListing();
+        String imageUrl = null;
+        try {
+            imageUrl = listingImageRepository.findByListingIdAndPrimaryTrue(listing.getId())
+                    .map(img -> listingImageMapper.toResponse(img).url())
+                    .orElse(null);
+        } catch (Exception e) {
+            log.debug("Could not resolve primary image for listing {}: {}", listing.getId(), e.getMessage());
+        }
+
+        String categoryName = listing.getCategory() != null ? listing.getCategory().getName() : null;
+        String locationStr = listing.getCity() != null ? listing.getCity() : listing.getLocation();
+
         return new AdBoostResponse(
                 b.getId(),
-                b.getListing().getId(),
-                b.getListing().getTitle(),
-                b.getListing().getSlug(),
+                listing.getId(),
+                listing.getTitle(),
+                listing.getSlug(),
                 b.getBoostType(),
                 b.getBoostStatus(),
                 b.getDurationDays(),
@@ -570,6 +587,11 @@ public class BoostServiceImpl implements BoostService {
                 payment != null ? payment.getAmount() : null,
                 payment != null ? payment.getCurrency() : "LKR",
                 payment != null ? payment.getPaymentStatus() : null,
-                paymentMethod);
+                paymentMethod,
+                imageUrl,
+                listing.getPrice(),
+                listing.getCurrency() != null ? listing.getCurrency() : "LKR",
+                categoryName,
+                locationStr);
     }
 }
