@@ -55,7 +55,7 @@ export default function PromotionsOverviewPage() {
 
   const spotlightStarting = getStartingPrice("SPOTLIGHT");
   const pushUpStarting = getStartingPrice("PUSH_UP");
-  const hotDealStarting = getStartingPrice("HOT_DEAL");
+  const urgentStarting = getStartingPrice("URGENT");
   const powerPackStarting = getStartingPrice("POWER_PACK");
 
   return (
@@ -153,35 +153,35 @@ export default function PromotionsOverviewPage() {
             </div>
           </div>
 
-          {/* Hot Deal */}
+          {/* Urgent */}
           <div className="relative flex flex-col justify-between rounded-3xl border border-rose-500/30 bg-white p-7 shadow-lg shadow-rose-500/5 dark:border-rose-400/30 dark:bg-slate-900">
             <div>
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-600 dark:bg-rose-400/10 dark:text-rose-400">
                 <Flame className="h-6 w-6" />
               </div>
-              <h3 className="mt-5 text-xl font-bold text-slate-900 dark:text-white">Hot Deal</h3>
+              <h3 className="mt-5 text-xl font-bold text-slate-900 dark:text-white">Urgent Ad</h3>
               <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-                Signal instant urgency and appear in the exclusive Hot Deals buyer filter.
+                Signal instant urgency and priority with a high-visibility red Urgent ribbon.
               </p>
               <ul className="mt-6 space-y-2.5 text-xs text-slate-700 dark:text-slate-300">
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  <span>Vibrant flame badge</span>
+                  <span>High-visibility Urgent ribbon</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  <span>Dedicated filter tab</span>
+                  <span>Stands out across search feeds</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  <span>High buyer intent</span>
+                  <span>High buyer inquiry intent</span>
                 </li>
               </ul>
             </div>
             <div className="mt-8 border-t border-slate-100 pt-4 dark:border-slate-800">
               <span className="text-xs text-slate-500">Starting from</span>
               <div className="text-xl font-extrabold text-slate-900 dark:text-white">
-                Rs {hotDealStarting.toLocaleString()} <span className="text-xs font-normal text-slate-500">/ 3 days</span>
+                Rs {urgentStarting.toLocaleString()} <span className="text-xs font-normal text-slate-500">/ 3 days</span>
               </div>
             </div>
           </div>
@@ -197,7 +197,7 @@ export default function PromotionsOverviewPage() {
               </div>
               <h3 className="mt-5 text-xl font-bold text-slate-900 dark:text-white">Power Pack</h3>
               <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-                The ultimate combo suite: Spotlight + Daily Push Ups + Hot Deal badge.
+                The ultimate combo suite: Spotlight + Daily Push Ups + Urgent ribbon badge.
               </p>
               <ul className="mt-6 space-y-2.5 text-xs text-slate-700 dark:text-slate-300">
                 <li className="flex items-center gap-2">

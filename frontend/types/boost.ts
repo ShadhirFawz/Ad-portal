@@ -1,4 +1,4 @@
-export type BoostType = "SPOTLIGHT" | "PUSH_UP" | "HOT_DEAL" | "POWER_PACK";
+export type BoostType = "SPOTLIGHT" | "PUSH_UP" | "URGENT" | "POWER_PACK";
 
 export type BoostDuration = "THREE_DAYS" | "SEVEN_DAYS" | "FOURTEEN_DAYS" | "THIRTY_DAYS";
 

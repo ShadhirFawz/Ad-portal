@@ -94,7 +94,7 @@ export interface Listing {
 
   hasActiveAuction?: boolean;
   isSpotlight?: boolean;
-  isHotDeal?: boolean;
+  isUrgent?: boolean;
   isPushedUp?: boolean;
 
   images: ListingImage[];
@@ -191,7 +191,7 @@ export interface ListingCardData {
   isBookmarked?: boolean;
   hasActiveAuction?: boolean;
   isSpotlight?: boolean;
-  isHotDeal?: boolean;
+  isUrgent?: boolean;
   isPushedUp?: boolean;
   customAttributes?: Record<string, unknown>;
   publishedAt?: string | null;

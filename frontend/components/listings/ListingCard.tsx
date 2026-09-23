@@ -24,9 +24,10 @@ import { useAuth } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
 import {
   SpotlightBadge,
-  HotDealBadge,
+  UrgentBadge,
   PushUpBadge,
   PowerPackBadge,
+  UrgentRibbonBadge,
 } from "@/components/listings/BoostBadge";
 
 interface ListingCardProps {
@@ -292,9 +293,9 @@ export default function ListingCard({
       : listing.createdAt) as string
   );
 
-  const isPowerPack = Boolean(listing.isSpotlight && listing.isHotDeal && listing.isPushedUp);
+  const isPowerPack = Boolean(listing.isSpotlight && listing.isUrgent && listing.isPushedUp);
   const isSpotlight = Boolean(listing.isSpotlight);
-  const isHotDeal = Boolean(listing.isHotDeal);
+  const isUrgent = Boolean(listing.isUrgent);
   const isPushedUp = Boolean(listing.isPushedUp);
 
   // Spotlight hover scrub reveals 2nd image on hover
@@ -314,8 +315,8 @@ export default function ListingCard({
         >
           <Bookmark
             className={`w-4 h-4 shrink-0 ${isBookmarked
-              ? "fill-slate-800 text-slate-800 dark:fill-slate-100 dark:text-slate-100"
-              : "text-slate-500 dark:text-slate-400"
+                ? "fill-slate-800 text-slate-800 dark:fill-slate-100 dark:text-slate-100"
+                : "text-slate-500 dark:text-slate-400"
               }`}
           />
           <span>{isBookmarked ? "Bookmarked" : "Bookmark"}</span>
@@ -618,7 +619,7 @@ export default function ListingCard({
   if (layout === "row") {
     const rowCardTheme = isSpotlight
       ? "border-amber-400/90 dark:border-amber-500/80 bg-amber-50 dark:bg-slate-900/90 shadow-md shadow-amber-500/10 hover:border-amber-500 hover:shadow-amber-500/20 ring-1 ring-amber-400/40"
-      : isHotDeal
+      : isUrgent
         ? "border-rose-400/90 dark:border-rose-500/80 bg-rose-50 dark:bg-slate-900/90 shadow-md shadow-rose-500/10 hover:border-rose-500 hover:shadow-rose-500/20 ring-1 ring-rose-400/40"
         : isPushedUp
           ? "border-emerald-400/90 dark:border-emerald-500/80 bg-emerald-50 dark:bg-slate-900/90 shadow-md shadow-emerald-500/10 hover:border-emerald-500 hover:shadow-emerald-500/20 ring-1 ring-emerald-400/40"
@@ -717,8 +718,8 @@ export default function ListingCard({
 
           {/* Content Area Column */}
           <div className="flex flex-col flex-1 min-w-0">
-            {/* HOT DEAL divider */}
-            {listing.isHotDeal && <HotDealBadge />}
+            {/* URGENT divider */}
+            {listing.isUrgent && <UrgentBadge />}
 
             <div className="flex flex-1 flex-col justify-between p-3 gap-1.5 min-w-0">
               <div className="space-y-1 min-w-0">
@@ -733,10 +734,10 @@ export default function ListingCard({
                   {listing.status && listing.status !== "ACTIVE" && (
                     <span
                       className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${listing.status === "DRAFT"
-                        ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
-                        : listing.status === "SOLD"
-                          ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
-                          : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                          ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
+                          : listing.status === "SOLD"
+                            ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
+                            : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                         }`}
                     >
                       {listing.status}
@@ -774,21 +775,16 @@ export default function ListingCard({
 
               {/* Bottom Row: Price & Metadata */}
               <div className="flex flex-col gap-0.5 pt-1.5 border-t border-slate-100 dark:border-slate-800/80">
-                <div className="flex items-baseline justify-between gap-2">
+                <div className="flex items-center justify-between gap-2">
                   <span
-                    className={`text-sm sm:text-base font-black ${isHotDeal
-                      ? "text-rose-600 dark:text-rose-400"
-                      : "text-emerald-600 dark:text-emerald-400"
+                    className={`text-sm sm:text-base font-black ${isUrgent
+                        ? "text-rose-600 dark:text-rose-400"
+                        : "text-emerald-600 dark:text-emerald-400"
                       }`}
                   >
                     {formatPrice()}
                   </span>
-                  {isHotDeal && listing.negotiable && (
-                    <span className="inline-flex items-center gap-1 rounded bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 px-1.5 py-0.5 text-[9px] font-bold uppercase">
-                      <Flame className="w-2.5 h-2.5 text-rose-500" />
-                      Deal Open
-                    </span>
-                  )}
+                  {isUrgent && <UrgentRibbonBadge />}
                 </div>
 
                 <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-500">
@@ -831,7 +827,7 @@ export default function ListingCard({
   // Grid Layout
   const gridCardTheme = isSpotlight
     ? "border-amber-400/90 dark:border-amber-500/80 bg-amber-50 dark:bg-slate-900/90 shadow-md shadow-amber-500/10 hover:border-amber-500 hover:shadow-amber-500/20 ring-1 ring-amber-400/40"
-    : isHotDeal
+    : isUrgent
       ? "border-rose-400/90 dark:border-rose-500/80 bg-rose-50 dark:bg-slate-900/90 shadow-md shadow-rose-500/10 hover:border-rose-500 hover:shadow-rose-500/20 ring-1 ring-rose-400/40"
       : isPushedUp
         ? "border-emerald-400/90 dark:border-emerald-500/80 bg-emerald-50 dark:bg-slate-900/90 shadow-md shadow-emerald-500/10 hover:border-emerald-500 hover:shadow-emerald-500/20 ring-1 ring-emerald-400/40"
@@ -932,40 +928,37 @@ export default function ListingCard({
           )}
         </div>
 
-        {/* Hot deal divider bar */}
-        {listing.isHotDeal && <HotDealBadge />}
+        {/* URGENT divider bar */}
+        {listing.isUrgent && <UrgentBadge />}
 
         {/* Card Body */}
         <div className="flex flex-1 flex-col justify-between p-3 space-y-2">
           <div className="space-y-1.5">
-            {/* Price & Deal Status */}
-            <div className="flex items-baseline justify-between gap-1.5">
+            {/* Price & Urgent Status */}
+            <div className="flex items-center justify-between gap-2">
               <span
-                className={`text-base sm:text-lg font-black truncate ${isHotDeal
-                  ? "text-rose-600 dark:text-rose-400"
-                  : "text-emerald-600 dark:text-emerald-400"
+                className={`text-base sm:text-lg font-black truncate ${isUrgent
+                    ? "text-rose-600 dark:text-rose-400"
+                    : "text-emerald-600 dark:text-emerald-400"
                   }`}
               >
                 {formatPrice()}
               </span>
-              {isHotDeal && listing.negotiable && (
-                <span className="inline-flex items-center gap-0.5 rounded bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 px-1.5 py-0.5 text-[9px] font-bold uppercase shrink-0">
-                  <Flame className="w-2.5 h-2.5 text-rose-500" />
-                  Deal
-                </span>
-              )}
-              {listing.status && listing.status !== "ACTIVE" && (
-                <span
-                  className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${listing.status === "DRAFT"
-                    ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
-                    : listing.status === "SOLD"
-                      ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
-                      : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                    }`}
-                >
-                  {listing.status}
-                </span>
-              )}
+              <div className="flex items-center gap-1.5 shrink-0">
+                {listing.status && listing.status !== "ACTIVE" && (
+                  <span
+                    className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${listing.status === "DRAFT"
+                        ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
+                        : listing.status === "SOLD"
+                          ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
+                          : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                      }`}
+                  >
+                    {listing.status}
+                  </span>
+                )}
+                {isUrgent && <UrgentRibbonBadge />}
+              </div>
             </div>
 
             {/* Title */}

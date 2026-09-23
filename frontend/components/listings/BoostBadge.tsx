@@ -1,13 +1,13 @@
 import React from "react";
-import { Star, Flame, TrendingUp, Crown } from "lucide-react";
+import { Star, Flame, TrendingUp, Crown, Zap } from "lucide-react";
 import type { BoostType } from "@/types/boost";
 
 /* POWER PACK — Full-width banner at the very top of the card */
 export function PowerPackBadge() {
   return (
     <div
-      title="Power Pack — Maximum visibility: Spotlight + Hot Deal + Push Up"
-      aria-label="Power Pack — Maximum visibility: Spotlight + Hot Deal + Push Up"
+      title="Power Pack — Maximum visibility: Spotlight + Urgent + Push Up"
+      aria-label="Power Pack — Maximum visibility: Spotlight + Urgent + Push Up"
       className="pointer-events-auto cursor-help flex items-center justify-center gap-2 px-3 py-[6px] shrink-0"
       style={{
         background: "#5b21b6",
@@ -76,31 +76,53 @@ export function SpotlightBadge() {
   );
 }
 
-/* HOT DEAL — Divider bar between image and card content */
-export function HotDealBadge() {
+/* URGENT — Divider bar between image and card content */
+export function UrgentBadge() {
   return (
     <div
-      title="Hot Deal — Limited-time price offer"
-      aria-label="Hot Deal — Limited-time price offer"
-      className="pointer-events-auto cursor-help flex items-center justify-center gap-2 px-3 py-[5px] shrink-0 w-full"
+      title="Urgent — High priority quick sale"
+      aria-label="Urgent — High priority quick sale"
+      className="pointer-events-auto cursor-help shrink-0 w-full"
       style={{
+        height: 3,
         background: "#dc2626",
         boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12)",
+      }}
+    />
+  );
+}
+
+export const HotDealBadge = UrgentBadge;
+
+export function UrgentRibbonBadge({ className = "" }: { className?: string }) {
+  return (
+    <span
+      title="Urgent — High priority quick sale"
+      aria-label="Urgent — High priority quick sale"
+      className={`pointer-events-auto cursor-help inline-flex items-center shrink-0 -mr-3 ${className}`}
+      style={{
+        height: 20,
+        paddingLeft: 12,
+        paddingRight: 8,
+        background: "#dc2626",
+        clipPath: "polygon(8px 0, 100% 0, 100% 100%, 0 100%)",
+        boxShadow: "0 1px 6px rgba(220,38,38,0.35)",
       }}
     >
       <span
         style={{
+          marginLeft: 4,
           fontSize: 9,
-          fontWeight: 800,
+          fontWeight: 900,
           color: "white",
-          letterSpacing: "0.12em",
+          letterSpacing: "0.14em",
           textTransform: "uppercase",
           lineHeight: 1,
         }}
       >
         Urgent
       </span>
-    </div>
+    </span>
   );
 }
 
@@ -166,15 +188,15 @@ export const BoostBadge: React.FC<BoostBadgeProps> = ({
           {!showIconOnly && "Spotlight"}
         </span>
       );
-    case "HOT_DEAL":
+    case "URGENT":
       return (
         <span
-          title="Hot Deal — Limited-time price offer"
-          aria-label="Hot Deal — Limited-time price offer"
+          title="Urgent — High priority quick sale"
+          aria-label="Urgent — High priority quick sale"
           className={`${pill} bg-red-600 text-white border-red-700/40 shadow-sm ${className}`}
         >
           <Flame style={{ width: px, height: px, fill: "white", flexShrink: 0 }} />
-          {!showIconOnly && "Hot Deal"}
+          {!showIconOnly && "Urgent"}
         </span>
       );
     case "PUSH_UP":
@@ -191,8 +213,8 @@ export const BoostBadge: React.FC<BoostBadgeProps> = ({
     case "POWER_PACK":
       return (
         <span
-          title="Power Pack — Spotlight + Hot Deal + Push Up combined"
-          aria-label="Power Pack — Spotlight + Hot Deal + Push Up combined"
+          title="Power Pack — Spotlight + Urgent + Push Up combined"
+          aria-label="Power Pack — Spotlight + Urgent + Push Up combined"
           className={`${pill} bg-violet-700 text-white border-violet-800/40 shadow-sm ${className}`}
         >
           <Crown style={{ width: px, height: px, fill: "#fde68a", flexShrink: 0 }} />

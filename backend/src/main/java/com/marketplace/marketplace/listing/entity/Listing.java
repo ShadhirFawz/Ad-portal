@@ -168,8 +168,8 @@ public class Listing {
     @Column(name = "is_spotlight", nullable = false)
     private boolean isSpotlight = false;
 
-    @Column(name = "is_hot_deal", nullable = false)
-    private boolean isHotDeal = false;
+    @Column(name = "is_urgent", nullable = false)
+    private boolean isUrgent = false;
 
     @Column(name = "is_pushed_up", nullable = false)
     private boolean isPushedUp = false;
