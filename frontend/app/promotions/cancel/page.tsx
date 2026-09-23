@@ -3,14 +3,18 @@
 import React, { Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { XCircle, RefreshCcw, Home, HelpCircle } from "lucide-react";
+import { XCircle, RefreshCcw, Home, HelpCircle, ArrowLeft } from "lucide-react";
 
 function PromotionCancelContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("order_id");
+  const listingId = searchParams.get("listing_id");
 
   return (
     <div className="relative mx-auto max-w-lg px-4 py-16 text-center sm:px-6">
+      {/* Decorative Glow */}
+      <div className="absolute left-1/2 top-10 -translate-x-1/2 -translate-y-1/2 h-64 w-64 rounded-full bg-rose-500/10 blur-3xl pointer-events-none" />
+
       {/* Cancel Icon */}
       <div className="relative mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-rose-500/10 text-rose-500 shadow-xl shadow-rose-500/10 ring-8 ring-rose-500/5 dark:bg-rose-400/10 dark:text-rose-400">
         <XCircle className="h-10 w-10" />
@@ -32,12 +36,21 @@ function PromotionCancelContent() {
 
       {/* Action Buttons */}
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-        <Link
-          href="/listings"
-          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-6 py-3.5 text-sm font-bold text-white shadow-lg transition-all hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-500"
-        >
-          <RefreshCcw className="h-4 w-4" /> Try Again from Listings
-        </Link>
+        {listingId ? (
+          <Link
+            href={`/listings/${listingId}`}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-6 py-3.5 text-sm font-bold text-white shadow-lg transition-all hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+          >
+            <ArrowLeft className="h-4 w-4" /> Back to ad
+          </Link>
+        ) : (
+          <Link
+            href="/listings"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-6 py-3.5 text-sm font-bold text-white shadow-lg transition-all hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+          >
+            <ArrowLeft className="h-4 w-4" /> Try Again from Listings
+          </Link>
+        )}
 
         <Link
           href="/"
