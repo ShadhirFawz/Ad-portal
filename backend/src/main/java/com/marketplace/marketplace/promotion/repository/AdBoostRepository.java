@@ -28,6 +28,22 @@ public interface AdBoostRepository extends JpaRepository<AdBoost, UUID> {
     @Query("SELECT b FROM AdBoost b WHERE b.boostStatus = 'ACTIVE' AND b.expiresAt <= :now")
     List<AdBoost> findActiveDueForExpiry(@Param("now") OffsetDateTime now);
 
+    @Query("SELECT b FROM AdBoost b WHERE b.listing.id = :listingId AND b.boostType = :boostType AND b.boostStatus = 'ACTIVE' AND b.expiresAt > :now ORDER BY b.expiresAt DESC")
+    List<AdBoost> findActiveByListingIdAndBoostType(@Param("listingId") UUID listingId, @Param("boostType") BoostType boostType, @Param("now") OffsetDateTime now);
+
+    @Query("SELECT COUNT(b) > 0 FROM AdBoost b WHERE b.listing.id = :listingId AND b.boostType = :boostType AND b.boostStatus = 'ACTIVE' AND b.expiresAt > :now")
+    boolean existsActiveBoost(@Param("listingId") UUID listingId, @Param("boostType") BoostType boostType, @Param("now") OffsetDateTime now);
+
+    @Query("SELECT COUNT(b) > 0 FROM AdBoost b WHERE b.listing.id = :listingId AND b.boostType = :boostType AND b.boostStatus = 'SCHEDULED' AND b.expiresAt > :now")
+    boolean existsScheduledBoost(@Param("listingId") UUID listingId, @Param("boostType") BoostType boostType, @Param("now") OffsetDateTime now);
+
+    @Query("SELECT COUNT(b) > 0 FROM AdBoost b WHERE b.listing.id = :listingId AND b.boostStatus = 'SCHEDULED' AND b.expiresAt > :now")
+    boolean existsAnyScheduledBoost(@Param("listingId") UUID listingId, @Param("now") OffsetDateTime now);
+
     @Query("SELECT COUNT(b) > 0 FROM AdBoost b WHERE b.listing.id = :listingId AND b.boostType = :boostType AND b.boostStatus IN ('ACTIVE', 'SCHEDULED') AND b.expiresAt > :now")
     boolean existsActiveOrScheduledBoost(@Param("listingId") UUID listingId, @Param("boostType") BoostType boostType, @Param("now") OffsetDateTime now);
+
+    @Query("SELECT COUNT(b) > 0 FROM AdBoost b WHERE b.listing.id = :listingId AND b.boostStatus IN ('ACTIVE', 'SCHEDULED') AND b.expiresAt > :now")
+    boolean existsAnyActiveOrScheduledBoost(@Param("listingId") UUID listingId, @Param("now") OffsetDateTime now);
 }
+

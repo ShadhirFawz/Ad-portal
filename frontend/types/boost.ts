@@ -60,4 +60,12 @@ export interface AdBoost {
   expiresAt: string;
   activatedAt?: string | null;
   createdAt: string;
+  paymentId?: string | null;
+  orderId?: string | null;
+  payherePaymentId?: string | null;
+  amount?: number | null;
+  currency?: string | null;
+  paymentStatus?: PaymentStatus | null;
+  paymentMethod?: string | null;
 }
+

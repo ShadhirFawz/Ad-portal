@@ -80,6 +80,17 @@ export default function BoostListingPage({ params }: PageProps) {
 
         if (plansData && plansData.length > 0) {
           setPlans(plansData);
+          // Pick first available boost that isn't already active
+          const activeTypes = new Set(activeBoosts.map((b) => b.boostType));
+          const hasPowerPack = activeTypes.has("POWER_PACK");
+          const availablePlan = plansData.find((p) => {
+            if (hasPowerPack) return false;
+            if (activeTypes.size > 0 && p.boostType === "POWER_PACK") return false;
+            return !activeTypes.has(p.boostType);
+          });
+          if (availablePlan) {
+            setSelectedType(availablePlan.boostType);
+          }
         }
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : "Failed to load boost options";
@@ -257,6 +268,41 @@ export default function BoostListingPage({ params }: PageProps) {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {plans.map((plan) => {
                   const isSelected = selectedType === plan.boostType;
+                  const activeBoostOfThisType = existingBoosts.find(
+                    (b) => b.boostType === plan.boostType && b.boostStatus === "ACTIVE"
+                  );
+                  const scheduledBoostOfThisType = existingBoosts.find(
+                    (b) => b.boostType === plan.boostType && b.boostStatus === "SCHEDULED"
+                  );
+                  const isThisBoostActive = !!activeBoostOfThisType;
+                  const hasScheduledQueue = !!scheduledBoostOfThisType;
+
+                  const isPowerPackActive = existingBoosts.some(
+                    (b) => b.boostType === "POWER_PACK" && b.boostStatus === "ACTIVE"
+                  );
+                  const isPowerPackScheduled = existingBoosts.some(
+                    (b) => b.boostType === "POWER_PACK" && b.boostStatus === "SCHEDULED"
+                  );
+                  const hasOtherIndividualActive = existingBoosts.some(
+                    (b) => b.boostType !== "POWER_PACK" && (b.boostStatus === "ACTIVE" || b.boostStatus === "SCHEDULED")
+                  );
+
+                  // Power pack rules:
+                  // - Blocked if individual boosts are active/scheduled
+                  // - Blocked if Power Pack already has a scheduled queue
+                  const isPowerPackBlocked =
+                    plan.boostType === "POWER_PACK" &&
+                    (hasOtherIndividualActive || isPowerPackScheduled);
+
+                  // Individual boost rules:
+                  // - Blocked if Power Pack is active/scheduled
+                  // - Blocked if THIS boost type already has a scheduled queue (max 1 active + 1 scheduled queue)
+                  const isIndividualBlocked =
+                    (isPowerPackActive || isPowerPackScheduled) || hasScheduledQueue;
+
+                  const isDisabled = isPowerPackBlocked || isIndividualBlocked;
+                  const isExtensionMode = isThisBoostActive && !hasScheduledQueue && !isDisabled;
+
                   // Get selected duration tier for this plan
                   const planTier = plan.pricingTiers?.find((t) => t.duration === selectedDuration);
                   const planFinalPrice = planTier?.finalPrice ?? plan.pricing?.[selectedDuration] ?? 0;
@@ -266,18 +312,66 @@ export default function BoostListingPage({ params }: PageProps) {
                   return (
                     <div
                       key={plan.boostType}
-                      onClick={() => setSelectedType(plan.boostType)}
-                      className={`relative flex cursor-pointer flex-col justify-between rounded-2xl border-2 p-5 transition-all duration-200 ${isSelected
-                        ? plan.boostType === "SPOTLIGHT"
-                          ? "border-amber-500 bg-amber-500/5 shadow-lg shadow-amber-500/10 dark:border-amber-400 dark:bg-amber-400/5"
-                          : plan.boostType === "PUSH_UP"
+                      onClick={() => {
+                        if (!isDisabled) {
+                          setSelectedType(plan.boostType);
+                        }
+                      }}
+                      className={`relative flex flex-col justify-between rounded-2xl border-2 p-5 transition-all duration-200 ${
+                        isDisabled
+                          ? "cursor-not-allowed border-slate-200 bg-slate-50/70 opacity-60 dark:border-slate-800 dark:bg-slate-900/40"
+                          : "cursor-pointer"
+                      } ${
+                        isSelected && !isDisabled
+                          ? plan.boostType === "SPOTLIGHT"
+                            ? "border-amber-500 bg-amber-500/5 shadow-lg shadow-amber-500/10 dark:border-amber-400 dark:bg-amber-400/5"
+                            : plan.boostType === "PUSH_UP"
                             ? "border-emerald-500 bg-emerald-500/5 shadow-lg shadow-emerald-500/10 dark:border-emerald-400 dark:bg-emerald-400/5"
                             : plan.boostType === "URGENT"
-                              ? "border-rose-500 bg-rose-500/5 shadow-lg shadow-rose-500/10 dark:border-rose-400 dark:bg-rose-400/5"
-                              : "border-purple-500 bg-purple-500/5 shadow-lg shadow-purple-500/10 dark:border-purple-400 dark:bg-purple-400/5"
-                        : "border-slate-200/90 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700"
-                        }`}
+                            ? "border-rose-500 bg-rose-500/5 shadow-lg shadow-rose-500/10 dark:border-rose-400 dark:bg-rose-400/5"
+                            : "border-purple-500 bg-purple-500/5 shadow-lg shadow-purple-500/10 dark:border-purple-400 dark:bg-purple-400/5"
+                          : !isDisabled
+                          ? "border-slate-200/90 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700"
+                          : ""
+                      }`}
                     >
+                      {/* Status Badges for Active / Extension / Conflict */}
+                      {hasScheduledQueue && (
+                        <div className="mb-2">
+                          <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                            <Clock className="h-3 w-3" /> Scheduled in Queue (Max Reached)
+                          </span>
+                        </div>
+                      )}
+                      {isExtensionMode && (
+                        <div className="mb-2">
+                          <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300">
+                            <CheckCircle2 className="h-3 w-3" /> Active — Click to Queue 2nd Round!
+                          </span>
+                        </div>
+                      )}
+                      {isPowerPackBlocked && !isThisBoostActive && (
+                        <div className="mb-2">
+                          <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:bg-amber-900/60 dark:text-amber-300">
+                            Cannot combine with active boosts
+                          </span>
+                        </div>
+                      )}
+                      {(isPowerPackActive || isPowerPackScheduled) && plan.boostType !== "POWER_PACK" && (
+                        <div className="mb-2">
+                          <span className="inline-flex items-center gap-1 rounded-md bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-purple-800 dark:bg-purple-900/60 dark:text-purple-300">
+                            Covered by Active Power Pack
+                          </span>
+                        </div>
+                      )}
+                      {!isDisabled && !isThisBoostActive && hasOtherIndividualActive && plan.boostType !== "POWER_PACK" && (
+                        <div className="mb-2">
+                          <span className="inline-flex items-center gap-1 rounded-md bg-sky-100 px-2 py-0.5 text-[10px] font-bold text-sky-800 dark:bg-sky-900/60 dark:text-sky-300">
+                            Available to combine with active boosts!
+                          </span>
+                        </div>
+                      )}
+
                       {/* Selection Checkmark & Badge */}
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -310,12 +404,13 @@ export default function BoostListingPage({ params }: PageProps) {
                         </div>
 
                         <div
-                          className={`flex h-5 w-5 items-center justify-center rounded-full border ${isSelected
-                            ? "border-emerald-500 bg-emerald-500 text-white"
-                            : "border-slate-300 dark:border-slate-600"
-                            }`}
+                          className={`flex h-5 w-5 items-center justify-center rounded-full border ${
+                            isSelected && !isDisabled
+                              ? "border-emerald-500 bg-emerald-500 text-white"
+                              : "border-slate-300 dark:border-slate-600"
+                          }`}
                         >
-                          {isSelected && <CheckCircle2 className="h-4 w-4" />}
+                          {isSelected && !isDisabled && <CheckCircle2 className="h-4 w-4" />}
                         </div>
                       </div>
 
@@ -546,6 +641,31 @@ export default function BoostListingPage({ params }: PageProps) {
                     {currentDays} Days
                   </span>
                 </div>
+
+                {/* Chained Extension Notice if extending active boost */}
+                {existingBoosts.some((b) => b.boostType === selectedType && b.boostStatus === "ACTIVE") && (
+                  <div className="rounded-xl border border-emerald-500/30 bg-emerald-50/90 p-3 text-xs dark:border-emerald-500/30 dark:bg-emerald-950/40">
+                    <div className="flex items-center gap-1.5 font-bold text-emerald-800 dark:text-emerald-300">
+                      <Clock className="h-3.5 w-3.5" />
+                      <span>Chained Extension Queue</span>
+                    </div>
+                    <p className="mt-1 text-[11px] text-emerald-700 dark:text-emerald-300">
+                      Auto-starts on{" "}
+                      <strong>
+                        {new Date(
+                          existingBoosts.find((b) => b.boostType === selectedType && b.boostStatus === "ACTIVE")!.expiresAt
+                        ).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </strong>{" "}
+                      (exact end date of your active period).
+                    </p>
+                  </div>
+                )}
 
                 <div className="flex justify-between">
                   <span className="text-slate-600 dark:text-slate-400">Base Price</span>
