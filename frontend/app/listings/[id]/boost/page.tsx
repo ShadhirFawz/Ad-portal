@@ -618,11 +618,49 @@ export default function BoostListingPage({ params }: PageProps) {
               </button>
 
               {/* Supported payment channels */}
-              <div className="mt-4 text-center">
-                <span className="text-[11px] text-slate-400">
-                  Visa, MasterCard, Amex, eZ Cash, FriMi, Genie, Bank Transfer
-                </span>
+              <div className="mt-5 flex flex-col items-center gap-2">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+                  Accepted Cards
+                </p>
+                <div className="flex items-center gap-3">
+                  {[
+                    { src: "/visa.svg", alt: "Visa", label: "Visa" },
+                    { src: "/mastercard.svg", alt: "Mastercard", label: "Mastercard" },
+                    { src: "/amex.svg", alt: "American Express", label: "Amex" },
+                  ].map(({ src, alt, label }, i) => (
+                    <div
+                      key={alt}
+                      title={alt}
+                      className="group relative flex flex-col items-center gap-1"
+                      style={{
+                        animation: `fadeSlideUp 0.4s ease both`,
+                        animationDelay: `${i * 80}ms`,
+                      }}
+                    >
+                      <div className="relative overflow-hidden rounded-lg shadow-md transition-all duration-300 ease-out hover:scale-110 hover:shadow-xl">
+                        {/* Shine sweep on hover */}
+                        <div className="pointer-events-none absolute inset-0 -skew-x-12 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent transition-transform duration-500 ease-in-out group-hover:translate-x-full" />
+                        <img
+                          src={src}
+                          alt={alt}
+                          width={56}
+                          height={36}
+                          className="block h-9 w-14 rounded-md object-cover"
+                        />
+                      </div>
+                      <span className="text-[9px] font-medium tracking-wide text-slate-500 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                        {label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
+              <style>{`
+                @keyframes fadeSlideUp {
+                  from { opacity: 0; transform: translateY(8px); }
+                  to   { opacity: 1; transform: translateY(0); }
+                }
+              `}</style>
             </div>
 
             {/* Satisfaction Guarantee */}
