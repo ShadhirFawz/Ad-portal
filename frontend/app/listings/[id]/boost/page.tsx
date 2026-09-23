@@ -272,7 +272,7 @@ export default function BoostListingPage({ params }: PageProps) {
                           ? "border-amber-500 bg-amber-500/5 shadow-lg shadow-amber-500/10 dark:border-amber-400 dark:bg-amber-400/5"
                           : plan.boostType === "PUSH_UP"
                             ? "border-emerald-500 bg-emerald-500/5 shadow-lg shadow-emerald-500/10 dark:border-emerald-400 dark:bg-emerald-400/5"
-                            : plan.boostType === "HOT_DEAL"
+                            : plan.boostType === "URGENT"
                               ? "border-rose-500 bg-rose-500/5 shadow-lg shadow-rose-500/10 dark:border-rose-400 dark:bg-rose-400/5"
                               : "border-purple-500 bg-purple-500/5 shadow-lg shadow-purple-500/10 dark:border-purple-400 dark:bg-purple-400/5"
                         : "border-slate-200/90 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700"
@@ -291,7 +291,7 @@ export default function BoostListingPage({ params }: PageProps) {
                               <ArrowUpCircle className="h-5 w-5" />
                             </div>
                           )}
-                          {plan.boostType === "HOT_DEAL" && (
+                          {plan.boostType === "URGENT" && (
                             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 dark:bg-rose-400/10 dark:text-rose-400">
                               <Flame className="h-5 w-5" />
                             </div>

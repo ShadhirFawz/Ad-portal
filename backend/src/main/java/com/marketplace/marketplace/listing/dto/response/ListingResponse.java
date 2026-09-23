@@ -96,7 +96,7 @@ public record ListingResponse(
 
         boolean isSpotlight,
 
-        boolean isHotDeal,
+        boolean isUrgent,
 
         boolean isPushedUp
 

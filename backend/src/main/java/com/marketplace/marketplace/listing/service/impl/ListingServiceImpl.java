@@ -1062,7 +1062,7 @@ public class ListingServiceImpl implements ListingService {
                                 hasActiveAuction,
                                 isBookmarked,
                                 listing.isSpotlight(),
-                                listing.isHotDeal(),
+                                listing.isUrgent(),
                                 listing.isPushedUp());
         }
 

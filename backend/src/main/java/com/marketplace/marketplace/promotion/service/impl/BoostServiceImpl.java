@@ -103,25 +103,25 @@ public class BoostServiceImpl implements BoostService {
                         pricingByType.getOrDefault(BoostType.PUSH_UP, Collections.emptyMap()),
                         tiersByType.getOrDefault(BoostType.PUSH_UP, Collections.emptyList())),
                 new BoostPlanResponse(
-                        BoostType.HOT_DEAL,
-                        "Hot Deal",
-                        "HOT DEAL",
-                        "Signal high urgency and great pricing with a vibrant flame badge and inclusion in the exclusive Hot Deals filter.",
+                        BoostType.URGENT,
+                        "Urgent Ad",
+                        "URGENT",
+                        "Highlight your ad with a distinctive red Urgent tag and border to attract immediate buyers and sell quickly.",
                         List.of(
-                                "Vibrant red/rose urgency badge",
-                                "Featured in the high-intent Hot Deals tab",
-                                "Encourages immediate buyer inquiries",
-                                "Pairs perfectly with discounts & quick sales"),
+                                "High-visibility Urgent red ribbon badge",
+                                "Stands out clearly in search & category feeds",
+                                "Signals immediate seller readiness",
+                                "Perfect for quick sales & immediate buyers"),
                         "rose",
-                        pricingByType.getOrDefault(BoostType.HOT_DEAL, Collections.emptyMap()),
-                        tiersByType.getOrDefault(BoostType.HOT_DEAL, Collections.emptyList())),
+                        pricingByType.getOrDefault(BoostType.URGENT, Collections.emptyMap()),
+                        tiersByType.getOrDefault(BoostType.URGENT, Collections.emptyList())),
                 new BoostPlanResponse(
                         BoostType.POWER_PACK,
                         "Power Pack (All-in-One)",
                         "POWER PACK",
-                        "Maximum visibility suite combining Spotlight placement, daily Push-Ups, and the Hot Deal badge at a bundled discount.",
+                        "Maximum visibility suite combining Spotlight placement, daily Push-Ups, and the Urgent badge at a bundled discount.",
                         List.of(
-                                "Includes Spotlight + Push Up + Hot Deal",
+                                "Includes Spotlight + Push Up + Urgent",
                                 "Exclusive gradient purple badge & frame",
                                 "Up to 10x higher buyer engagement",
                                 "Best value for high-value items"),
@@ -447,10 +447,10 @@ public class BoostServiceImpl implements BoostService {
                 listing.setPushedUp(true);
                 listing.setPushUpLastBumpedAt(now);
             }
-            case HOT_DEAL -> listing.setHotDeal(true);
+            case URGENT -> listing.setUrgent(true);
             case POWER_PACK -> {
                 listing.setSpotlight(true);
-                listing.setHotDeal(true);
+                listing.setUrgent(true);
                 listing.setPushedUp(true);
                 listing.setPushUpLastBumpedAt(now);
             }
@@ -460,15 +460,15 @@ public class BoostServiceImpl implements BoostService {
     private void recomputeListingBoostFlags(Listing listing, OffsetDateTime now) {
         List<AdBoost> active = adBoostRepository.findActiveByListingId(listing.getId(), now);
         boolean hasSpotlight = false;
-        boolean hasHotDeal = false;
+        boolean hasUrgent = false;
         boolean hasPushUp = false;
 
         for (AdBoost b : active) {
             if (b.getBoostType() == BoostType.SPOTLIGHT || b.getBoostType() == BoostType.POWER_PACK) {
                 hasSpotlight = true;
             }
-            if (b.getBoostType() == BoostType.HOT_DEAL || b.getBoostType() == BoostType.POWER_PACK) {
-                hasHotDeal = true;
+            if (b.getBoostType() == BoostType.URGENT || b.getBoostType() == BoostType.POWER_PACK) {
+                hasUrgent = true;
             }
             if (b.getBoostType() == BoostType.PUSH_UP || b.getBoostType() == BoostType.POWER_PACK) {
                 hasPushUp = true;
@@ -476,7 +476,7 @@ public class BoostServiceImpl implements BoostService {
         }
 
         listing.setSpotlight(hasSpotlight);
-        listing.setHotDeal(hasHotDeal);
+        listing.setUrgent(hasUrgent);
         listing.setPushedUp(hasPushUp);
         if (!hasPushUp) {
             listing.setPushUpLastBumpedAt(null);
