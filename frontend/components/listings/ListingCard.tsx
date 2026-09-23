@@ -314,8 +314,8 @@ export default function ListingCard({
         >
           <Bookmark
             className={`w-4 h-4 shrink-0 ${isBookmarked
-                ? "fill-slate-800 text-slate-800 dark:fill-slate-100 dark:text-slate-100"
-                : "text-slate-500 dark:text-slate-400"
+              ? "fill-slate-800 text-slate-800 dark:fill-slate-100 dark:text-slate-100"
+              : "text-slate-500 dark:text-slate-400"
               }`}
           />
           <span>{isBookmarked ? "Bookmarked" : "Bookmark"}</span>
@@ -616,14 +616,19 @@ export default function ListingCard({
 
   // Row Layout
   if (layout === "row") {
+    const rowCardTheme = isSpotlight
+      ? "border-amber-400/90 dark:border-amber-500/80 bg-amber-50 dark:bg-slate-900/90 shadow-md shadow-amber-500/10 hover:border-amber-500 hover:shadow-amber-500/20 ring-1 ring-amber-400/40"
+      : isHotDeal
+        ? "border-rose-400/90 dark:border-rose-500/80 bg-rose-50 dark:bg-slate-900/90 shadow-md shadow-rose-500/10 hover:border-rose-500 hover:shadow-rose-500/20 ring-1 ring-rose-400/40"
+        : isPushedUp
+          ? "border-emerald-400/90 dark:border-emerald-500/80 bg-emerald-50 dark:bg-slate-900/90 shadow-md shadow-emerald-500/10 hover:border-emerald-500 hover:shadow-emerald-500/20 ring-1 ring-emerald-400/40"
+          : "border-slate-200/80 bg-white hover:border-emerald-500/40 hover:shadow-md dark:border-slate-800 dark:bg-slate-900/90 dark:hover:border-emerald-500/30";
+
     return (
       <article
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className={`group relative flex flex-col overflow-hidden rounded-xl sm:rounded-2xl border transition-all duration-300 w-full ${isSpotlight
-            ? "border-amber-400/90 dark:border-amber-500/80 bg-gradient-to-r from-amber-500/[0.04] via-white to-transparent dark:from-amber-500/[0.07] dark:via-slate-900 dark:to-slate-900/90 shadow-md shadow-amber-500/10 hover:border-amber-500 hover:shadow-amber-500/15 ring-1 ring-amber-400/40"
-            : "border-slate-200/80 bg-white hover:border-emerald-500/40 hover:shadow-md dark:border-slate-800 dark:bg-slate-900/90 dark:hover:border-emerald-500/30"
-          } ${className}`}
+        className={`group relative flex flex-col overflow-hidden rounded-xl sm:rounded-2xl border transition-all duration-300 w-full ${rowCardTheme} ${className}`}
       >
         {/* Spotlight corner ribbon */}
         {listing.isSpotlight && <SpotlightBadge />}
@@ -728,10 +733,10 @@ export default function ListingCard({
                   {listing.status && listing.status !== "ACTIVE" && (
                     <span
                       className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${listing.status === "DRAFT"
-                          ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
-                          : listing.status === "SOLD"
-                            ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
-                            : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                        ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
+                        : listing.status === "SOLD"
+                          ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
+                          : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                         }`}
                     >
                       {listing.status}
@@ -772,8 +777,8 @@ export default function ListingCard({
                 <div className="flex items-baseline justify-between gap-2">
                   <span
                     className={`text-sm sm:text-base font-black ${isHotDeal
-                        ? "text-rose-600 dark:text-rose-400"
-                        : "text-emerald-600 dark:text-emerald-400"
+                      ? "text-rose-600 dark:text-rose-400"
+                      : "text-emerald-600 dark:text-emerald-400"
                       }`}
                   >
                     {formatPrice()}
@@ -824,14 +829,19 @@ export default function ListingCard({
   }
 
   // Grid Layout
+  const gridCardTheme = isSpotlight
+    ? "border-amber-400/90 dark:border-amber-500/80 bg-amber-50 dark:bg-slate-900/90 shadow-md shadow-amber-500/10 hover:border-amber-500 hover:shadow-amber-500/20 ring-1 ring-amber-400/40"
+    : isHotDeal
+      ? "border-rose-400/90 dark:border-rose-500/80 bg-rose-50 dark:bg-slate-900/90 shadow-md shadow-rose-500/10 hover:border-rose-500 hover:shadow-rose-500/20 ring-1 ring-rose-400/40"
+      : isPushedUp
+        ? "border-emerald-400/90 dark:border-emerald-500/80 bg-emerald-50 dark:bg-slate-900/90 shadow-md shadow-emerald-500/10 hover:border-emerald-500 hover:shadow-emerald-500/20 ring-1 ring-emerald-400/40"
+        : "border-slate-200/80 bg-white hover:border-emerald-500/40 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900/90 dark:hover:border-emerald-500/30";
+
   return (
     <article
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={`group relative flex flex-col overflow-hidden rounded-xl sm:rounded-2xl border transition-all duration-300 hover:-translate-y-0.5 h-full w-full ${isSpotlight
-          ? "border-amber-400/90 dark:border-amber-500/80 bg-gradient-to-b from-amber-500/[0.04] via-white to-amber-500/[0.01] dark:from-amber-500/[0.07] dark:via-slate-900/95 dark:to-slate-900 shadow-md shadow-amber-500/10 hover:border-amber-500 hover:shadow-amber-500/15 ring-1 ring-amber-400/40"
-          : "border-slate-200/80 bg-white hover:border-emerald-500/40 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900/90 dark:hover:border-emerald-500/30"
-        } ${className}`}
+      className={`group relative flex flex-col overflow-hidden rounded-xl sm:rounded-2xl border transition-all duration-300 hover:-translate-y-0.5 h-full w-full ${gridCardTheme} ${className}`}
     >
       {/* Ellipsis Menu */}
       <div
@@ -932,8 +942,8 @@ export default function ListingCard({
             <div className="flex items-baseline justify-between gap-1.5">
               <span
                 className={`text-base sm:text-lg font-black truncate ${isHotDeal
-                    ? "text-rose-600 dark:text-rose-400"
-                    : "text-emerald-600 dark:text-emerald-400"
+                  ? "text-rose-600 dark:text-rose-400"
+                  : "text-emerald-600 dark:text-emerald-400"
                   }`}
               >
                 {formatPrice()}
@@ -947,10 +957,10 @@ export default function ListingCard({
               {listing.status && listing.status !== "ACTIVE" && (
                 <span
                   className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${listing.status === "DRAFT"
-                      ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
-                      : listing.status === "SOLD"
-                        ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
-                        : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                    ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
+                    : listing.status === "SOLD"
+                      ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
+                      : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                     }`}
                 >
                   {listing.status}
