@@ -18,6 +18,7 @@ import {
   ArrowRight,
   Flame,
   Check,
+  ArrowUpCircle,
 } from "lucide-react";
 import { toggleBookmarkListing } from "@/lib/api/listings";
 import { useAuth } from "@/providers/AuthProvider";
@@ -315,8 +316,8 @@ export default function ListingCard({
         >
           <Bookmark
             className={`w-4 h-4 shrink-0 ${isBookmarked
-                ? "fill-slate-800 text-slate-800 dark:fill-slate-100 dark:text-slate-100"
-                : "text-slate-500 dark:text-slate-400"
+              ? "fill-slate-800 text-slate-800 dark:fill-slate-100 dark:text-slate-100"
+              : "text-slate-500 dark:text-slate-400"
               }`}
           />
           <span>{isBookmarked ? "Bookmarked" : "Bookmark"}</span>
@@ -734,10 +735,10 @@ export default function ListingCard({
                   {listing.status && listing.status !== "ACTIVE" && (
                     <span
                       className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${listing.status === "DRAFT"
-                          ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
-                          : listing.status === "SOLD"
-                            ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
-                            : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                        ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
+                        : listing.status === "SOLD"
+                          ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
+                          : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                         }`}
                     >
                       {listing.status}
@@ -778,8 +779,8 @@ export default function ListingCard({
                 <div className="flex items-center justify-between gap-2">
                   <span
                     className={`text-sm sm:text-base font-black ${isUrgent
-                        ? "text-rose-600 dark:text-rose-400"
-                        : "text-emerald-600 dark:text-emerald-400"
+                      ? "text-rose-600 dark:text-rose-400"
+                      : "text-emerald-600 dark:text-emerald-400"
                       }`}
                   >
                     {formatPrice()}
@@ -800,10 +801,7 @@ export default function ListingCard({
                   {/* Freshness Beacon for PushUp */}
                   {isPushedUp ? (
                     <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                      </span>
+                      <ArrowUpCircle className="w-4" />
                       <span>Bumped</span>
                     </span>
                   ) : timeAgoStr ? (
@@ -938,8 +936,8 @@ export default function ListingCard({
             <div className="flex items-center justify-between gap-2">
               <span
                 className={`text-base sm:text-lg font-black truncate ${isUrgent
-                    ? "text-rose-600 dark:text-rose-400"
-                    : "text-emerald-600 dark:text-emerald-400"
+                  ? "text-rose-600 dark:text-rose-400"
+                  : "text-emerald-600 dark:text-emerald-400"
                   }`}
               >
                 {formatPrice()}
@@ -948,10 +946,10 @@ export default function ListingCard({
                 {listing.status && listing.status !== "ACTIVE" && (
                   <span
                     className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${listing.status === "DRAFT"
-                        ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
-                        : listing.status === "SOLD"
-                          ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
-                          : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                      ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
+                      : listing.status === "SOLD"
+                        ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
+                        : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                       }`}
                   >
                     {listing.status}

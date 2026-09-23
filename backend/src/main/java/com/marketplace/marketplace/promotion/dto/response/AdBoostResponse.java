@@ -26,7 +26,12 @@ public record AdBoostResponse(
         BigDecimal amount,
         String currency,
         PaymentStatus paymentStatus,
-        String paymentMethod
+        String paymentMethod,
+        String listingImageUrl,
+        BigDecimal listingPrice,
+        String listingCurrency,
+        String listingCategory,
+        String listingLocation
 ) {
 }
 
