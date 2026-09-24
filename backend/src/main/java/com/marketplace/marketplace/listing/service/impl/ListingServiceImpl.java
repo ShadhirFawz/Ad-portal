@@ -1060,7 +1060,10 @@ public class ListingServiceImpl implements ListingService {
                                 sellerPhoneNumber,
                                 sellerWhatsappNumber,
                                 hasActiveAuction,
-                                isBookmarked);
+                                isBookmarked,
+                                listing.isSpotlight(),
+                                listing.isUrgent(),
+                                listing.isPushedUp());
         }
 
         private String generateUniqueSlug(String title, UUID listingId) {
