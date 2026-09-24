@@ -9,10 +9,6 @@ import {
   Flame,
   TrendingUp,
   Clock,
-  Calendar,
-  CheckCircle2,
-  AlertCircle,
-  XCircle,
   ExternalLink,
   Receipt,
   Zap,
@@ -21,9 +17,10 @@ import {
   MapPin,
   Copy,
   Check,
-  Sparkles,
   ChevronRight,
   Layers,
+  Radio,
+  CalendarClock,
 } from "lucide-react";
 import type { AdBoost, BoostType } from "@/types/boost";
 import type { ListingSubscriptionGroup } from "./ListingPromotionsModal";
@@ -51,55 +48,45 @@ export default function SubscriptionCard({
           title: "Power Pack",
           subtitle: "Spotlight + Urgent + Push Up VIP Boost",
           icon: Crown,
-          accentBg: "bg-purple-500/10 dark:bg-purple-400/10",
-          accentText: "text-purple-600 dark:text-purple-400",
-          badgeBg: "bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30",
-          bannerGradient: "from-purple-600 via-indigo-600 to-purple-800",
-          glow: "hover:shadow-purple-500/15",
+          iconColor: "text-purple-600 dark:text-purple-400",
+          badgeBg:
+            "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60",
         };
       case "SPOTLIGHT":
         return {
           title: "Spotlight",
           subtitle: "Pinned to top of search results",
           icon: Star,
-          accentBg: "bg-amber-500/10 dark:bg-amber-400/10",
-          accentText: "text-amber-600 dark:text-amber-400",
-          badgeBg: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
-          bannerGradient: "from-amber-500 via-yellow-500 to-amber-600",
-          glow: "hover:shadow-amber-500/15",
+          iconColor: "text-amber-500 dark:text-amber-400",
+          badgeBg:
+            "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60",
         };
       case "URGENT":
         return {
           title: "Urgent",
           subtitle: "High-priority red badge & ribbon",
           icon: Flame,
-          accentBg: "bg-rose-500/10 dark:bg-rose-400/10",
-          accentText: "text-rose-600 dark:text-rose-400",
-          badgeBg: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30",
-          bannerGradient: "from-rose-600 via-red-600 to-rose-700",
-          glow: "hover:shadow-rose-500/15",
+          iconColor: "text-rose-600 dark:text-rose-400",
+          badgeBg:
+            "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60",
         };
       case "PUSH_UP":
         return {
           title: "Push Up",
           subtitle: "Refreshed to top of search feeds",
           icon: TrendingUp,
-          accentBg: "bg-teal-500/10 dark:bg-teal-400/10",
-          accentText: "text-teal-600 dark:text-teal-400",
-          badgeBg: "bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30",
-          bannerGradient: "from-teal-600 via-emerald-600 to-teal-700",
-          glow: "hover:shadow-teal-500/15",
+          iconColor: "text-teal-600 dark:text-teal-400",
+          badgeBg:
+            "bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800/60",
         };
       default:
         return {
           title: type,
           subtitle: "Promotional Boost",
           icon: Zap,
-          accentBg: "bg-slate-500/10",
-          accentText: "text-slate-600",
-          badgeBg: "bg-slate-500/15 text-slate-700 border-slate-500/30",
-          bannerGradient: "from-slate-700 to-slate-900",
-          glow: "",
+          iconColor: "text-slate-500 dark:text-slate-400",
+          badgeBg:
+            "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700",
         };
     }
   };
@@ -158,51 +145,7 @@ export default function SubscriptionCard({
   const TypeIcon = typeConfig.icon;
 
   return (
-    <div
-      className={`group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900/90 ${typeConfig.glow}`}
-    >
-      {/* Top Banner */}
-      {hasMultiplePromotions ? (
-        /* Multi-Promotion Banner */
-        <div className="flex items-center justify-between bg-gradient-to-r from-emerald-700 via-teal-700 to-indigo-800 px-5 py-2.5 text-white">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 shrink-0 text-amber-300" />
-            <span className="text-xs font-black uppercase tracking-wider">
-              {group.promotions.length} Active Promotions
-            </span>
-          </div>
-
-          <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-bold">
-            Multi-Boosted
-          </span>
-        </div>
-      ) : (
-        /* Single Promotion Banner */
-        <div
-          className={`flex items-center justify-between bg-gradient-to-r ${typeConfig.bannerGradient} px-5 py-2.5 text-white`}
-        >
-          <div className="flex items-center gap-2">
-            <TypeIcon className="h-4 w-4 shrink-0" />
-            <span className="text-xs font-black uppercase tracking-wider">
-              {typeConfig.title}
-            </span>
-            <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold">
-              {nearestPromotion.durationDays} Days
-            </span>
-          </div>
-
-          {isCurrentlyActive ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/90 px-2.5 py-0.5 text-[11px] font-bold text-white shadow-sm">
-              <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" /> Live Active
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/90 px-2.5 py-0.5 text-[11px] font-bold text-white shadow-sm">
-              <Clock className="h-3 w-3" /> Scheduled Queue
-            </span>
-          )}
-        </div>
-      )}
-
+    <div className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900/90">
       <div className="flex-1 p-5">
         {/* Listing Visual Header (Photo + Price + Meta) */}
         <div className="flex gap-4">
@@ -269,41 +212,73 @@ export default function SubscriptionCard({
           </div>
         </div>
 
-        {/* Promotion Badges row if Multi-Promotions exist */}
-        {hasMultiplePromotions && (
-          <div className="mt-4">
-            <div className="flex flex-wrap items-center gap-1.5">
+        {/* ── Promotion badge row ── */}
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {hasMultiplePromotions ? (
+            <>
               {group.promotions.map((promo) => {
                 const pConfig = getBoostTypeDetails(promo.boostType);
                 const PIcon = pConfig.icon;
                 return (
                   <span
                     key={promo.id}
-                    className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] font-bold ${pConfig.badgeBg}`}
+                    className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-semibold ${pConfig.badgeBg}`}
                   >
-                    <PIcon className="h-3 w-3" />
+                    <PIcon className={`h-3.5 w-3.5 shrink-0 ${pConfig.iconColor}`} />
                     <span>{pConfig.title}</span>
-                    <span className="opacity-70">({promo.durationDays}d)</span>
+                    <span className="opacity-60 font-normal">· {promo.durationDays}d</span>
                   </span>
                 );
               })}
-            </div>
-
-            {/* Modal Trigger Button for Multi-Promotions */}
-            {onOpenPromotionsModal && (
-              <button
-                type="button"
-                onClick={() => onOpenPromotionsModal(group)}
-                className="mt-2.5 flex w-full items-center justify-between rounded-xl bg-slate-100 px-3.5 py-2 text-xs font-bold text-slate-700 transition-all hover:bg-emerald-50 hover:text-emerald-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-400"
-              >
-                <span className="flex items-center gap-1.5">
-                  <Layers className="h-3.5 w-3.5 text-emerald-500" />
-                  View All {group.promotions.length} Promotion Timelines
+              {isCurrentlyActive ? (
+                <span className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
+                  <Radio className="h-3.5 w-3.5 animate-pulse" />
+                  Live
                 </span>
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            )}
-          </div>
+              ) : (
+                <span className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-sky-200 dark:border-sky-800/50 bg-sky-50 dark:bg-sky-950/40 px-2.5 py-1 text-[11px] font-semibold text-sky-700 dark:text-sky-300">
+                  <CalendarClock className="h-3.5 w-3.5" />
+                  Scheduled
+                </span>
+              )}
+            </>
+          ) : (
+            <>
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-semibold ${typeConfig.badgeBg}`}
+              >
+                <TypeIcon className={`h-3.5 w-3.5 shrink-0 ${typeConfig.iconColor}`} />
+                <span>{typeConfig.title}</span>
+                <span className="opacity-60 font-normal">· {nearestPromotion.durationDays}d</span>
+              </span>
+              {isCurrentlyActive ? (
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
+                  <Radio className="h-3.5 w-3.5 animate-pulse" />
+                  Live Active
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-sky-200 dark:border-sky-800/50 bg-sky-50 dark:bg-sky-950/40 px-2.5 py-1 text-[11px] font-semibold text-sky-700 dark:text-sky-300">
+                  <CalendarClock className="h-3.5 w-3.5" />
+                  Scheduled
+                </span>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* View All button when multi */}
+        {hasMultiplePromotions && onOpenPromotionsModal && (
+          <button
+            type="button"
+            onClick={() => onOpenPromotionsModal(group)}
+            className="mt-2.5 flex w-full items-center justify-between rounded-xl bg-slate-100 px-3.5 py-2 text-xs font-bold text-slate-700 transition-all hover:bg-emerald-50 hover:text-emerald-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-400"
+          >
+            <span className="flex items-center gap-1.5">
+              <Layers className="h-3.5 w-3.5 text-emerald-500" />
+              View All {group.promotions.length} Promotion Timelines
+            </span>
+            <ChevronRight className="h-4 w-4" />
+          </button>
         )}
 
         {/* Schedule & Due Date Progress Section */}
