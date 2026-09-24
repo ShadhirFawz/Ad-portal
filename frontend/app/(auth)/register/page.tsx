@@ -1,12 +1,12 @@
 "use client";
 
-import { FormEvent, useState, Suspense } from "react";
+import { FormEvent, useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
 import Image from "next/image";
-import { UserPlus, AlertTriangle, Eye, EyeOff, HelpCircle } from "lucide-react";
+import { AlertTriangle, Eye, EyeOff, HelpCircle } from "lucide-react";
 import { validateRegisterForm, RegisterFormData } from "@/lib/validation/authValidation";
 import { getPasswordStrength } from "@/lib/validation/passwordStrength";
 import { getSafeRedirectUrl } from "@/lib/utils/redirect";
@@ -16,7 +16,7 @@ function RegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectParam = searchParams.get("redirect") || searchParams.get("returnUrl");
-  const { signUp, loginWithGoogle } = useAuth();
+  const { user, loading, signUp, loginWithGoogle } = useAuth();
   const { error: toastError } = useToast();
 
   const [firstName, setFirstName] = useState("");
@@ -29,6 +29,12 @@ function RegisterContent() {
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace("/");
+    }
+  }, [loading, user, router]);
 
   const strength = getPasswordStrength(password);
 
@@ -66,6 +72,17 @@ function RegisterContent() {
       setSubmitting(false);
     }
   };
+
+  if (loading || user) {
+    return (
+      <main className="flex-1 flex items-center justify-center py-20">
+        <div className="flex items-center gap-3 text-slate-500 font-medium">
+          <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          Redirecting...
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="flex-1 flex items-center justify-center px-4 py-8">
