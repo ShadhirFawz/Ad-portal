@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, Suspense, FormEvent } from "react";
+import { useEffect, useRef, useState, useCallback, Suspense, FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -11,6 +11,11 @@ import { getSafeRedirectUrl } from "@/lib/utils/redirect";
 import { useToast } from "@/hooks/useToast";
 import type { Listing } from "@/types/listing";
 import ListingCard from "@/components/listings/ListingCard";
+import {
+  uploadProfileImage,
+  registerProfileImage,
+  deleteProfileImage,
+} from "@/services/profile-image-service";
 import {
   ExternalLink,
   Edit3,
@@ -31,8 +36,15 @@ import {
   CheckCircle2,
   XCircle,
   Loader2,
+  Camera,
+  Eye,
+  Trash2,
+  Image as ImageIcon,
+  UploadCloud,
+  X as XIcon,
 } from "lucide-react";
 import WhatsAppIcon from "@/components/common/WhatsAppIcon";
+import { useToast as _useToast } from "@/hooks/useToast";
 
 const PAGE_SIZE = 8;
 
@@ -62,6 +74,14 @@ function ProfileContent() {
   const [usernameSaving, setUsernameSaving] = useState(false);
   const [checkingUsername, setCheckingUsername] = useState(false);
   const [usernameAvailability, setUsernameAvailability] = useState<UsernameAvailabilityResult | null>(null);
+
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+
+  const [openMenu, setOpenMenu] = useState<"avatar" | "cover" | null>(null);
+  const [imageUploading, setImageUploading] = useState<"avatar" | "cover" | null>(null);
+  const [imageDeleting, setImageDeleting] = useState<"avatar" | "cover" | null>(null);
+  const [viewerImage, setViewerImage] = useState<{ url: string; label: string } | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -181,6 +201,85 @@ function ProfileContent() {
     } finally {
       setUsernameSaving(false);
     }
+  };
+
+  useEffect(() => {
+    if (!openMenu) return;
+    function close() {
+      setOpenMenu(null);
+    }
+    document.addEventListener("click", close);
+    return () => document.removeEventListener("click", close);
+  }, [openMenu]);
+
+  const handleImagePick = async (
+    kind: "avatar" | "cover",
+    file: File
+  ) => {
+    if (!user || !accessToken) return;
+
+    // Validate
+    const allowed = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowed.includes(file.type)) {
+      toastError("Invalid File", "Only JPEG, PNG and WebP images are supported.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toastError("File Too Large", "Image must be 5 MB or smaller.");
+      return;
+    }
+
+    setImageUploading(kind);
+    try {
+      const storagePath = await uploadProfileImage(user.id, file, kind);
+      await registerProfileImage(accessToken, kind, {
+        storagePath,
+        fileName: file.name,
+        mimeType: file.type,
+        fileSize: file.size,
+      });
+      await syncProfile();
+      toastSuccess(
+        kind === "avatar" ? "Avatar Updated" : "Cover Updated",
+        "Your photo has been saved."
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Upload failed.";
+      toastError("Upload Failed", msg);
+    } finally {
+      setImageUploading(null);
+    }
+  };
+
+  const handleImageRemove = async (kind: "avatar" | "cover") => {
+    if (!accessToken) return;
+    setImageDeleting(kind);
+    try {
+      await deleteProfileImage(accessToken, kind);
+      await syncProfile();
+      toastSuccess(
+        kind === "avatar" ? "Avatar Removed" : "Cover Removed",
+        "The photo has been removed from your profile."
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Remove failed.";
+      toastError("Remove Failed", msg);
+    } finally {
+      setImageDeleting(null);
+      setOpenMenu(null);
+    }
+  };
+
+  const onAvatarInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (file) handleImagePick("avatar", file);
+  };
+
+  const onCoverInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (file) handleImagePick("cover", file);
   };
 
   const fetchMyListings = useCallback(
@@ -391,40 +490,194 @@ function ProfileContent() {
       {/* Cover Photo Section */}
       <div className="glass-panel overflow-hidden">
         {/* Cover Photo Banner */}
-        {user.coverPhotoUrl ? (
-          <div className="h-32 sm:h-48 relative overflow-hidden">
+                {/* Hidden file inputs */}
+        <input
+          ref={coverInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={onCoverInputChange}
+        />
+        <input
+          ref={avatarInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={onAvatarInputChange}
+        />
+
+        {/* Cover Photo Banner — hover reveals blur overlay + menu */}
+        <div className="relative h-32 sm:h-48 overflow-hidden group/cover">
+          {user.coverPhotoUrl ? (
             <Image
               src={user.coverPhotoUrl}
               alt="Cover photo"
               width={900}
               height={200}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transition-transform duration-500 group-hover/cover:scale-[1.02]"
             />
+          ) : (
+            <div className="h-full w-full bg-linear-to-r from-emerald-600 via-teal-600 to-indigo-700" />
+          )}
+
+          {/* Hover overlay */}
+          <div className="absolute inset-0 backdrop-blur-[2px] bg-slate-950/35 opacity-0 group-hover/cover:opacity-100 transition-opacity flex items-center justify-center">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpenMenu(openMenu === "cover" ? null : "cover");
+              }}
+              className="px-3.5 py-2 rounded-xl bg-white/95 hover:bg-white text-slate-900 text-xs font-bold shadow-md flex items-center gap-1.5"
+            >
+              <Camera className="w-3.5 h-3.5" />
+              <span>Edit Cover</span>
+            </button>
           </div>
-        ) : (
-          <div className="h-32 sm:h-48 bg-linear-to-r from-emerald-600 via-teal-600 to-indigo-700" />
-        )}
+
+          {/* Uploading spinner */}
+          {imageUploading === "cover" && (
+            <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center z-20">
+              <div className="flex items-center gap-2 text-white text-xs font-semibold">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Uploading cover…
+              </div>
+            </div>
+          )}
+
+          {/* Popup menu */}
+          {openMenu === "cover" && (
+            <div
+              className="absolute right-3 top-3 z-30 min-w-[160px] rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setOpenMenu(null);
+                  coverInputRef.current?.click();
+                }}
+                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60"
+              >
+                <Camera className="w-4 h-4 text-slate-500" />
+                Change cover
+              </button>
+
+              {user.coverPhotoUrl && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpenMenu(null);
+                    setViewerImage({ url: user.coverPhotoUrl!, label: "Cover Photo" });
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60"
+                >
+                  <Eye className="w-4 h-4 text-slate-500" />
+                  View cover
+                </button>
+              )}
+
+              {user.coverPhotoUrl && (
+                <button
+                  type="button"
+                  disabled={imageDeleting === "cover"}
+                  onClick={() => handleImageRemove("cover")}
+                  className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 disabled:opacity-60"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  {imageDeleting === "cover" ? "Removing…" : "Remove cover"}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Profile Card Body */}
         <div className="p-6 sm:p-8 relative pt-0">
 
           {/* Avatar Badge Overlapping Banner */}
           <div className="-mt-16 sm:-mt-20 mb-4 flex items-end justify-between flex-wrap gap-4">
-            {user.avatarUrl ? (
+            {/* Avatar with hover overlay + popup menu */}
+            <div className="relative group/avatar">
               <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl bg-slate-100 dark:bg-slate-800 text-white font-bold text-4xl sm:text-5xl flex items-center justify-center border-4 border-white dark:border-[#0b0f19] shadow-xl overflow-hidden relative">
-                <Image
-                  src={user.avatarUrl}
-                  alt="Profile picture"
-                  width={128}
-                  height={128}
-                  className="w-full h-full object-contain"
-                />
+                {user.avatarUrl ? (
+                  <Image
+                    src={user.avatarUrl}
+                    alt="Profile picture"
+                    width={128}
+                    height={128}
+                    className="w-full h-full object-contain"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-slate-900 flex items-center justify-center">
+                    {user.firstName[0]?.toUpperCase()}
+                  </div>
+                )}
+
+                {/* Hover overlay */}
+                <div className="absolute inset-0 backdrop-blur-[2px] bg-slate-950/40 opacity-0 group-hover/avatar:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenMenu(openMenu === "avatar" ? null : "avatar");
+                  }}
+                >
+                  <Camera className="w-6 h-6 text-white" />
+                </div>
+
+                {/* Uploading spinner */}
+                {imageUploading === "avatar" && (
+                  <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center z-20">
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl bg-slate-900 text-white font-bold text-4xl sm:text-5xl flex items-center justify-center border-4 border-white dark:border-[#0b0f19] shadow-xl">
-                {user.firstName[0]?.toUpperCase()}
-              </div>
-            )}
+
+              {/* Popup menu */}
+              {openMenu === "avatar" && (
+                <div
+                  className="absolute left-0 top-full mt-2 z-30 min-w-[160px] rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl overflow-hidden"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpenMenu(null);
+                      avatarInputRef.current?.click();
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60"
+                  >
+                    <Camera className="w-4 h-4 text-slate-500" />
+                    Change photo
+                  </button>
+
+                  {user.avatarUrl && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOpenMenu(null);
+                        setViewerImage({ url: user.avatarUrl!, label: "Profile Photo" });
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60"
+                    >
+                      <Eye className="w-4 h-4 text-slate-500" />
+                      View photo
+                    </button>
+                  )}
+
+                  {user.avatarUrl && (
+                    <button
+                      type="button"
+                      disabled={imageDeleting === "avatar"}
+                      onClick={() => handleImageRemove("avatar")}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 disabled:opacity-60"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      {imageDeleting === "avatar" ? "Removing…" : "Remove photo"}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
 
             <span className="badge-emerald px-3 py-1 text-sm">
               {user.role === "ADMIN" ? "Admin" : "Member"}
@@ -835,7 +1088,44 @@ function ProfileContent() {
           </div>
         )}
       </section>
+      {/* Full-screen image viewer */}
+      {viewerImage && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-150"
+          onClick={() => setViewerImage(null)}
+        >
+          <div
+            className="relative max-w-3xl w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-3 text-white">
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <ImageIcon className="w-4 h-4" />
+                <span>{viewerImage.label}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setViewerImage(null)}
+                className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+                aria-label="Close viewer"
+              >
+                <XIcon className="w-5 h-5" />
+              </button>
+            </div>
 
+            <div className="rounded-2xl overflow-hidden border border-white/10 bg-slate-900">
+              <Image
+                src={viewerImage.url}
+                alt={viewerImage.label}
+                width={1200}
+                height={800}
+                className="w-full h-auto max-h-[80vh] object-contain"
+                unoptimized
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
