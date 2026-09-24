@@ -1,12 +1,12 @@
 "use client";
 
-import { FormEvent, useState, Suspense } from "react";
+import { FormEvent, useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
 import Image from "next/image";
-import { Lock, AlertTriangle, Eye, EyeOff } from "lucide-react";
+import { AlertTriangle, Eye, EyeOff } from "lucide-react";
 import { validateLoginForm } from "@/lib/validation/authValidation";
 import { getSafeRedirectUrl } from "@/lib/utils/redirect";
 import GoogleIcon from "@/components/common/GoogleIcon";
@@ -15,7 +15,7 @@ function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectParam = searchParams.get("redirect") || searchParams.get("returnUrl");
-  const { login, loginWithGoogle } = useAuth();
+  const { user, loading, login, loginWithGoogle } = useAuth();
   const { error: toastError } = useToast();
 
   const [email, setEmail] = useState("");
@@ -25,6 +25,12 @@ function LoginContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace("/");
+    }
+  }, [loading, user, router]);
 
   const fieldClass = (key: string) =>
     `w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 placeholder:text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all ${fieldErrors[key] ? "border-rose-500 focus:border-rose-500 focus:ring-rose-500/20" : ""}`;
@@ -48,6 +54,17 @@ function LoginContent() {
       setSubmitting(false);
     }
   };
+
+  if (loading || user) {
+    return (
+      <main className="flex-1 flex items-center justify-center py-20">
+        <div className="flex items-center gap-3 text-slate-500 font-medium">
+          <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          Redirecting...
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="flex-1 flex items-center justify-center px-4 py-8">
