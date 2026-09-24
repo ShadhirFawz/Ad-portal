@@ -232,8 +232,7 @@ export default function SubscriptionCard({
               })}
               {isCurrentlyActive ? (
                 <span className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
-                  <Radio className="h-3.5 w-3.5 animate-pulse" />
-                  Live
+                  Active
                 </span>
               ) : (
                 <span className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-sky-200 dark:border-sky-800/50 bg-sky-50 dark:bg-sky-950/40 px-2.5 py-1 text-[11px] font-semibold text-sky-700 dark:text-sky-300">
@@ -253,8 +252,7 @@ export default function SubscriptionCard({
               </span>
               {isCurrentlyActive ? (
                 <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
-                  <Radio className="h-3.5 w-3.5 animate-pulse" />
-                  Live Active
+                  Active
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1.5 rounded-lg border border-sky-200 dark:border-sky-800/50 bg-sky-50 dark:bg-sky-950/40 px-2.5 py-1 text-[11px] font-semibold text-sky-700 dark:text-sky-300">
@@ -384,7 +382,6 @@ export default function SubscriptionCard({
           }
           className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm transition-all hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
         >
-          <Receipt className="h-3.5 w-3.5 text-slate-500" />
           {hasMultiplePromotions ? "All Receipts" : "Receipt Details"}
         </button>
 

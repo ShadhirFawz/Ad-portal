@@ -20,8 +20,13 @@ import {
   Download,
   Filter,
   ShieldCheck,
+  Printer,
+  Loader2,
+  FileText,
 } from "lucide-react";
 import type { AdBoost, BoostType } from "@/types/boost";
+import { useAuth } from "@/providers/AuthProvider";
+import { downloadInvoicePdf, printInvoicePdf } from "@/services/invoice-service";
 
 interface PurchaseHistoryModalProps {
   isOpen: boolean;
@@ -36,12 +41,52 @@ export default function PurchaseHistoryModal({
   boosts,
   selectedOrderId,
 }: PurchaseHistoryModalProps) {
-  const [searchQuery, setSearchQuery] = useState("");
+  const { user } = useAuth();
+  const [searchQuery, setSearchQuery] = useState(selectedOrderId || "");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "COMPLETED" | "PENDING" | "CANCELLED">("ALL");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(selectedOrderId || null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [printingId, setPrintingId] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      if (selectedOrderId) {
+        setSearchQuery(selectedOrderId);
+        setExpandedOrderId(selectedOrderId);
+        setStatusFilter("ALL");
+      } else {
+        setSearchQuery("");
+        setExpandedOrderId(null);
+      }
+    }
+  }, [isOpen, selectedOrderId]);
 
   if (!isOpen) return null;
+
+  const handleDownloadInvoice = async (e: React.MouseEvent, boost: AdBoost) => {
+    e.stopPropagation();
+    try {
+      setDownloadingId(boost.id);
+      await downloadInvoicePdf(boost, user);
+    } catch (err) {
+      console.error("Failed to download PDF invoice:", err);
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const handlePrintInvoice = async (e: React.MouseEvent, boost: AdBoost) => {
+    e.stopPropagation();
+    try {
+      setPrintingId(boost.id);
+      await printInvoicePdf(boost, user);
+    } catch (err) {
+      console.error("Failed to print invoice:", err);
+    } finally {
+      setPrintingId(null);
+    }
+  };
 
   const copyToClipboard = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -51,11 +96,14 @@ export default function PurchaseHistoryModal({
 
   // Filter transactions
   const filteredBoosts = boosts.filter((b) => {
+    const q = searchQuery.trim().toLowerCase();
     const matchesSearch =
-      (b.orderId && b.orderId.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (b.listingTitle && b.listingTitle.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (b.payherePaymentId && b.payherePaymentId.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (b.boostType && b.boostType.toLowerCase().includes(searchQuery.toLowerCase()));
+      !q ||
+      (b.orderId && b.orderId.toLowerCase().includes(q)) ||
+      (b.id && b.id.toLowerCase().includes(q)) ||
+      (b.listingTitle && b.listingTitle.toLowerCase().includes(q)) ||
+      (b.payherePaymentId && b.payherePaymentId.toLowerCase().includes(q)) ||
+      (b.boostType && b.boostType.toLowerCase().includes(q));
 
     if (!matchesSearch) return false;
 
@@ -71,6 +119,7 @@ export default function PurchaseHistoryModal({
     }
     return true;
   });
+
 
   // Calculate totals
   const completedBoosts = boosts.filter(
@@ -151,7 +200,7 @@ export default function PurchaseHistoryModal({
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Detailed transaction records, receipts, and order summaries for ad promotions
+                Detailed transaction records, print-standard PDF invoices, and order summaries
               </p>
             </div>
           </div>
@@ -189,7 +238,7 @@ export default function PurchaseHistoryModal({
             </span>
             <div className="mt-1 flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200">
               <ShieldCheck className="h-4 w-4 text-emerald-500" />
-              <span>Verified PayHere</span>
+              <span>Verified PayHere & Supabase Safe</span>
             </div>
           </div>
         </div>
@@ -204,8 +253,21 @@ export default function PurchaseHistoryModal({
               placeholder="Search by order ID, listing title, or payment ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-2 text-xs text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+              className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-9 py-2 text-xs text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:border-slate-800 dark:bg-slate-950 dark:text-white"
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery("");
+                  setExpandedOrderId(null);
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                title="Clear search"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
 
           {/* Status Filter Pills */}
@@ -221,11 +283,10 @@ export default function PurchaseHistoryModal({
               <button
                 key={filter.key}
                 onClick={() => setStatusFilter(filter.key)}
-                className={`rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all ${
-                  statusFilter === filter.key
+                className={`rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all ${statusFilter === filter.key
                     ? "bg-emerald-600 text-white shadow-sm"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-                }`}
+                  }`}
               >
                 {filter.label}
               </button>
@@ -253,7 +314,12 @@ export default function PurchaseHistoryModal({
             filteredBoosts.map((boost) => {
               const typeInfo = getBoostTypeInfo(boost.boostType);
               const TypeIcon = typeInfo.icon;
-              const isExpanded = expandedOrderId === (boost.orderId || boost.id);
+              const isExpanded =
+                expandedOrderId === boost.orderId ||
+                expandedOrderId === boost.id ||
+                (boost.orderId && expandedOrderId === boost.orderId) ||
+                (boost.id && expandedOrderId === boost.id);
+
 
               const isSuccess =
                 boost.paymentStatus === "COMPLETED" ||
@@ -262,14 +328,16 @@ export default function PurchaseHistoryModal({
               const isPending =
                 boost.paymentStatus === "PENDING" || boost.boostStatus === "PENDING_PAYMENT";
 
+              const isDownloading = downloadingId === boost.id;
+              const isPrintingCurrent = printingId === boost.id;
+
               return (
                 <div
                   key={boost.id}
-                  className={`rounded-2xl border transition-all duration-200 ${
-                    isExpanded
+                  className={`rounded-2xl border transition-all duration-200 ${isExpanded
                       ? "border-emerald-500/50 bg-emerald-50/20 dark:border-emerald-500/30 dark:bg-emerald-950/10 shadow-md"
                       : "border-slate-200/90 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/90 dark:hover:border-slate-700"
-                  }`}
+                    }`}
                 >
                   {/* Transaction Row Summary */}
                   <div
@@ -291,13 +359,12 @@ export default function PurchaseHistoryModal({
                             {typeInfo.name} ({boost.durationDays} Days)
                           </span>
                           <span
-                            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                              isSuccess
+                            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${isSuccess
                                 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                                 : isPending
-                                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                                : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
-                            }`}
+                                  ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                                  : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                              }`}
                           >
                             {isSuccess ? (
                               <CheckCircle2 className="h-3 w-3" />
@@ -326,7 +393,7 @@ export default function PurchaseHistoryModal({
                       </div>
                     </div>
 
-                    <div className="flex sm:flex-col items-center sm:items-end justify-between border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100 dark:border-slate-800">
+                    <div className="flex sm:flex-col items-center sm:items-end justify-between border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100 dark:border-slate-800 gap-2">
                       <span className="text-base font-extrabold text-slate-900 dark:text-white">
                         {boost.currency || "LKR"}{" "}
                         {(boost.amount || 0).toLocaleString(undefined, {
@@ -334,9 +401,27 @@ export default function PurchaseHistoryModal({
                           maximumFractionDigits: 2,
                         })}
                       </span>
-                      <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 hover:underline">
-                        {isExpanded ? "Hide Details" : "View Receipt"}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {isSuccess && (
+                          <button
+                            type="button"
+                            onClick={(e) => handleDownloadInvoice(e, boost)}
+                            disabled={isDownloading}
+                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
+                            title="Download PDF Tax Invoice"
+                          >
+                            {isDownloading ? (
+                              <Loader2 className="h-3 w-3 animate-spin text-emerald-500" />
+                            ) : (
+                              <Download className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                            )}
+                            <span>PDF</span>
+                          </button>
+                        )}
+                        <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 hover:underline">
+                          {isExpanded ? "Hide Details" : "View Receipt"}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
@@ -438,18 +523,48 @@ export default function PurchaseHistoryModal({
                       </div>
 
                       {/* Bottom actions on receipt */}
-                      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800 text-xs">
+                      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-200/60 dark:border-slate-800 text-xs">
                         <div className="flex items-center gap-1.5 text-slate-400">
                           <ShieldCheck className="h-4 w-4 text-emerald-500" />
-                          <span>Official Digital Receipt • All taxes included</span>
+                          <span>Official Digital Receipt • All taxes included • Archived safely</span>
                         </div>
 
-                        <Link
-                          href={`/listings/${boost.listingSlug || boost.listingId}`}
-                          className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-1.5 font-bold text-white shadow-sm hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 transition-colors"
-                        >
-                          View Listing <ExternalLink className="h-3.5 w-3.5" />
-                        </Link>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={(e) => handlePrintInvoice(e, boost)}
+                            disabled={isPrintingCurrent}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                          >
+                            {isPrintingCurrent ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Printer className="h-3.5 w-3.5 text-slate-500" />
+                            )}
+                            <span>Print</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={(e) => handleDownloadInvoice(e, boost)}
+                            disabled={isDownloading}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-1.5 font-bold text-white shadow-sm transition hover:bg-emerald-500"
+                          >
+                            {isDownloading ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Download className="h-3.5 w-3.5" />
+                            )}
+                            <span>Download PDF Invoice</span>
+                          </button>
+
+                          <Link
+                            href={`/listings/${boost.listingSlug || boost.listingId}`}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-1.5 font-bold text-white shadow-sm hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 transition-colors"
+                          >
+                            View Listing <ExternalLink className="h-3.5 w-3.5" />
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   )}

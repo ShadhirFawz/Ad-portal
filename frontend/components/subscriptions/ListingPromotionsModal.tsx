@@ -5,24 +5,19 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   X,
-  Layers,
   Crown,
   Star,
   Flame,
   TrendingUp,
   Clock,
-  Calendar,
-  CheckCircle2,
   ExternalLink,
-  Receipt,
   Plus,
-  Tag,
   MapPin,
   Copy,
   Check,
   Zap,
-  Radio,
   CalendarClock,
+  FileText,
 } from "lucide-react";
 import type { AdBoost, BoostType } from "@/types/boost";
 
@@ -254,7 +249,7 @@ export default function ListingPromotionsModal({
                   <div className="ml-auto">
                     {isActive ? (
                       <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
-                        <Radio className="h-3.5 w-3.5 animate-pulse" /> Live Active
+                        Active
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1.5 rounded-lg border border-sky-200 dark:border-sky-800/50 bg-sky-50 dark:bg-sky-950/40 px-2.5 py-1 text-[11px] font-semibold text-sky-700 dark:text-sky-300">
@@ -336,7 +331,7 @@ export default function ListingPromotionsModal({
                       }}
                       className="inline-flex items-center gap-1 font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
                     >
-                      <Receipt className="h-3 w-3" /> View Receipt
+                      <FileText className="h-3 w-3" /> View receipt
                     </button>
                   </div>
                 </div>
