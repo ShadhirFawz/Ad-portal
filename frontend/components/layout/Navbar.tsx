@@ -6,9 +6,9 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
 import ThemeToggle from "@/components/layout/ThemeToggle";
-import ProfileAvatar from "@/components/profile/ProfileAvatar";
 import AccountSetupProgressWidget from "@/components/layout/AccountSetupProgressWidget";
-import { Menu, X, ChevronDown, LogOut, User, Heart, Bookmark, Package, Settings, Sparkles } from "lucide-react";
+import GlobalListingSearch from "@/components/layout/GlobalListingSearch";
+import { Menu, X, ChevronDown, LogOut, User, Heart, Bookmark, Package, Settings, BadgeCheck } from "lucide-react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 
@@ -21,8 +21,12 @@ export default function Navbar() {
 
   // Close mobile menu on route change
   useEffect(() => {
-    setIsMenuOpen(false);
-    setIsProfileDropdownOpen(false);
+    const timer = window.setTimeout(() => {
+      setIsMenuOpen(false);
+      setIsProfileDropdownOpen(false);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [pathname]);
 
   // Close dropdown when clicking outside
@@ -68,7 +72,7 @@ export default function Navbar() {
               width={800}
               height={1200}
               priority
-              className="h-auto w-auto max-h-12 mb-2 w-auto object-contain transition-transform duration-300 group-hover:scale-105 dark:hidden"
+              className="h-auto w-auto max-h-12 mb-2 object-contain transition-transform duration-300 group-hover:scale-105 dark:hidden"
             />
             {/* Dark mode logo */}
             <Image
@@ -77,39 +81,48 @@ export default function Navbar() {
               width={800}
               height={1200}
               priority
-              className="h-auto w-auto max-h-12 mb-2 w-auto object-contain transition-transform duration-300 group-hover:scale-105 hidden dark:block"
+              className="h-auto w-auto max-h-12 mb-2 object-contain transition-transform duration-300 group-hover:scale-105 hidden dark:block"
             />
-            <div
-              className="
-                flex flex-col justify-center
-                ml-0 max-w-0 overflow-hidden
-                opacity-0
-                transition-all duration-500 ease-out
-                group-hover:ml-1 group-hover:max-w-[220px] group-hover:opacity-100
-              "
-            >
+
+            {/* Desktop / tablet: text always visible */}
+            <div className="hidden md:flex flex-col justify-center ml-2">
               <span
-                className="
-                  whitespace-nowrap
-                  text-base sm:text-lg font-bold tracking-[0.2em] uppercase leading-none
-                  text-slate-900 dark:text-white
-                "
+                className="whitespace-nowrap text-base lg:text-lg font-bold tracking-[0.2em] uppercase leading-none text-slate-900 dark:text-white"
                 style={{ fontFamily: "'Quicksand', 'Calibri Light', sans-serif" }}
               >
                 Wudo
               </span>
               <span
-                className="
-                  whitespace-nowrap mt-0.5
-                  text-[9px] sm:text-[10px] font-medium tracking-[0.15em] uppercase leading-none
-                  text-slate-500 dark:text-slate-400
-                "
+                className="whitespace-nowrap mt-0.5 text-[9px] lg:text-[10px] font-medium tracking-[0.15em] uppercase leading-none text-slate-500 dark:text-slate-400"
                 style={{ fontFamily: "'PT Sans', 'Tahoma', sans-serif" }}
               >
                 We Do Deals
               </span>
             </div>
 
+            {/* Mobile: text hidden, reveals on hover */}
+            <div
+              className="
+                flex md:hidden flex-col justify-center
+                ml-0 max-w-0 overflow-hidden
+                opacity-0
+                transition-all duration-500 ease-out
+                group-hover:ml-1 group-hover:max-w-55 group-hover:opacity-100
+              "
+            >
+              <span
+                className="whitespace-nowrap text-base font-bold tracking-[0.2em] uppercase leading-none text-slate-900 dark:text-white"
+                style={{ fontFamily: "'Quicksand', 'Calibri Light', sans-serif" }}
+              >
+                Wudo
+              </span>
+              <span
+                className="whitespace-nowrap mt-0.5 text-[9px] font-medium tracking-[0.15em] uppercase leading-none text-slate-500 dark:text-slate-400"
+                style={{ fontFamily: "'PT Sans', 'Tahoma', sans-serif" }}
+              >
+                We Do Deals
+              </span>
+            </div>
           </Link>
 
           {/* Desktop Navigation */}
@@ -137,6 +150,11 @@ export default function Navbar() {
                 My Listings
               </Link>
             )}
+          </div>
+
+          {/* Global Search */}
+          <div className="hidden lg:block flex-1 max-w-xl px-6">
+            <GlobalListingSearch />
           </div>
 
           {/* Right Section */}
@@ -201,7 +219,7 @@ export default function Navbar() {
                           href="/subscriptions"
                           className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                         >
-                          <Sparkles className="w-4 h-4 text-emerald-500" />
+                          <BadgeCheck className="w-4 h-4 text-emerald-500" />
                           My Subscriptions
                         </Link>
                         <Link
@@ -289,6 +307,13 @@ export default function Navbar() {
             <div className="fixed right-3 top-20 bottom-3 w-80 max-w-[85vw] bg-white dark:bg-slate-900 z-50 md:hidden overflow-y-auto rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 animate-in slide-in-from-right duration-200">
               <div className="flex flex-col p-4 space-y-1">
                 {/* Navigation Links */}
+                <div className="pb-3 border-b border-slate-200 dark:border-slate-800 mb-2">
+                  <GlobalListingSearch
+                    compact
+                    onNavigate={() => setIsMenuOpen(false)}
+                  />
+                </div>
+
                 <Link
                   href="/listings"
                   className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors ${isActive("/listings")
@@ -317,9 +342,7 @@ export default function Navbar() {
                             {user.email}
                           </p>
                           {!user.emailVerified && (
-                            <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400">
-                              ⚠️ Verify email
-                            </span>
+                            <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400">Verify email</span>
                           )}
                         </div>
                       </div>
@@ -346,7 +369,7 @@ export default function Navbar() {
                       className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      <Sparkles className="w-5 h-5 text-emerald-500" />
+                      <BadgeCheck className="w-5 h-5 text-emerald-500" />
                       My Subscriptions
                     </Link>
                     <Link
