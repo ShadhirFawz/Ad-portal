@@ -92,7 +92,13 @@ public record ListingResponse(
 
         boolean hasActiveAuction,
 
-        boolean isBookmarked
+        boolean isBookmarked,
+
+        boolean isSpotlight,
+
+        boolean isUrgent,
+
+        boolean isPushedUp
 
 ) {
 }

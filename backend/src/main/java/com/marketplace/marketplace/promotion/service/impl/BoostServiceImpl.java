@@ -1,0 +1,597 @@
+package com.marketplace.marketplace.promotion.service.impl;
+
+import com.marketplace.marketplace.common.exception.ConflictException;
+import com.marketplace.marketplace.common.exception.ResourceNotFoundException;
+import com.marketplace.marketplace.common.security.util.SecurityUtils;
+import com.marketplace.marketplace.listing.entity.Listing;
+import com.marketplace.marketplace.listing.enums.ListingStatus;
+import com.marketplace.marketplace.listing.repository.ListingRepository;
+import com.marketplace.marketplace.listing.repository.ListingImageRepository;
+import com.marketplace.marketplace.listing.mapper.ListingImageMapper;
+import com.marketplace.marketplace.promotion.config.PayHereProperties;
+import com.marketplace.marketplace.promotion.dto.request.BoostCheckoutRequest;
+import com.marketplace.marketplace.promotion.dto.request.BoostIpnRequest;
+import com.marketplace.marketplace.promotion.dto.response.AdBoostResponse;
+import com.marketplace.marketplace.promotion.dto.response.BoostCheckoutResponse;
+import com.marketplace.marketplace.promotion.dto.response.BoostPlanResponse;
+import com.marketplace.marketplace.promotion.dto.response.BoostPricingTierResponse;
+import com.marketplace.marketplace.promotion.entity.AdBoost;
+import com.marketplace.marketplace.promotion.entity.BoostPayment;
+import com.marketplace.marketplace.promotion.entity.BoostPricingPlan;
+import com.marketplace.marketplace.promotion.enums.BoostDuration;
+import com.marketplace.marketplace.promotion.enums.BoostStatus;
+import com.marketplace.marketplace.promotion.enums.BoostType;
+import com.marketplace.marketplace.promotion.enums.PaymentStatus;
+import com.marketplace.marketplace.promotion.repository.AdBoostRepository;
+import com.marketplace.marketplace.promotion.repository.BoostPaymentRepository;
+import com.marketplace.marketplace.promotion.repository.BoostPricingPlanRepository;
+import com.marketplace.marketplace.promotion.service.BoostService;
+import com.marketplace.marketplace.promotion.util.PayHereHashUtil;
+import com.marketplace.marketplace.user.entity.User;
+import com.marketplace.marketplace.user.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+import java.util.*;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class BoostServiceImpl implements BoostService {
+
+    private final AdBoostRepository adBoostRepository;
+    private final BoostPaymentRepository boostPaymentRepository;
+    private final BoostPricingPlanRepository boostPricingPlanRepository;
+    private final ListingRepository listingRepository;
+    private final ListingImageRepository listingImageRepository;
+    private final ListingImageMapper listingImageMapper;
+    private final UserRepository userRepository;
+    private final PayHereProperties payHereProperties;
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BoostPlanResponse> getBoostPlans() {
+        List<BoostPricingPlan> dbPlans = boostPricingPlanRepository.findByIsActiveTrueOrderByDisplayOrderAsc();
+
+        // Group tiers by BoostType
+        Map<BoostType, List<BoostPricingTierResponse>> tiersByType = new EnumMap<>(BoostType.class);
+        Map<BoostType, Map<BoostDuration, BigDecimal>> pricingByType = new EnumMap<>(BoostType.class);
+
+        for (BoostPricingPlan p : dbPlans) {
+            BoostPricingTierResponse tier = new BoostPricingTierResponse(
+                    p.getId(),
+                    p.getDuration(),
+                    p.getDurationDays(),
+                    p.getBasePrice(),
+                    p.getDiscountPercentage(),
+                    p.getDiscountAmount(),
+                    p.getPriceAfterDiscount(),
+                    p.getTaxPercentage(),
+                    p.getTaxAmount(),
+                    p.getFinalPrice(),
+                    p.isActive());
+            tiersByType.computeIfAbsent(p.getBoostType(), k -> new ArrayList<>()).add(tier);
+            pricingByType.computeIfAbsent(p.getBoostType(), k -> new EnumMap<>(BoostDuration.class))
+                    .put(p.getDuration(), p.getFinalPrice());
+        }
+
+        return List.of(
+                new BoostPlanResponse(
+                        BoostType.SPOTLIGHT,
+                        "Spotlight Ad",
+                        "SPOTLIGHT",
+                        "Reserve a top showcase position on search results and category pages with a radiant golden spotlight border.",
+                        List.of(
+                                "Top 2 priority showcase placement",
+                                "Eye-catching glowing gold badge & frame",
+                                "Up to 5x more clicks & engagement",
+                                "Equal round-robin rotation among top slots"),
+                        "amber",
+                        pricingByType.getOrDefault(BoostType.SPOTLIGHT, Collections.emptyMap()),
+                        tiersByType.getOrDefault(BoostType.SPOTLIGHT, Collections.emptyList())),
+                new BoostPlanResponse(
+                        BoostType.PUSH_UP,
+                        "Push Up",
+                        "PUSH UP",
+                        "Instantly bump your listing to the very top of recent listings every 24 hours throughout your promotion period.",
+                        List.of(
+                                "Daily automatic bump to top of search results",
+                                "Moves down naturally as fresh ads arrive",
+                                "Keeps your ad consistently discoverable",
+                                "Ideal for fast-moving categories"),
+                        "emerald",
+                        pricingByType.getOrDefault(BoostType.PUSH_UP, Collections.emptyMap()),
+                        tiersByType.getOrDefault(BoostType.PUSH_UP, Collections.emptyList())),
+                new BoostPlanResponse(
+                        BoostType.URGENT,
+                        "Urgent Ad",
+                        "URGENT",
+                        "Highlight your ad with a distinctive red Urgent tag and border to attract immediate buyers and sell quickly.",
+                        List.of(
+                                "High-visibility Urgent red ribbon badge",
+                                "Stands out clearly in search & category feeds",
+                                "Signals immediate seller readiness",
+                                "Perfect for quick sales & immediate buyers"),
+                        "rose",
+                        pricingByType.getOrDefault(BoostType.URGENT, Collections.emptyMap()),
+                        tiersByType.getOrDefault(BoostType.URGENT, Collections.emptyList())),
+                new BoostPlanResponse(
+                        BoostType.POWER_PACK,
+                        "Power Pack (All-in-One)",
+                        "POWER PACK",
+                        "Maximum visibility suite combining Spotlight placement, daily Push-Ups, and the Urgent badge at a bundled discount.",
+                        List.of(
+                                "Includes Spotlight + Push Up + Urgent",
+                                "Exclusive gradient purple badge & frame",
+                                "Up to 10x higher buyer engagement",
+                                "Best value for high-value items"),
+                        "purple",
+                        pricingByType.getOrDefault(BoostType.POWER_PACK, Collections.emptyMap()),
+                        tiersByType.getOrDefault(BoostType.POWER_PACK, Collections.emptyList())));
+    }
+
+    @Override
+    @Transactional
+    public BoostCheckoutResponse createCheckout(BoostCheckoutRequest request) {
+        UUID currentUserId = SecurityUtils.getCurrentUserId();
+        User user = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + currentUserId));
+
+        Listing listing = listingRepository.findById(request.listingId())
+                .orElseThrow(() -> new ResourceNotFoundException("Listing not found: " + request.listingId()));
+
+        if (!listing.getSeller().getId().equals(currentUserId)) {
+            throw new ConflictException("You can only boost listings that you own.");
+        }
+
+        if (listing.getStatus() != ListingStatus.ACTIVE) {
+            throw new ConflictException("Only active listings can be boosted.");
+        }
+
+        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime startsAt;
+        OffsetDateTime expiresAt;
+
+        // Validate boost conflicts and calculate startsAt
+        if (request.boostType() == BoostType.POWER_PACK) {
+            // Check if Power Pack already has a scheduled queue
+            if (adBoostRepository.existsScheduledBoost(listing.getId(), BoostType.POWER_PACK, now)) {
+                throw new ConflictException("This listing already has a scheduled Power Pack promotion in queue.");
+            }
+
+            // Check if Power Pack is currently active -> allow 1 scheduled extension
+            // starting at the end date of active Power Pack
+            List<AdBoost> activePowerPacks = adBoostRepository.findActiveByListingIdAndBoostType(listing.getId(),
+                    BoostType.POWER_PACK, now);
+            if (!activePowerPacks.isEmpty()) {
+                AdBoost activePowerPack = activePowerPacks.get(0);
+                startsAt = (request.scheduledStartTime() != null
+                        && request.scheduledStartTime().isAfter(activePowerPack.getExpiresAt()))
+                                ? request.scheduledStartTime()
+                                : activePowerPack.getExpiresAt();
+            } else {
+                // If other individual boosts exist (active or scheduled), Power Pack cannot be
+                // combined
+                if (adBoostRepository.existsAnyActiveOrScheduledBoost(listing.getId(), now)) {
+                    throw new ConflictException(
+                            "This listing already has active or scheduled promotions. Power Pack cannot be combined with existing individual boosts.");
+                }
+                startsAt = request.scheduledStartTime() != null && request.scheduledStartTime().isAfter(now)
+                        ? request.scheduledStartTime()
+                        : now;
+            }
+        } else {
+            // Individual boost (SPOTLIGHT, URGENT, PUSH_UP)
+            // Cannot activate or schedule if Power Pack is already active/scheduled
+            if (adBoostRepository.existsActiveOrScheduledBoost(listing.getId(), BoostType.POWER_PACK, now)) {
+                throw new ConflictException(
+                        "This listing already has an active or scheduled Power Pack VIP promotion, which includes all boost features.");
+            }
+
+            // Check if this same boost type ALREADY has a scheduled boost in queue
+            if (adBoostRepository.existsScheduledBoost(listing.getId(), request.boostType(), now)) {
+                throw new ConflictException(
+                        "This listing already has a scheduled " + request.boostType().name().replace("_", " ")
+                                + " boost in queue. Only one scheduled extension is allowed at a time.");
+            }
+
+            // Check if this boost type is currently ACTIVE on the listing
+            List<AdBoost> activeSameBoosts = adBoostRepository.findActiveByListingIdAndBoostType(listing.getId(),
+                    request.boostType(), now);
+            if (!activeSameBoosts.isEmpty()) {
+                // Listing already has 1 active boost of this type -> allow second chance
+                // (scheduled extension)
+                AdBoost activeBoost = activeSameBoosts.get(0);
+                startsAt = (request.scheduledStartTime() != null
+                        && request.scheduledStartTime().isAfter(activeBoost.getExpiresAt()))
+                                ? request.scheduledStartTime()
+                                : activeBoost.getExpiresAt();
+                log.info(
+                        "Chaining duplicate extension for boost type {} on listing {}. Active ends at {}, new startsAt set to {}",
+                        request.boostType(), listing.getId(), activeBoost.getExpiresAt(), startsAt);
+            } else {
+                // First activation for this boost type
+                startsAt = request.scheduledStartTime() != null && request.scheduledStartTime().isAfter(now)
+                        ? request.scheduledStartTime()
+                        : now;
+            }
+        }
+
+        expiresAt = startsAt.plusDays(request.duration().getDays());
+
+        // Calculate amount dynamically from database pricing plan
+        BigDecimal amount = boostPricingPlanRepository
+                .findByBoostTypeAndDurationAndIsActiveTrue(request.boostType(), request.duration())
+                .map(BoostPricingPlan::getFinalPrice)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Active pricing plan not found in database for boost type " + request.boostType()
+                                + " and duration " + request.duration()));
+
+        String currency = payHereProperties.getCurrency() != null ? payHereProperties.getCurrency() : "LKR";
+
+        // Create AdBoost subscription
+        AdBoost adBoost = new AdBoost();
+        adBoost.setListing(listing);
+        adBoost.setUser(user);
+        adBoost.setBoostType(request.boostType());
+        adBoost.setBoostStatus(BoostStatus.PENDING_PAYMENT);
+        adBoost.setDurationDays(request.duration().getDays());
+        adBoost.setStartsAt(startsAt);
+        adBoost.setExpiresAt(expiresAt);
+        adBoost = adBoostRepository.save(adBoost);
+
+        // Generate unique PayHere order ID
+        String orderId = "BOOST-" + adBoost.getId().toString().substring(0, 8).toUpperCase() + "-"
+                + System.currentTimeMillis();
+
+        // Create BoostPayment
+        BoostPayment payment = new BoostPayment();
+        payment.setBoostSubscription(adBoost);
+        payment.setPayhereOrderId(orderId);
+        payment.setAmount(amount);
+        payment.setCurrency(currency);
+        payment.setPaymentStatus(PaymentStatus.PENDING);
+        payment = boostPaymentRepository.save(payment);
+
+        // Calculate PayHere MD5 signature
+        String formattedAmount = PayHereHashUtil.formatAmount(amount);
+        String hash = PayHereHashUtil.generateCheckoutHash(
+                payHereProperties.getMerchantId(),
+                orderId,
+                amount,
+                currency,
+                payHereProperties.getMerchantSecret());
+
+        log.info("PayHere hash inputs — merchant_id: [{}], order_id: [{}], amount: [{}], currency: [{}]",
+                payHereProperties.getMerchantId(), orderId, formattedAmount, currency);
+
+        String boostLabel = request.boostType().name().replace("_", " ");
+        String itemsValue = boostLabel + " " + request.duration().getDays() + " Days Ad Boost";
+
+        Map<String, String> payHereParams = new HashMap<>();
+        payHereParams.put("merchant_id", payHereProperties.getMerchantId());
+        payHereParams.put("return_url", payHereProperties.getReturnUrl() + "?order_id=" + orderId);
+        payHereParams.put("cancel_url",
+                payHereProperties.getCancelUrl() + "?order_id=" + orderId + "&listing_id=" + listing.getId());
+        payHereParams.put("notify_url", payHereProperties.getNotifyUrl());
+        payHereParams.put("order_id", orderId);
+        payHereParams.put("items", itemsValue);
+        payHereParams.put("currency", currency);
+        payHereParams.put("amount", formattedAmount);
+        payHereParams.put("first_name", user.getFirstName() != null ? user.getFirstName() : "Customer");
+        payHereParams.put("last_name", user.getLastName() != null ? user.getLastName() : "User");
+        payHereParams.put("email", user.getEmail());
+        payHereParams.put("phone", user.getPhoneNumber() != null ? user.getPhoneNumber() : "0771234567");
+        payHereParams.put("address", "Wudo");
+        payHereParams.put("city", "Colombo");
+        payHereParams.put("country", "Sri Lanka");
+        payHereParams.put("hash", hash);
+        payHereParams.put("custom_1", adBoost.getId().toString());
+        payHereParams.put("custom_2", listing.getId().toString());
+
+        String checkoutUrl = payHereProperties.getBaseUrl() + "/pay/checkout";
+
+        return new BoostCheckoutResponse(
+                adBoost.getId(),
+                payment.getId(),
+                orderId,
+                amount,
+                currency,
+                checkoutUrl,
+                payHereParams);
+    }
+
+    @Override
+    @Transactional
+    public void processPayHereIpn(BoostIpnRequest ipn) {
+        log.info("Received PayHere IPN notification for orderId: {}, statusCode: {}", ipn.order_id(),
+                ipn.status_code());
+
+        // Verify MD5 Signature
+        boolean isValid = PayHereHashUtil.verifyIpnHash(
+                ipn.merchant_id(),
+                ipn.order_id(),
+                ipn.payhere_amount(),
+                ipn.payhere_currency(),
+                ipn.status_code(),
+                ipn.md5sig(),
+                payHereProperties.getMerchantSecret());
+
+        if (!isValid) {
+            log.warn("Invalid PayHere IPN MD5 signature for orderId: {}", ipn.order_id());
+            throw new IllegalArgumentException("Invalid signature");
+        }
+
+        BoostPayment payment = boostPaymentRepository.findByPayhereOrderId(ipn.order_id())
+                .orElseThrow(() -> new ResourceNotFoundException("Payment not found for orderId: " + ipn.order_id()));
+
+        Map<String, Object> raw = new HashMap<>();
+        raw.put("payment_id", ipn.payment_id());
+        raw.put("status_code", ipn.status_code());
+        raw.put("status_message", ipn.status_message());
+        raw.put("method", ipn.method());
+        raw.put("card_holder_name", ipn.card_holder_name());
+        raw.put("card_no", ipn.card_no());
+        payment.setPayhereRawResponse(raw);
+        payment.setPayherePaymentId(ipn.payment_id());
+
+        AdBoost boost = payment.getBoostSubscription();
+        OffsetDateTime now = OffsetDateTime.now();
+
+        // Status code 2 indicates successful payment in PayHere
+        if ("2".equals(ipn.status_code())) {
+            payment.setPaymentStatus(PaymentStatus.COMPLETED);
+
+            if (boost.getStartsAt().isAfter(now)) {
+                boost.setBoostStatus(BoostStatus.SCHEDULED);
+                log.info("Boost {} scheduled for future activation at {}", boost.getId(), boost.getStartsAt());
+            } else {
+                boost.setBoostStatus(BoostStatus.ACTIVE);
+                boost.setActivatedAt(now);
+                Listing listing = boost.getListing();
+                applyBoostFlagsToListing(listing, boost.getBoostType(), now);
+                listingRepository.save(listing);
+                log.info("Boost {} activated immediately for listing {}", boost.getId(), listing.getId());
+            }
+        } else if ("0".equals(ipn.status_code())) {
+            payment.setPaymentStatus(PaymentStatus.PENDING);
+        } else if ("-1".equals(ipn.status_code())) {
+            payment.setPaymentStatus(PaymentStatus.CANCELLED);
+            boost.setBoostStatus(BoostStatus.CANCELLED);
+        } else {
+            payment.setPaymentStatus(PaymentStatus.FAILED);
+            boost.setBoostStatus(BoostStatus.CANCELLED);
+        }
+
+        boostPaymentRepository.save(payment);
+        adBoostRepository.save(boost);
+    }
+
+    @Override
+    @Transactional
+    public AdBoostResponse confirmPayment(String orderId, String paymentId) {
+        log.info("Explicit payment confirmation requested for orderId: {}, paymentId: {}", orderId, paymentId);
+        BoostPayment payment = boostPaymentRepository.findByPayhereOrderId(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment not found for orderId: " + orderId));
+
+        UUID currentUserId = SecurityUtils.getCurrentUserId();
+        AdBoost boost = payment.getBoostSubscription();
+
+        if (!boost.getUser().getId().equals(currentUserId)) {
+            throw new ConflictException("You do not have permission to confirm this payment.");
+        }
+
+        OffsetDateTime now = OffsetDateTime.now();
+
+        if (payment.getPaymentStatus() != PaymentStatus.COMPLETED) {
+            payment.setPaymentStatus(PaymentStatus.COMPLETED);
+            if (paymentId != null && !paymentId.isBlank()) {
+                payment.setPayherePaymentId(paymentId.trim());
+            }
+            if (payment.getPayhereRawResponse() == null) {
+                Map<String, Object> raw = new HashMap<>();
+                raw.put("order_id", orderId);
+                if (paymentId != null && !paymentId.isBlank()) {
+                    raw.put("payment_id", paymentId.trim());
+                }
+                raw.put("status_code", "2");
+                raw.put("status_message", "Successfully verified and confirmed from PayHere checkout return");
+                raw.put("channel", "RETURN_URL_CONFIRMATION");
+                payment.setPayhereRawResponse(raw);
+            }
+
+            if (boost.getStartsAt().isAfter(now)) {
+                boost.setBoostStatus(BoostStatus.SCHEDULED);
+                log.info("Boost {} scheduled for future activation at {}", boost.getId(), boost.getStartsAt());
+            } else {
+                boost.setBoostStatus(BoostStatus.ACTIVE);
+                boost.setActivatedAt(now);
+                Listing listing = boost.getListing();
+                applyBoostFlagsToListing(listing, boost.getBoostType(), now);
+                listingRepository.save(listing);
+                log.info("Boost {} activated immediately for listing {}", boost.getId(), listing.getId());
+            }
+
+            boostPaymentRepository.save(payment);
+            adBoostRepository.save(boost);
+        }
+
+        return mapToResponse(boost);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AdBoostResponse> getMyBoosts() {
+        UUID currentUserId = SecurityUtils.getCurrentUserId();
+        return adBoostRepository.findByUserIdOrderByCreatedAtDesc(currentUserId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AdBoostResponse> getActiveBoostsForListing(UUID listingId) {
+        return adBoostRepository.findActiveByListingId(listingId, OffsetDateTime.now())
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public void cancelScheduledBoost(UUID boostId) {
+        UUID currentUserId = SecurityUtils.getCurrentUserId();
+        AdBoost boost = adBoostRepository.findById(boostId)
+                .orElseThrow(() -> new ResourceNotFoundException("Boost not found: " + boostId));
+
+        if (!boost.getUser().getId().equals(currentUserId)) {
+            throw new ConflictException("You do not have permission to cancel this boost.");
+        }
+
+        if (boost.getBoostStatus() != BoostStatus.SCHEDULED && boost.getBoostStatus() != BoostStatus.PENDING_PAYMENT) {
+            throw new ConflictException("Only scheduled or pending boosts can be cancelled.");
+        }
+
+        boost.setBoostStatus(BoostStatus.CANCELLED);
+        adBoostRepository.save(boost);
+        log.info("Boost {} cancelled by user {}", boostId, currentUserId);
+    }
+
+    @Override
+    @Transactional
+    public void activateDueScheduledBoosts() {
+        OffsetDateTime now = OffsetDateTime.now();
+        List<AdBoost> dueBoosts = adBoostRepository.findScheduledDueForActivation(now);
+        for (AdBoost boost : dueBoosts) {
+            boost.setBoostStatus(BoostStatus.ACTIVE);
+            boost.setActivatedAt(now);
+            adBoostRepository.save(boost);
+
+            Listing listing = boost.getListing();
+            applyBoostFlagsToListing(listing, boost.getBoostType(), now);
+            listingRepository.save(listing);
+            log.info("Activated scheduled boost {} for listing {}", boost.getId(), listing.getId());
+        }
+    }
+
+    @Override
+    @Transactional
+    public void expireCompletedBoosts() {
+        OffsetDateTime now = OffsetDateTime.now();
+        List<AdBoost> expiredBoosts = adBoostRepository.findActiveDueForExpiry(now);
+        Set<UUID> affectedListingIds = new HashSet<>();
+
+        for (AdBoost boost : expiredBoosts) {
+            boost.setBoostStatus(BoostStatus.EXPIRED);
+            adBoostRepository.save(boost);
+            affectedListingIds.add(boost.getListing().getId());
+            log.info("Expired boost {} for listing {}", boost.getId(), boost.getListing().getId());
+        }
+
+        // Re-evaluate flags on affected listings
+        for (UUID listingId : affectedListingIds) {
+            Listing listing = listingRepository.findById(listingId).orElse(null);
+            if (listing != null) {
+                recomputeListingBoostFlags(listing, now);
+                listingRepository.save(listing);
+            }
+        }
+    }
+
+    private void applyBoostFlagsToListing(Listing listing, BoostType boostType, OffsetDateTime now) {
+        switch (boostType) {
+            case SPOTLIGHT -> listing.setSpotlight(true);
+            case PUSH_UP -> {
+                listing.setPushedUp(true);
+                listing.setPushUpLastBumpedAt(now);
+            }
+            case URGENT -> listing.setUrgent(true);
+            case POWER_PACK -> {
+                listing.setSpotlight(true);
+                listing.setUrgent(true);
+                listing.setPushedUp(true);
+                listing.setPushUpLastBumpedAt(now);
+            }
+        }
+    }
+
+    private void recomputeListingBoostFlags(Listing listing, OffsetDateTime now) {
+        List<AdBoost> active = adBoostRepository.findActiveByListingId(listing.getId(), now);
+        boolean hasSpotlight = false;
+        boolean hasUrgent = false;
+        boolean hasPushUp = false;
+
+        for (AdBoost b : active) {
+            if (b.getBoostType() == BoostType.SPOTLIGHT || b.getBoostType() == BoostType.POWER_PACK) {
+                hasSpotlight = true;
+            }
+            if (b.getBoostType() == BoostType.URGENT || b.getBoostType() == BoostType.POWER_PACK) {
+                hasUrgent = true;
+            }
+            if (b.getBoostType() == BoostType.PUSH_UP || b.getBoostType() == BoostType.POWER_PACK) {
+                hasPushUp = true;
+            }
+        }
+
+        listing.setSpotlight(hasSpotlight);
+        listing.setUrgent(hasUrgent);
+        listing.setPushedUp(hasPushUp);
+        if (!hasPushUp) {
+            listing.setPushUpLastBumpedAt(null);
+        }
+    }
+
+    private AdBoostResponse mapToResponse(AdBoost b) {
+        BoostPayment payment = boostPaymentRepository.findByBoostSubscriptionId(b.getId()).orElse(null);
+        String paymentMethod = null;
+        if (payment != null && payment.getPayhereRawResponse() != null) {
+            Object method = payment.getPayhereRawResponse().get("method");
+            if (method != null) {
+                paymentMethod = method.toString();
+            }
+        }
+
+        Listing listing = b.getListing();
+        String imageUrl = null;
+        try {
+            imageUrl = listingImageRepository.findByListingIdAndPrimaryTrue(listing.getId())
+                    .map(img -> listingImageMapper.toResponse(img).url())
+                    .orElse(null);
+        } catch (Exception e) {
+            log.debug("Could not resolve primary image for listing {}: {}", listing.getId(), e.getMessage());
+        }
+
+        String categoryName = listing.getCategory() != null ? listing.getCategory().getName() : null;
+        String locationStr = listing.getCity() != null ? listing.getCity() : listing.getLocation();
+
+        return new AdBoostResponse(
+                b.getId(),
+                listing.getId(),
+                listing.getTitle(),
+                listing.getSlug(),
+                b.getBoostType(),
+                b.getBoostStatus(),
+                b.getDurationDays(),
+                b.getStartsAt(),
+                b.getExpiresAt(),
+                b.getActivatedAt(),
+                b.getCreatedAt(),
+                payment != null ? payment.getId() : null,
+                payment != null ? payment.getPayhereOrderId() : null,
+                payment != null ? payment.getPayherePaymentId() : null,
+                payment != null ? payment.getAmount() : null,
+                payment != null ? payment.getCurrency() : "LKR",
+                payment != null ? payment.getPaymentStatus() : null,
+                paymentMethod,
+                imageUrl,
+                listing.getPrice(),
+                listing.getCurrency() != null ? listing.getCurrency() : "LKR",
+                categoryName,
+                locationStr);
+    }
+}

@@ -20,9 +20,9 @@ public final class ListingSpecification {
     }
 
     private static void applyCommonFilterParams(ListingFilterParams params,
-                                                Root<Listing> root,
-                                                CriteriaBuilder criteriaBuilder,
-                                                List<Predicate> predicates) {
+            Root<Listing> root,
+            CriteriaBuilder criteriaBuilder,
+            List<Predicate> predicates) {
         if (params == null) {
             return;
         }
@@ -61,11 +61,21 @@ public final class ListingSpecification {
             List<Predicate> predicates = new ArrayList<>();
             predicates.add(criteriaBuilder.equal(root.get("status"), ListingStatus.ACTIVE));
             applyCommonFilterParams(params, root, criteriaBuilder, predicates);
+
+            if (query != null && !Long.class.equals(query.getResultType())
+                    && (query.getOrderList() == null || query.getOrderList().isEmpty())) {
+                query.orderBy(
+                        criteriaBuilder.desc(root.get("isSpotlight")),
+                        criteriaBuilder
+                                .desc(criteriaBuilder.coalesce(root.get("pushUpLastBumpedAt"), root.get("createdAt"))));
+            }
+
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
     }
 
-    public static Specification<Listing> buildSellerSpec(UUID sellerId, ListingStatus status, ListingFilterParams params) {
+    public static Specification<Listing> buildSellerSpec(UUID sellerId, ListingStatus status,
+            ListingFilterParams params) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
             predicates.add(criteriaBuilder.equal(root.get("seller").get("id"), sellerId));

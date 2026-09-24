@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/useToast";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 import ProfileAvatar from "@/components/profile/ProfileAvatar";
 import AccountSetupProgressWidget from "@/components/layout/AccountSetupProgressWidget";
-import { Menu, X, ChevronDown, LogOut, User, Heart, Bookmark, Package, Settings } from "lucide-react";
+import { Menu, X, ChevronDown, LogOut, User, Heart, Bookmark, Package, Settings, Sparkles } from "lucide-react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 
@@ -198,6 +198,13 @@ export default function Navbar() {
                           My Listings
                         </Link>
                         <Link
+                          href="/subscriptions"
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                        >
+                          <Sparkles className="w-4 h-4 text-emerald-500" />
+                          My Subscriptions
+                        </Link>
+                        <Link
                           href="/favorites"
                           className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                         >
@@ -333,6 +340,14 @@ export default function Navbar() {
                     >
                       <Package className="w-5 h-5" />
                       My Listings
+                    </Link>
+                    <Link
+                      href="/subscriptions"
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <Sparkles className="w-5 h-5 text-emerald-500" />
+                      My Subscriptions
                     </Link>
                     <Link
                       href="/favorites"
