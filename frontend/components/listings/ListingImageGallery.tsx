@@ -9,9 +9,10 @@ import ListingImageLightbox from "@/components/listings/ListingImageLightbox";
 interface Props {
     images: ListingImage[];
     title: string;
+    sold?: boolean;
 }
 
-export default function ListingImageGallery({ images = [], title }: Props) {
+export default function ListingImageGallery({ images = [], title, sold = false }: Props) {
     const safeImages = images ?? [];
     const orderedImages = [...safeImages].sort(
         (a, b) => a.displayOrder - b.displayOrder
@@ -51,6 +52,18 @@ export default function ListingImageGallery({ images = [], title }: Props) {
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                         priority
                     />
+
+                    {sold && (
+                        <div className="absolute inset-0 bg-black/35 backdrop-blur-sm pointer-events-none">
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="rotate-[-18deg] border-4 border-white bg-transparent px-6 py-2 shadow-2xl backdrop-blur-md">
+                                    <span className="text-2xl sm:text-4xl font-black tracking-[0.35em] text-white uppercase">
+                                        Sold
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Hover Overlay Hint */}
                     <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center pointer-events-none">
