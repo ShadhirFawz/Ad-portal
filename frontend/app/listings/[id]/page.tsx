@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { useAuth } from "@/providers/AuthProvider";
 import { getListing, toggleFavoriteListing, toggleBookmarkListing, markListingAsSold } from "@/lib/api/listings";
 import ListingImageGallery from "@/components/listings/ListingImageGallery";
+import RevealablePhoneNumber from "@/components/listings/RevealablePhoneNumber";
 import ListingBreadcrumb from "@/components/listings/ListingBreadcrumb";
 import SimilarListingsColumn from "@/components/listings/SimilarListingsColumn";
 import RelatedCategoryListings from "@/components/listings/RelatedCategoryListings";
@@ -17,7 +18,6 @@ import {
   formatListingCondition,
   formatListingPrice,
   formatListingStatus,
-  formatListingType,
   formatLocationType,
   formatModerationStatus,
   formatPricingType,
@@ -31,7 +31,6 @@ import {
   MapPin,
   Package,
   Pencil,
-  Phone,
   Shield,
   Tag,
   User,
@@ -393,7 +392,7 @@ export default function ListingDetailsPage() {
               )}
               <Link
                 href={`/listings/${listing.id}/boost`}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-500/40 bg-gradient-to-r from-amber-500/10 to-orange-500/10 text-amber-700 hover:from-amber-500/20 hover:to-orange-500/20 dark:text-amber-300 dark:border-amber-700/60 font-bold text-xs transition shadow-xs"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-500/40 bg-linear-to-r from-amber-500/10 to-orange-500/10 text-amber-700 hover:from-amber-500/20 hover:to-orange-500/20 dark:text-amber-300 dark:border-amber-700/60 font-bold text-xs transition shadow-xs"
               >
                 <TrendingUp className="w-3.5 h-3.5 text-amber-500" />
                 Boost Ad
@@ -413,7 +412,7 @@ export default function ListingDetailsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Image Gallery */}
           <div className="w-full lg:col-span-5 xl:col-span-4 lg:sticky lg:top-18">
-            <ListingImageGallery images={listing.images} title={listing.title} />
+            <ListingImageGallery images={listing.images} title={listing.title} sold={listing.status === "SOLD"} />
           </div>
 
           {/* Header and Seller Contact */}
@@ -636,17 +635,8 @@ export default function ListingDetailsPage() {
               ) : isLoggedIn ? (
                 <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/40 p-4 space-y-3">
                   <div className="space-y-1">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                      Seller Mobile
-                    </p>
                     {listing.sellerPhoneNumber ? (
-                      <a
-                        href={`tel:${listing.sellerPhoneNumber}`}
-                        className="inline-flex items-center gap-2 text-lg font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
-                      >
-                        <Phone className="w-5 h-5 shrink-0" />
-                        {listing.sellerPhoneNumber}
-                      </a>
+                      <RevealablePhoneNumber phoneNumber={listing.sellerPhoneNumber} />
                     ) : (
                       <p className="text-sm text-slate-500 dark:text-slate-400">
                         Seller has not provided a mobile number.
