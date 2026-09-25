@@ -25,6 +25,7 @@ import {
   LucideIcon,
   Plug2,
   BriefcaseBusiness,
+  Leaf,
 } from "lucide-react";
 
 interface NestedCategorySelectorProps {
@@ -49,7 +50,8 @@ function getCategoryIcon(name: string, slug?: string): LucideIcon {
   if (text.includes("job") || text.includes("work") || text.includes("career")) return Briefcase;
   if (text.includes("pet") || text.includes("animal")) return Dog;
   if (text.includes("mob")) return Smartphone;
-  if (text.includes("food") || text.includes("agri") || text.includes("grocery")) return Apple;
+  if (text.includes("agri")) return Leaf;
+  if (text.includes("food") || text.includes("grocery")) return Apple;
   if (text.includes("health") || text.includes("beauty") || text.includes("toy") || text.includes("kid")) return Sparkles;
   if (text.includes("pack")) return Package;
   if (text.includes("business") || text.includes("industry")) return BriefcaseBusiness;
