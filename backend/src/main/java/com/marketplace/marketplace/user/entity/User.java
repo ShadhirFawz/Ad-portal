@@ -47,6 +47,20 @@ public class User extends BaseUuidEntity {
     @Builder.Default
     private java.util.List<UserPhoneNumber> phoneNumbers = new java.util.ArrayList<>();
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OrderBy("dayOfWeek ASC")
+    @Builder.Default
+    private java.util.List<UserOpeningHour> openingHours = new java.util.ArrayList<>();
+
+    public void ensureDefaultOpeningHours() {
+        if (this.openingHours == null) {
+            this.openingHours = new java.util.ArrayList<>();
+        }
+        if (this.openingHours.isEmpty()) {
+            this.openingHours.addAll(UserOpeningHour.defaultsFor(this));
+        }
+    }
+
     @Column(name = "avatar_url")
     private String avatarUrl;
 

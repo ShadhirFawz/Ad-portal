@@ -26,7 +26,10 @@ public record UpdateProfileRequest(
         String coverPhotoUrl,
 
         @Size(max = 3, message = "You can add a maximum of 3 phone numbers")
-        List<@Valid UserPhoneNumberRequest> phoneNumbers
+        List<@Valid UserPhoneNumberRequest> phoneNumbers,
+
+        @Size(min = 7, max = 7, message = "Opening hours must include all 7 days of the week")
+        List<@Valid UserOpeningHourRequest> openingHours
 
 ) {
 }

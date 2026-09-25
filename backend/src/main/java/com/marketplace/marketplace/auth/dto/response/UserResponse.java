@@ -2,6 +2,7 @@ package com.marketplace.marketplace.auth.dto.response;
 
 import com.marketplace.marketplace.common.enums.Role;
 import com.marketplace.marketplace.common.enums.UserStatus;
+import com.marketplace.marketplace.user.dto.response.UserOpeningHourResponse;
 import com.marketplace.marketplace.user.dto.response.UserPhoneNumberResponse;
 
 import java.time.OffsetDateTime;
@@ -42,7 +43,9 @@ public record UserResponse(
 
         Boolean publicProfile,
 
-        OffsetDateTime createdAt
+        OffsetDateTime createdAt,
+
+        List<UserOpeningHourResponse> openingHours
 
 ) {
 }
