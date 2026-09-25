@@ -5,6 +5,7 @@ import com.marketplace.marketplace.auth.dto.response.UserResponse;
 import com.marketplace.marketplace.common.enums.Role;
 import com.marketplace.marketplace.common.enums.UserStatus;
 import com.marketplace.marketplace.common.exception.AuthenticationException;
+import com.marketplace.marketplace.common.exception.BadRequestException;
 import com.marketplace.marketplace.common.exception.ConflictException;
 import com.marketplace.marketplace.common.exception.ResourceNotFoundException;
 import com.marketplace.marketplace.common.security.util.SecurityUtils;
@@ -15,7 +16,9 @@ import com.marketplace.marketplace.listing.repository.ListingRepository;
 import com.marketplace.marketplace.user.dto.response.AccountSetupProgressResponse;
 import com.marketplace.marketplace.user.dto.response.AccountSetupStepItem;
 import com.marketplace.marketplace.user.dto.response.UsernameAvailabilityResponse;
+import com.marketplace.marketplace.user.dto.request.UserOpeningHourRequest;
 import com.marketplace.marketplace.user.entity.User;
+import com.marketplace.marketplace.user.entity.UserOpeningHour;
 import com.marketplace.marketplace.user.entity.UserPhoneNumber;
 import com.marketplace.marketplace.user.mapper.UserMapper;
 import com.marketplace.marketplace.user.repository.UserRepository;
@@ -26,15 +29,20 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -303,6 +311,12 @@ public class UserServiceImpl implements UserService {
             }
         }
 
+        if (request.openingHours() != null) {
+            applyOpeningHours(user, request.openingHours());
+        } else {
+            user.ensureDefaultOpeningHours();
+        }
+
         return userMapper.toResponse(userRepository.save(user));
     }
 
@@ -467,6 +481,7 @@ public class UserServiceImpl implements UserService {
                                 newUser.getPhoneNumbers().add(upn);
                             }
 
+                            newUser.ensureDefaultOpeningHours();
                             return userRepository.save(newUser);
                         }));
     }
@@ -484,15 +499,20 @@ public class UserServiceImpl implements UserService {
 
         return userRepository.findById(userId)
                 .map(existingUser -> {
+                    boolean dirty = false;
                     if (existingUser.getEmail() != null
                             && existingUser.getEmail().startsWith("user-")
                             && tokenEmail != null
                             && !tokenEmail.isBlank()
                             && !tokenEmail.startsWith("user-")) {
                         existingUser.setEmail(tokenEmail.trim());
-                        return userRepository.save(existingUser);
+                        dirty = true;
                     }
-                    return existingUser;
+                    if (existingUser.getOpeningHours() == null || existingUser.getOpeningHours().isEmpty()) {
+                        existingUser.ensureDefaultOpeningHours();
+                        dirty = true;
+                    }
+                    return dirty ? userRepository.save(existingUser) : existingUser;
                 })
                 .orElseGet(() -> {
                     String email = (tokenEmail != null && !tokenEmail.isBlank())
@@ -511,6 +531,7 @@ public class UserServiceImpl implements UserService {
                             .build();
                     user.setId(userId);
                     user.setIsNew(true);
+                    user.ensureDefaultOpeningHours();
                     return userRepository.save(user);
                 });
     }
@@ -585,6 +606,69 @@ public class UserServiceImpl implements UserService {
                 percentage,
                 isFullyCompleted,
                 steps);
+    }
+
+    private void applyOpeningHours(User user, List<UserOpeningHourRequest> requests) {
+        if (requests.size() != 7) {
+            throw new BadRequestException("Opening hours must include all 7 days of the week.");
+        }
+
+        Set<Integer> days = new HashSet<>();
+        for (UserOpeningHourRequest req : requests) {
+            if (req.dayOfWeek() == null || req.dayOfWeek() < 1 || req.dayOfWeek() > 7) {
+                throw new BadRequestException("Day of week must be between 1 (Monday) and 7 (Sunday).");
+            }
+            if (!days.add(req.dayOfWeek())) {
+                throw new BadRequestException("Each day of the week can only appear once in opening hours.");
+            }
+        }
+        if (days.size() != 7) {
+            throw new BadRequestException("Opening hours must include every day from Monday to Sunday.");
+        }
+
+        Map<Integer, UserOpeningHour> existingByDay = user.getOpeningHours().stream()
+                .collect(Collectors.toMap(UserOpeningHour::getDayOfWeek, Function.identity(), (a, b) -> a));
+
+        for (UserOpeningHourRequest req : requests) {
+            boolean closed = Boolean.TRUE.equals(req.isClosed());
+            LocalTime openTime = closed ? null : parseClockTime(req.openTime(), "open");
+            LocalTime closeTime = closed ? null : parseClockTime(req.closeTime(), "close");
+
+            if (!closed) {
+                if (openTime == null || closeTime == null) {
+                    throw new BadRequestException("Open and close times are required for days that are not closed.");
+                }
+                if (!closeTime.isAfter(openTime)) {
+                    throw new BadRequestException("Close time must be after open time.");
+                }
+            }
+
+            UserOpeningHour existing = existingByDay.get(req.dayOfWeek());
+            if (existing != null) {
+                existing.setIsClosed(closed);
+                existing.setOpenTime(openTime);
+                existing.setCloseTime(closeTime);
+            } else {
+                user.getOpeningHours().add(UserOpeningHour.builder()
+                        .user(user)
+                        .dayOfWeek(req.dayOfWeek())
+                        .isClosed(closed)
+                        .openTime(openTime)
+                        .closeTime(closeTime)
+                        .build());
+            }
+        }
+    }
+
+    private LocalTime parseClockTime(String value, String label) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalTime.parse(value.trim());
+        } catch (DateTimeParseException ex) {
+            throw new BadRequestException("Invalid " + label + " time. Use HH:mm format.");
+        }
     }
 
     private String trimToNull(String value) {
