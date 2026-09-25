@@ -1,5 +1,6 @@
 import { PERSON_NAME_REGEX, PHONE_E164_REGEX } from "./authValidation";
 import type { UserPhoneNumberPayload } from "@/lib/api/users";
+import { validateOpeningHours, type OpeningHour } from "@/lib/openingHours";
 
 export const USERNAME_REGEX = /^(?=.{3,30}$)(?![_-])(?!.*[_-]{2})[a-zA-Z0-9_-]+(?<![_-])$/;
 
@@ -10,6 +11,7 @@ export interface EditProfileFormData {
   bio?: string;
   location?: string;
   phoneNumbers: UserPhoneNumberPayload[];
+  openingHours?: OpeningHour[];
 }
 
 export interface PhoneNumberValidationResult {
@@ -85,7 +87,7 @@ export function validateEditProfileForm(
   data: EditProfileFormData
 ): ProfileValidationResult {
   const errors: Record<string, string> = {};
-  const { firstName, lastName, username, bio, location, phoneNumbers } = data;
+  const { firstName, lastName, username, bio, location, phoneNumbers, openingHours } = data;
 
   if (!firstName || !firstName.trim()) {
     errors.firstName = "First name is required.";
@@ -116,6 +118,13 @@ export function validateEditProfileForm(
   const phoneValidation = validatePhoneNumbers(phoneNumbers);
   if (!phoneValidation.isValid && phoneValidation.error) {
     errors.phoneNumbers = phoneValidation.error;
+  }
+
+  if (openingHours) {
+    const hoursError = validateOpeningHours(openingHours);
+    if (hoursError) {
+      errors.openingHours = hoursError;
+    }
   }
 
   const firstErrorKey = Object.keys(errors)[0];
