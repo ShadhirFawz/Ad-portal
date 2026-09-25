@@ -4,6 +4,7 @@ import UserListingsSection from "@/components/profile/UserListingsSection";
 import Link from "next/link";
 import Image from "next/image";
 import { Calendar, MapPin, Search } from "lucide-react";
+import OpeningHoursDisplay from "@/components/profile/OpeningHoursDisplay";
 
 interface PageProps {
   params: Promise<{
@@ -133,6 +134,8 @@ export default async function PublicProfilePage({ params }: PageProps) {
               </p>
             </div>
           )}
+
+          <OpeningHoursDisplay hours={user.openingHours} />
 
         </div>
       </div>

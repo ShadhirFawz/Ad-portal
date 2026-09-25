@@ -6,6 +6,13 @@ import Link from "next/link";
 import { useAuth } from "@/providers/AuthProvider";
 import { updateMyProfile, UserPhoneNumberPayload } from "@/lib/api/users";
 import { validateEditProfileForm } from "@/lib/validation/profileValidation";
+import {
+  defaultOpeningHours,
+  normalizeOpeningHours,
+  toOpeningHoursPayload,
+  WEEK_DAYS,
+  type OpeningHour,
+} from "@/lib/openingHours";
 import { getSafeRedirectUrl } from "@/lib/utils/redirect";
 import { useToast } from "@/hooks/useToast";
 import {
@@ -22,6 +29,8 @@ import {
   Plus,
   Trash2,
   Star,
+  Clock,
+  RotateCcw,
 } from "lucide-react";
 import WhatsAppIcon from "@/components/common/WhatsAppIcon";
 
@@ -40,6 +49,7 @@ function EditProfileContent() {
   const [avatarUrl, setAvatarUrl] = useState("");
   const [coverPhotoUrl, setCoverPhotoUrl] = useState("");
   const [phoneNumbers, setPhoneNumbers] = useState<UserPhoneNumberPayload[]>([]);
+  const [openingHours, setOpeningHours] = useState<OpeningHour[]>(defaultOpeningHours());
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,6 +92,8 @@ function EditProfileContent() {
       } else {
         setPhoneNumbers([]);
       }
+
+      setOpeningHours(normalizeOpeningHours(user.openingHours));
     }
   }, [user]);
 
@@ -225,6 +237,7 @@ function EditProfileContent() {
       bio: bio || undefined,
       location: location || undefined,
       phoneNumbers,
+      openingHours,
     });
 
     if (!validation.isValid) {
@@ -243,6 +256,7 @@ function EditProfileContent() {
         location: location.trim() || undefined,
         publicProfile,
         phoneNumbers: validation.cleanedPhoneNumbers,
+        openingHours: toOpeningHoursPayload(openingHours),
       });
 
       if (updated) {
@@ -261,6 +275,9 @@ function EditProfileContent() {
               isWhatsapp: Boolean(p.isWhatsapp),
             }))
           );
+        }
+        if (updated.openingHours) {
+          setOpeningHours(normalizeOpeningHours(updated.openingHours));
         }
       }
 
@@ -616,6 +633,127 @@ function EditProfileContent() {
           <p className="text-[11px] text-slate-400">
             Numbers must be in E.164 international format, e.g. <span className="font-mono text-slate-500 dark:text-slate-300">+94771234567</span>.
           </p>
+        </div>
+
+        {/* Shop / Business Hours */}
+        <div className="glass-panel p-6 sm:p-8 space-y-6">
+          <div className="flex items-start justify-between flex-wrap gap-3">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
+                <Clock className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                <span>Shop / Business Hours</span>
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Shown on your public and private profile. Defaults are 9:00 AM – 5:00 PM weekdays, closed on weekends.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setOpeningHours(defaultOpeningHours());
+                setFieldErrors((p) => ({ ...p, openingHours: "" }));
+              }}
+              className="text-xs font-semibold px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors flex items-center gap-1.5"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Reset to default</span>
+            </button>
+          </div>
+
+          {fieldErrors.openingHours && (
+            <p className="text-xs text-rose-500">{fieldErrors.openingHours}</p>
+          )}
+
+          <div className="space-y-2.5">
+            {openingHours.map((hour, index) => {
+              const day = WEEK_DAYS.find((d) => d.dayOfWeek === hour.dayOfWeek);
+              return (
+                <div
+                  key={hour.dayOfWeek}
+                  className={`p-4 rounded-xl border transition-all ${
+                    hour.isClosed
+                      ? "bg-slate-50/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800"
+                      : "bg-emerald-500/5 border-emerald-500/20 dark:bg-emerald-500/10"
+                  }`}
+                >
+                  <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                    <div className="flex items-center justify-between gap-3 min-w-40">
+                      <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                        {day?.label ?? `Day ${hour.dayOfWeek}`}
+                      </span>
+                      <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={!hour.isClosed}
+                          onChange={(e) => {
+                            const open = e.target.checked;
+                            setFieldErrors((p) => ({ ...p, openingHours: "" }));
+                            setOpeningHours((prev) =>
+                              prev.map((item, i) =>
+                                i === index
+                                  ? {
+                                      ...item,
+                                      isClosed: !open,
+                                      openTime: item.openTime || "09:00",
+                                      closeTime: item.closeTime || "17:00",
+                                    }
+                                  : item
+                              )
+                            );
+                          }}
+                          className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300"
+                        />
+                        <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                          {hour.isClosed ? "Closed" : "Open"}
+                        </span>
+                      </label>
+                    </div>
+
+                    <div className="flex-1 grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                          Opens
+                        </label>
+                        <input
+                          type="time"
+                          value={hour.openTime ?? "09:00"}
+                          disabled={hour.isClosed}
+                          onChange={(e) => {
+                            setFieldErrors((p) => ({ ...p, openingHours: "" }));
+                            setOpeningHours((prev) =>
+                              prev.map((item, i) =>
+                                i === index ? { ...item, openTime: e.target.value } : item
+                              )
+                            );
+                          }}
+                          className="input-field text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                          Closes
+                        </label>
+                        <input
+                          type="time"
+                          value={hour.closeTime ?? "17:00"}
+                          disabled={hour.isClosed}
+                          onChange={(e) => {
+                            setFieldErrors((p) => ({ ...p, openingHours: "" }));
+                            setOpeningHours((prev) =>
+                              prev.map((item, i) =>
+                                i === index ? { ...item, closeTime: e.target.value } : item
+                              )
+                            );
+                          }}
+                          className="input-field text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Save Bar */}
