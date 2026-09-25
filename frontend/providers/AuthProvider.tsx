@@ -71,6 +71,7 @@ function mapSupabaseUserToUserResponse(supabaseUser: {
     phoneVerified: false,
     publicProfile: true,
     createdAt: supabaseUser.created_at || new Date().toISOString(),
+    openingHours: [],
   };
 }
 

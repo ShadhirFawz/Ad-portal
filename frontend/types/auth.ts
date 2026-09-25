@@ -1,3 +1,5 @@
+import type { OpeningHour } from "@/lib/openingHours";
+
 export type UserRole =
   | "USER"
   | "ADMIN";
@@ -34,6 +36,7 @@ export interface UserResponse {
   phoneVerified: boolean;
   publicProfile: boolean;
   createdAt: string;
+  openingHours?: OpeningHour[];
 }
 
 export interface AuthResponse {

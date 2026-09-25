@@ -6,6 +6,7 @@ import type {
   ApiResponse,
   UserResponse,
 } from "@/types/auth";
+import type { OpeningHour } from "@/lib/openingHours";
 
 export interface UserPhoneNumberPayload {
   id?: string;
@@ -24,6 +25,7 @@ export interface UpdateProfileRequest {
   avatarUrl?: string;
   coverPhotoUrl?: string;
   phoneNumbers?: UserPhoneNumberPayload[];
+  openingHours?: OpeningHour[];
 }
 
 export interface ChangePasswordRequest {
