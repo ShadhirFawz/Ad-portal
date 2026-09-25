@@ -43,6 +43,7 @@ import {
   UploadCloud,
   X as XIcon,
 } from "lucide-react";
+import OpeningHoursDisplay from "@/components/profile/OpeningHoursDisplay";
 import WhatsAppIcon from "@/components/common/WhatsAppIcon";
 import { useToast as _useToast } from "@/hooks/useToast";
 
@@ -763,6 +764,8 @@ function ProfileContent() {
               </p>
             </div>
           )}
+
+          <OpeningHoursDisplay hours={user.openingHours} />
 
           {/* Action Buttons */}
           <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800 flex items-center gap-3 flex-wrap">
