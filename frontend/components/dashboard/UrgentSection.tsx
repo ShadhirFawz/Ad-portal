@@ -25,8 +25,8 @@ export default function UrgentSection({
 
   // Group listings in pairs for 2-column, 1-row layout
   const pairs: Listing[][] = [];
-  for (let i = 0; i < listings.length; i += 2) {
-    pairs.push(listings.slice(i, i + 2));
+  for (let i = 0; i < listings.length; i += 4) {
+    pairs.push(listings.slice(i, i + 4));
   }
 
   const maxIndex = Math.max(0, pairs.length - 1);
@@ -137,8 +137,8 @@ export default function UrgentSection({
               onClick={() => setIndex(i)}
               aria-label={`Go to urgent slide ${i + 1}`}
               className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${index === i
-                  ? "w-6 bg-rose-600"
-                  : "w-2 bg-slate-300 dark:bg-slate-700 hover:bg-rose-300"
+                ? "w-6 bg-rose-600"
+                : "w-2 bg-slate-300 dark:bg-slate-700 hover:bg-rose-300"
                 }`}
             />
           ))}
