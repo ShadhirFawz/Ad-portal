@@ -25,8 +25,8 @@ export default function SpotlightSection({
 
   // Group listings in pairs for 2-column, 1-row layout
   const pairs: Listing[][] = [];
-  for (let i = 0; i < listings.length; i += 2) {
-    pairs.push(listings.slice(i, i + 2));
+  for (let i = 0; i < listings.length; i += 4) {
+    pairs.push(listings.slice(i, i + 4));
   }
 
   const maxIndex = Math.max(0, pairs.length - 1);
@@ -107,13 +107,6 @@ export default function SpotlightSection({
               </button>
             </div>
           )}
-          <Link
-            href="/promotions"
-            className="hidden sm:inline-flex items-center gap-1 text-xs font-semibold text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 ml-2"
-          >
-            <span>Promote Ad</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
         </div>
       </div>
 
@@ -134,8 +127,8 @@ export default function SpotlightSection({
               onClick={() => setIndex(i)}
               aria-label={`Go to spotlight slide ${i + 1}`}
               className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${index === i
-                  ? "w-6 bg-amber-500"
-                  : "w-2 bg-slate-300 dark:bg-slate-700 hover:bg-amber-300"
+                ? "w-6 bg-amber-500"
+                : "w-2 bg-slate-300 dark:bg-slate-700 hover:bg-amber-300"
                 }`}
             />
           ))}
