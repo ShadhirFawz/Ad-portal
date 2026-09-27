@@ -169,3 +169,24 @@ export async function getAccountSetupProgress(
 
   return response.data;
 }
+
+export async function becomeSeller(
+  request: import("@/types/auth").BecomeSellerRequest,
+  accessToken?: string | null
+): Promise<UserResponse> {
+  const headers: Record<string, string> = {};
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
+
+  const response = await apiRequest<ApiResponse<UserResponse>>(
+    "/users/become-seller",
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify(request),
+    }
+  );
+
+  return response.data;
+}

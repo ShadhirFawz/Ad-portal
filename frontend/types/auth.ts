@@ -1,8 +1,10 @@
 import type { OpeningHour } from "@/lib/openingHours";
 
 export type UserRole =
-  | "USER"
-  | "ADMIN";
+  | "MEMBER"
+  | "SELLER"
+  | "ADMIN"
+  | "USER";
 
 export type UserStatus =
   | "PENDING_EMAIL_VERIFICATION"
@@ -32,11 +34,19 @@ export interface UserResponse {
   location: string | null;
   role: UserRole;
   status: UserStatus;
+  accountStatus?: UserStatus;
   emailVerified: boolean;
   phoneVerified: boolean;
   publicProfile: boolean;
   createdAt: string;
   openingHours?: OpeningHour[];
+}
+
+export interface BecomeSellerRequest {
+  phoneNumber: string;
+  acceptTerms: boolean;
+  isWhatsapp?: boolean;
+  preferredContactMethod?: "CALL" | "WHATSAPP" | "BOTH";
 }
 
 export interface AuthResponse {
