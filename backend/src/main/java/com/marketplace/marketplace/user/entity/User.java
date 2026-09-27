@@ -75,11 +75,13 @@ public class User extends BaseUuidEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private Role role;
+    @Builder.Default
+    private Role role = Role.MEMBER;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 40)
-    private UserStatus status;
+    @Builder.Default
+    private UserStatus status = UserStatus.ACTIVE;
 
     @Column(name = "email_verified", nullable = false)
     @Builder.Default

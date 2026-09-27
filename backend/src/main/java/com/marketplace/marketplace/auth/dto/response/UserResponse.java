@@ -37,6 +37,8 @@ public record UserResponse(
 
         UserStatus status,
 
+        UserStatus accountStatus,
+
         Boolean emailVerified,
 
         Boolean phoneVerified,

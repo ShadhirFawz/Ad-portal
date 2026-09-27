@@ -94,10 +94,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     AuthenticatedUser principal = new AuthenticatedUser(
                             userId,
                             tokenEmail,
-                            com.marketplace.marketplace.common.enums.Role.USER);
+                            com.marketplace.marketplace.common.enums.Role.MEMBER);
 
                     var authorities = List.of(
-                            new SimpleGrantedAuthority("ROLE_USER"));
+                            new SimpleGrantedAuthority("ROLE_MEMBER"));
 
                     var authentication = new UsernamePasswordAuthenticationToken(
                             principal,
