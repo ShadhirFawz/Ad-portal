@@ -20,6 +20,10 @@ import {
   ArrowRight,
   Package,
   RotateCcw,
+  Lock,
+  Sparkles,
+  User2,
+  UserStar,
 } from "lucide-react";
 
 const PAGE_SIZE = 16;
@@ -154,6 +158,43 @@ export default function MyListingsPage() {
     );
   }
 
+  // Members cannot access this seller-only page
+  if (user.role === "MEMBER") {
+    return (
+      <main className="flex-1 flex items-center justify-center py-20 min-h-[60vh] px-4">
+        <div className="max-w-md w-full text-center space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="mx-auto w-20 h-20 rounded-3xl bg-amber-500/10 text-amber-500 flex items-center justify-center shadow-lg">
+            <Lock className="w-9 h-9" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              Sellers Only
+            </h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+              The <strong className="text-slate-700 dark:text-slate-200">My Listings</strong> dashboard is reserved for verified sellers.
+              Activate your seller account to start posting ads and managing your listings.
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              href="/become-a-seller?next=/my-listings"
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl text-sm transition shadow-md shadow-emerald-500/20"
+            >
+              <UserStar className="w-4 h-4" />
+              Become a Seller
+            </Link>
+            <Link
+              href="/listings"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-400 dark:hover:border-slate-500 text-sm font-medium transition"
+            >
+              Explore Listings
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   const statusOptions = [
     { value: "ALL", label: "All" },
     {
@@ -227,6 +268,8 @@ export default function MyListingsPage() {
         </div>
       </div>
 
+
+
       {/* Horizontal Filter Bar */}
       <HorizontalFilterBar
         filters={filters}
@@ -286,8 +329,8 @@ export default function MyListingsPage() {
                   onClick={() => handlePageChange(i)}
                   disabled={listingsLoading}
                   className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all ${i === currentPage
-                      ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/25"
-                      : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/25"
+                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                     }`}
                 >
                   {i + 1}
