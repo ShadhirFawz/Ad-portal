@@ -210,6 +210,11 @@ export default function NewListingPage() {
       return;
     }
 
+    if (!authLoading && user && user.role !== "SELLER" && user.role !== "ADMIN") {
+      router.replace("/become-a-seller?next=/listings/new");
+      return;
+    }
+
     if (!user) return;
     if (categories.length > 0) return;
 
@@ -417,12 +422,16 @@ export default function NewListingPage() {
     }
   };
 
-  if (authLoading || (!user && !error)) {
+  if (authLoading || (!user && !error) || (user && user.role !== "SELLER" && user.role !== "ADMIN")) {
     return (
       <main className="flex-1 flex items-center justify-center py-24">
-        <div className="flex items-center gap-3 text-slate-500 font-medium">
-          <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-          Preparing listing form...
+        <div className="flex flex-col items-center gap-3 text-slate-500 font-medium">
+          <div className="w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs text-slate-400">
+            {user && user.role !== "SELLER" && user.role !== "ADMIN"
+              ? "Redirecting to seller setup..."
+              : "Preparing listing form..."}
+          </span>
         </div>
       </main>
     );
