@@ -81,6 +81,9 @@ public class SecurityConfig {
                                 .requestMatchers(HttpMethod.DELETE, "/api/v1/users/me")
                                 .authenticated()
 
+                                .requestMatchers(HttpMethod.POST, "/api/v1/users/become-seller", "/api/v1/users/me/become-seller")
+                                .authenticated()
+
                                 .requestMatchers("/api/v1/users/me/images/**")
                                 .authenticated()
 

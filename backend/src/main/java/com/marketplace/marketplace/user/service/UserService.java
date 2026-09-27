@@ -52,4 +52,9 @@ public interface UserService {
      */
     com.marketplace.marketplace.user.dto.response.AccountSetupProgressResponse getAccountSetupProgress();
 
+    /**
+     * Converts the current MEMBER to a SELLER with verified phone number and accepted terms.
+     */
+    UserResponse becomeSeller(com.marketplace.marketplace.user.dto.request.BecomeSellerRequest request);
+
 }
