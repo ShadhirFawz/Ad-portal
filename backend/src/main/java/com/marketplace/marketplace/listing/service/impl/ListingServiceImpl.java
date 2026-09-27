@@ -4,6 +4,7 @@ import com.marketplace.marketplace.category.dto.response.CategoryBreadcrumbRespo
 import com.marketplace.marketplace.category.entity.Category;
 import com.marketplace.marketplace.category.repository.CategoryRepository;
 import com.marketplace.marketplace.category.service.CategoryService;
+import com.marketplace.marketplace.common.exception.BadRequestException;
 import com.marketplace.marketplace.common.exception.ConflictException;
 import com.marketplace.marketplace.common.exception.ResourceNotFoundException;
 import com.marketplace.marketplace.common.security.util.SecurityUtils;
@@ -73,6 +74,16 @@ public class ListingServiceImpl implements ListingService {
                         CreateListingRequest request) {
 
                 User seller = getCurrentUser();
+
+                if (seller.getStatus() == com.marketplace.marketplace.common.enums.UserStatus.SUSPENDED
+                                || seller.getStatus() == com.marketplace.marketplace.common.enums.UserStatus.BANNED
+                                || seller.getStatus() == com.marketplace.marketplace.common.enums.UserStatus.DELETED) {
+                        throw new BadRequestException("Your account is " + seller.getStatus().name().toLowerCase() + ". You cannot post listings.");
+                }
+
+                if (seller.getRole() == com.marketplace.marketplace.common.enums.Role.MEMBER) {
+                        throw new BadRequestException("You must complete the seller registration before posting listings. Please visit /become-a-seller.");
+                }
 
                 Category category = getCategoryForListing(request.categoryId());
 
@@ -685,7 +696,7 @@ public class ListingServiceImpl implements ListingService {
                                         User user = User.builder()
                                                         .email(email)
                                                         .firstName("User")
-                                                        .role(com.marketplace.marketplace.common.enums.Role.USER)
+                                                        .role(com.marketplace.marketplace.common.enums.Role.MEMBER)
                                                         .status(com.marketplace.marketplace.common.enums.UserStatus.ACTIVE)
                                                         .emailVerified(true)
                                                         .phoneVerified(false)
