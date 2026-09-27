@@ -10,8 +10,9 @@ import {
 } from "react";
 
 import { createClient } from "@/lib/supabase/client";
-import type { UserResponse } from "@/types/auth";
+import type { UserResponse, BecomeSellerRequest } from "@/types/auth";
 import { getMe, syncUser } from "@/lib/api/auth";
+import { becomeSeller as apiBecomeSeller } from "@/lib/api/users";
 
 interface AuthContextValue {
   user: UserResponse | null;
@@ -27,6 +28,7 @@ interface AuthContextValue {
   logout: () => Promise<void>;
   refreshSession: () => Promise<void>;
   syncProfile: () => Promise<UserResponse | null>;
+  becomeSeller: (req: BecomeSellerRequest) => Promise<UserResponse>;
   updatePassword: (newPassword: string, currentPassword?: string) => Promise<unknown>;
   requestPasswordReset: (email: string) => Promise<void>;
 }
@@ -65,8 +67,9 @@ function mapSupabaseUserToUserResponse(supabaseUser: {
     coverPhotoUrl: "",
     bio: "",
     location: "",
-    role: "USER",
+    role: "MEMBER",
     status: "ACTIVE",
+    accountStatus: "ACTIVE",
     emailVerified: true,
     phoneVerified: false,
     publicProfile: true,
@@ -287,6 +290,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return null;
   };
 
+  const becomeSeller = async (req: BecomeSellerRequest) => {
+    if (!accessToken) {
+      throw new Error("You must be logged in to activate seller account.");
+    }
+    const updated = await apiBecomeSeller(req, accessToken);
+    setUser(updated);
+    return updated;
+  };
+
   const updatePassword = async (newPassword: string, currentPassword?: string) => {
     const supabase = createClient();
 
@@ -335,6 +347,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         refreshSession,
         syncProfile,
+        becomeSeller,
         updatePassword,
         requestPasswordReset,
       }}
