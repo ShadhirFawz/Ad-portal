@@ -17,6 +17,10 @@ import {
   Search,
   Package,
   BanknoteArrowUpIcon,
+  ArrowUpCircle,
+  Lock,
+  User2,
+  UserStar,
 } from "lucide-react";
 import { getMyBoosts } from "@/lib/api/boosts";
 import type { AdBoost } from "@/types/boost";
@@ -25,8 +29,10 @@ import PurchaseHistoryModal from "@/components/subscriptions/PurchaseHistoryModa
 import ListingPromotionsModal, {
   ListingSubscriptionGroup,
 } from "@/components/subscriptions/ListingPromotionsModal";
+import { useAuth } from "@/providers/AuthProvider";
 
 export default function SubscriptionsPage() {
+  const { user, loading: authLoading } = useAuth();
   const [boosts, setBoosts] = useState<AdBoost[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterTab, setFilterTab] = useState<
@@ -51,8 +57,13 @@ export default function SubscriptionsPage() {
   };
 
   useEffect(() => {
-    fetchBoosts();
-  }, []);
+    if (!authLoading && user && (user.role === "SELLER" || user.role === "ADMIN")) {
+      fetchBoosts();
+    } else if (!authLoading) {
+      setLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authLoading]);
 
   const handleOpenReceipt = (orderId?: string | null) => {
     setSelectedOrderId(orderId || null);
@@ -164,6 +175,55 @@ export default function SubscriptionsPage() {
 
     return true;
   });
+
+  // Auth loading state
+  if (authLoading) {
+    return (
+      <main className="flex-1 flex items-center justify-center py-20 min-h-[60vh]">
+        <div className="flex items-center gap-3 text-slate-500 font-medium">
+          <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          Loading...
+        </div>
+      </main>
+    );
+  }
+
+  // Members cannot access this seller-only page
+  if (!user || user.role === "MEMBER") {
+    return (
+      <main className="flex-1 flex items-center justify-center py-20 min-h-[60vh] px-4">
+        <div className="max-w-md w-full text-center space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="mx-auto w-20 h-20 rounded-3xl bg-amber-500/10 text-amber-500 flex items-center justify-center shadow-lg">
+            <Lock className="w-9 h-9" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              Sellers Only
+            </h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+              The <strong className="text-slate-700 dark:text-slate-200">Subscriptions &amp; Promotions</strong> dashboard is reserved for verified sellers.
+              Activate your seller account to access boost analytics, active promotions, and purchase history.
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              href="/become-a-seller?next=/subscriptions"
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl text-sm transition shadow-md shadow-emerald-500/20"
+            >
+              <UserStar className="w-4 h-4" />
+              Become a Seller
+            </Link>
+            <Link
+              href="/listings"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-400 dark:hover:border-slate-500 text-sm font-medium transition"
+            >
+              Explore Listings
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950 pb-24">
@@ -432,7 +492,7 @@ export default function SubscriptionsPage() {
           ) : filteredListingGroups.length === 0 ? (
             <div className="rounded-3xl border border-slate-200/80 bg-white p-12 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-400/10 dark:text-emerald-400">
-                <Sparkles className="h-8 w-8" />
+                <ArrowUpCircle className="h-8 w-8" />
               </div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                 {searchQuery || filterTab !== "ALL"
