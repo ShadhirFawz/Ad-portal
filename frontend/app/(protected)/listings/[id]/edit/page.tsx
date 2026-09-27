@@ -247,6 +247,12 @@ export default function EditListingPage({ params }: PageProps) {
         ]);
 
         if (isMounted) {
+          if (listingData.sellerId && user && listingData.sellerId !== user.id) {
+            setError("You do not have permission to edit this listing. Only the owner can edit their own listing.");
+            setFetching(false);
+            return;
+          }
+
           setListing(listingData);
           setCategories(categoriesData);
 

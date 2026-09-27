@@ -75,6 +75,12 @@ export default function BoostListingPage({ params }: PageProps) {
           getListingBoosts(listingId).catch(() => []),
         ]);
 
+        if (listingData && user && listingData.sellerId && listingData.sellerId !== user.id) {
+          setError("You can only boost listings that you own.");
+          setLoading(false);
+          return;
+        }
+
         setListing(listingData);
         setExistingBoosts(activeBoosts);
 
