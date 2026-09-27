@@ -6,7 +6,7 @@ spring:
     active: dev
 
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 security:
 
@@ -21,6 +21,8 @@ security:
 
     allowed-origins:
       - http://localhost:3000
+      - http://127.0.0.1:3000
+      - http://192.168.8.121:3000
 
     allowed-methods:
       - GET
