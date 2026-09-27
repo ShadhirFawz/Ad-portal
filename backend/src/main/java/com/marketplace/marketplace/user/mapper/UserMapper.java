@@ -63,6 +63,7 @@ public class UserMapper {
                 user.getLocation(),
                 user.getRole(),
                 user.getStatus(),
+                user.getStatus(),
                 user.getEmailVerified(),
                 user.getPhoneVerified(),
                 user.getPublicProfile(),
