@@ -53,6 +53,13 @@ public class AuctionServiceImpl implements AuctionService {
     @Transactional
     public AuctionPublicResponse startAuction(UUID listingId) {
         User seller = getCurrentUser();
+
+        if (seller.getStatus() == com.marketplace.marketplace.common.enums.UserStatus.SUSPENDED
+                || seller.getStatus() == com.marketplace.marketplace.common.enums.UserStatus.BANNED
+                || seller.getStatus() == com.marketplace.marketplace.common.enums.UserStatus.DELETED) {
+            throw new BadRequestException("Your account is " + seller.getStatus().name().toLowerCase() + ". You cannot start auctions.");
+        }
+
         Listing listing = getListing(listingId);
 
         if (!listing.getSeller().getId().equals(seller.getId())) {
@@ -138,6 +145,13 @@ public class AuctionServiceImpl implements AuctionService {
     @Transactional
     public PlaceBidResponse placeBid(UUID listingId, PlaceBidRequest request) {
         User bidder = getCurrentUser();
+
+        if (bidder.getStatus() == com.marketplace.marketplace.common.enums.UserStatus.SUSPENDED
+                || bidder.getStatus() == com.marketplace.marketplace.common.enums.UserStatus.BANNED
+                || bidder.getStatus() == com.marketplace.marketplace.common.enums.UserStatus.DELETED) {
+            throw new BadRequestException("Your account is " + bidder.getStatus().name().toLowerCase() + ". You cannot place bids.");
+        }
+
         Listing listing = getListing(listingId);
 
         if (listing.getSeller().getId().equals(bidder.getId())) {
@@ -211,7 +225,7 @@ public class AuctionServiceImpl implements AuctionService {
                     User user = User.builder()
                             .email(email)
                             .firstName("User")
-                            .role(com.marketplace.marketplace.common.enums.Role.USER)
+                            .role(com.marketplace.marketplace.common.enums.Role.MEMBER)
                             .status(com.marketplace.marketplace.common.enums.UserStatus.ACTIVE)
                             .emailVerified(true)
                             .phoneVerified(false)
