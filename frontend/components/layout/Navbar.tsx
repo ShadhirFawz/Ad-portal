@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/useToast";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 import AccountSetupProgressWidget from "@/components/layout/AccountSetupProgressWidget";
 import GlobalListingSearch from "@/components/layout/GlobalListingSearch";
-import { Menu, X, ChevronDown, LogOut, User, Heart, Bookmark, Package, Settings, BadgeCheck } from "lucide-react";
+import { Menu, X, ChevronDown, LogOut, User, Heart, Bookmark, Package, Settings, BadgeCheck, User2, LucideUserRoundArrowLeft, UserStar } from "lucide-react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 
@@ -138,7 +138,7 @@ export default function Navbar() {
               Explore
             </Link>
 
-            {user && (
+            {user && (user.role === "SELLER" || user.role === "ADMIN") && (
               <Link
                 href="/my-listings"
                 className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive("/my-listings")
@@ -208,20 +208,32 @@ export default function Navbar() {
                           <User className="w-4 h-4" />
                           Profile
                         </Link>
-                        <Link
-                          href="/my-listings"
-                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                        >
-                          <Package className="w-4 h-4" />
-                          My Listings
-                        </Link>
-                        <Link
-                          href="/subscriptions"
-                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                        >
-                          <BadgeCheck className="w-4 h-4 text-emerald-500" />
-                          My Subscriptions
-                        </Link>
+                        {(user.role === "SELLER" || user.role === "ADMIN") ? (
+                          <>
+                            <Link
+                              href="/my-listings"
+                              className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                            >
+                              <Package className="w-4 h-4" />
+                              My Listings
+                            </Link>
+                            <Link
+                              href="/subscriptions"
+                              className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                            >
+                              <BadgeCheck className="w-4 h-4 text-emerald-500" />
+                              My Subscriptions
+                            </Link>
+                          </>
+                        ) : (
+                          <Link
+                            href="/become-a-seller"
+                            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors font-medium"
+                          >
+                            <UserStar className="w-4 h-4" />
+                            Become a Seller
+                          </Link>
+                        )}
                         <Link
                           href="/favorites"
                           className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
@@ -356,22 +368,35 @@ export default function Navbar() {
                       <User className="w-5 h-5" />
                       Profile
                     </Link>
-                    <Link
-                      href="/my-listings"
-                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <Package className="w-5 h-5" />
-                      My Listings
-                    </Link>
-                    <Link
-                      href="/subscriptions"
-                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <BadgeCheck className="w-5 h-5 text-emerald-500" />
-                      My Subscriptions
-                    </Link>
+                    {(user.role === "SELLER" || user.role === "ADMIN") ? (
+                      <>
+                        <Link
+                          href="/my-listings"
+                          className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          <Package className="w-5 h-5" />
+                          My Listings
+                        </Link>
+                        <Link
+                          href="/subscriptions"
+                          className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          <BadgeCheck className="w-5 h-5 text-emerald-500" />
+                          My Subscriptions
+                        </Link>
+                      </>
+                    ) : (
+                      <Link
+                        href="/become-a-seller"
+                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <UserStar className="w-5 h-5" />
+                        Become a Seller
+                      </Link>
+                    )}
                     <Link
                       href="/favorites"
                       className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
