@@ -1,6 +1,7 @@
 package com.marketplace.marketplace.user.controller;
 
 import com.marketplace.marketplace.common.response.ApiResponse;
+import com.marketplace.marketplace.user.dto.request.BecomeSellerRequest;
 import com.marketplace.marketplace.user.dto.request.ChangePasswordRequest;
 import com.marketplace.marketplace.user.dto.request.UpdateProfileRequest;
 import com.marketplace.marketplace.auth.dto.response.UserResponse;
@@ -40,6 +41,15 @@ public class UserController {
         return ApiResponse.success(
                 "Account setup progress retrieved successfully.",
                 userService.getAccountSetupProgress());
+    }
+
+    @PostMapping({"/become-seller", "/me/become-seller"})
+    public ApiResponse<UserResponse> becomeSeller(
+            @Valid @RequestBody BecomeSellerRequest request) {
+
+        return ApiResponse.success(
+                "Seller account activated successfully.",
+                userService.becomeSeller(request));
     }
 
     @PatchMapping("/me")

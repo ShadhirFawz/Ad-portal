@@ -9,6 +9,7 @@ import com.marketplace.marketplace.common.exception.BadRequestException;
 import com.marketplace.marketplace.common.exception.ConflictException;
 import com.marketplace.marketplace.common.exception.ResourceNotFoundException;
 import com.marketplace.marketplace.common.security.util.SecurityUtils;
+import com.marketplace.marketplace.user.dto.request.BecomeSellerRequest;
 import com.marketplace.marketplace.user.dto.request.ChangePasswordRequest;
 import com.marketplace.marketplace.user.dto.request.UpdateProfileRequest;
 import com.marketplace.marketplace.auction.repository.AuctionBidRepository;
@@ -462,7 +463,7 @@ public class UserServiceImpl implements UserService {
                                     .lastName(lastName)
                                     .phoneNumber(phoneNumber)
                                     .username(username)
-                                    .role(Role.USER)
+                                    .role(Role.MEMBER)
                                     .status(UserStatus.ACTIVE)
                                     .emailVerified(true)
                                     .phoneVerified(false)
@@ -522,7 +523,7 @@ public class UserServiceImpl implements UserService {
                     User user = User.builder()
                             .email(email)
                             .firstName("User")
-                            .role(Role.USER)
+                            .role(Role.MEMBER)
                             .status(UserStatus.ACTIVE)
                             .emailVerified(true)
                             .phoneVerified(false)
@@ -669,6 +670,70 @@ public class UserServiceImpl implements UserService {
         } catch (DateTimeParseException ex) {
             throw new BadRequestException("Invalid " + label + " time. Use HH:mm format.");
         }
+    }
+
+    @Override
+    @Transactional
+    public UserResponse becomeSeller(BecomeSellerRequest request) {
+        if (request == null) {
+            throw new BadRequestException("Request body cannot be null.");
+        }
+
+        User user = getAuthenticatedUser();
+
+        if (user.getStatus() == UserStatus.SUSPENDED || user.getStatus() == UserStatus.BANNED || user.getStatus() == UserStatus.DELETED) {
+            throw new BadRequestException("Your account is " + user.getStatus().name().toLowerCase() + ". You cannot activate seller privileges.");
+        }
+
+        String phone = trimToNull(request.phoneNumber());
+        if (phone == null || phone.isBlank()) {
+            throw new BadRequestException("Phone number is mandatory to become a seller.");
+        }
+
+        // Check if phone number is used by another user
+        Optional<User> existingWithPhone = userRepository.findByPhoneNumber(phone);
+        if (existingWithPhone.isPresent() && !existingWithPhone.get().getId().equals(user.getId())) {
+            throw new ConflictException("This phone number is already registered to another account.");
+        }
+
+        user.setPhoneNumber(phone);
+
+        // Ensure user phone numbers list is updated
+        boolean phoneFound = false;
+        if (user.getPhoneNumbers() == null) {
+            user.setPhoneNumbers(new ArrayList<>());
+        }
+
+        for (UserPhoneNumber upn : user.getPhoneNumbers()) {
+            if (phone.equals(upn.getPhoneNumber())) {
+                upn.setIsPrimary(true);
+                if (request.isWhatsapp() != null) {
+                    upn.setIsWhatsapp(request.isWhatsapp());
+                }
+                phoneFound = true;
+            } else {
+                upn.setIsPrimary(false);
+            }
+        }
+
+        if (!phoneFound) {
+            UserPhoneNumber newUpn = UserPhoneNumber.builder()
+                    .user(user)
+                    .phoneNumber(phone)
+                    .isPrimary(true)
+                    .isWhatsapp(Boolean.TRUE.equals(request.isWhatsapp()))
+                    .build();
+            user.getPhoneNumbers().add(newUpn);
+        }
+
+        // Promote role to SELLER (keep ADMIN if already ADMIN)
+        if (user.getRole() != Role.ADMIN) {
+            user.setRole(Role.SELLER);
+        }
+
+        user.ensureDefaultOpeningHours();
+        User saved = userRepository.save(user);
+        return userMapper.toResponse(saved);
     }
 
     private String trimToNull(String value) {
