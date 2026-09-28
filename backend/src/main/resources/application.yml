@@ -24,6 +24,7 @@ security:
       - http://127.0.0.1:3000
       - http://192.168.8.121:3000
       - https://wudo-two.vercel.app
+      - https://*.vercel.app
       - ${FRONTEND_URL:https://wudo-two.vercel.app}
 
     allowed-methods:
