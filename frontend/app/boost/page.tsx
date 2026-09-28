@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { getBoostPlans } from "@/lib/api/boosts";
 import type { BoostPlan, BoostPricingTier } from "@/types/boost";
+import BoostFlowDiagram from "@/components/common/BoostFlowDiagram";
 
 // ─── Boost type visual config ──────────────────────────────────────────────────
 const BOOST_CONFIGS = {
@@ -228,42 +229,62 @@ export default function BoostAdPage() {
             you sell faster, at the price you want, without lowering it just to get noticed.
           </p>
 
-          <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-4xl">
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 p-5">
-              <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 mb-2">
-                <Eye className="h-4 w-4" />
-                <span className="text-xs font-bold uppercase tracking-wider">More Views</span>
+          <div className="mt-8 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8 max-w-4xl items-center">
+            {/* Left: text rows for the three stages */}
+            <div className="space-y-5">
+              <div className="flex items-start gap-3">
+                <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500 pt-1">
+                  01
+                </span>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                    More Views
+                  </p>
+                  <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                    Boosted ads appear at the top of search results and category feeds,
+                    where buyer attention is highest.
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Boosted ads appear at the top of search results and category feeds, where
-                buyer attention is highest.
-              </p>
+
+              <div className="flex items-start gap-3">
+                <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500 pt-1">
+                  02
+                </span>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                    More Inquiries
+                  </p>
+                  <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                    Higher placement means more clicks, more chats, and more serious buyers
+                    reaching out about your item.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500 pt-1">
+                  03
+                </span>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                    Faster Sales
+                  </p>
+                  <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                    Sellers using boosts report selling up to 10× faster than unboosted
+                    listings in the same category.
+                  </p>
+                </div>
+              </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 p-5">
-              <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 mb-2">
-                <MousePointerClick className="h-4 w-4" />
-                <span className="text-xs font-bold uppercase tracking-wider">More Inquiries</span>
-              </div>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Higher placement means more clicks, more chats, and more serious buyers
-                reaching out about your item.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 p-5">
-              <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 mb-2">
-                <TrendingUp className="h-4 w-4" />
-                <span className="text-xs font-bold uppercase tracking-wider">Faster Sales</span>
-              </div>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Sellers using boosts report selling up to 10× faster than unboosted listings
-                in the same category.
-              </p>
+            {/* Right: the flow diagram */}
+            <div className="hidden lg:flex items-center justify-center">
+              <BoostFlowDiagram className="w-full max-w-[360px] h-auto" />
             </div>
           </div>
 
-          <p className="mt-8 text-xs text-slate-500 dark:text-slate-400 max-w-3xl leading-relaxed">
+          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 max-w-3xl leading-relaxed">
             Boosts are one-time purchases — Pick a duration, pay securely, and your
             listing is promoted instantly. No subscriptions, no auto-renewals, no hidden
             charges. Below you can compare the four boost types available and choose the
@@ -274,7 +295,7 @@ export default function BoostAdPage() {
             <Link
               href="/listings"
               id="boost-explore-listings"
-              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-colors"
+              className="btn-primary inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-colors"
             >
               Choose a Listing to Boost <ArrowRight className="h-4 w-4" />
             </Link>
