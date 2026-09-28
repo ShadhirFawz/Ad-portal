@@ -27,7 +27,7 @@ export function PowerPackBadge() {
           lineHeight: 1,
         }}
       >
-        Power Pack
+        Top ad
       </span>
       <Crown
         style={{ width: 11, height: 11, color: "#fde68a", fill: "#fde68a", flexShrink: 0 }}
