@@ -1,6 +1,55 @@
 spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:${DATABASE_URL:jdbc:postgresql://db.qliaulbxnqlvnkmiqjsw.supabase.co:5432/postgres}}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+
   jpa:
+    hibernate:
+      ddl-auto: ${HIBERNATE_DDL_AUTO:validate}
     open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+
+  flyway:
+    enabled: true
+    repair-check-location: true
+    validate-on-migrate: false
 
 server:
   port: ${PORT:8080}
+
+app:
+  listing-images:
+    max-images: 10
+    max-file-size: 6291456
+    bucket: listing-images
+  profile-images:
+    max-file-size: 5242880
+    bucket: profile-images
+
+payhere:
+  merchant-id: ${PAYHERE_MERCHANT_ID}
+  merchant-secret: ${PAYHERE_MERCHANT_SECRET}
+  app-id: ${PAYHERE_APP_ID}
+  app-secret: ${PAYHERE_APP_SECRET}
+  base-url: ${PAYHERE_BASE_URL:https://sandbox.payhere.lk}
+  notify-url: ${PAYHERE_NOTIFY_URL}
+  return-url: ${PAYHERE_RETURN_URL:https://wudo-two.vercel.app/promotions/success}
+  cancel-url: ${PAYHERE_CANCEL_URL:https://wudo-two.vercel.app/promotions/cancel}
+  currency: LKR
+
+security:
+  jwt:
+    secret: ${JWT_SECRET}
+    access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:24h}
+
+supabase:
+  url: ${SUPABASE_URL:https://qliaulbxnqlvnkmiqjsw.supabase.co}
+  secret-key: ${SUPABASE_SECRET_KEY}
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: INFO
