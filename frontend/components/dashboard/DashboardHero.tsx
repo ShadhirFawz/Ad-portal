@@ -82,7 +82,7 @@ export default function DashboardHero() {
       />
 
       {/* ── Top-right logo ─────────────────────────────────────────── */}
-      <div className="pointer-events-none absolute top-5 right-5 sm:top-7 sm:right-8 lg:top-9 lg:right-10 z-20">
+      <div className="pointer-events-none absolute top-0 right-2 sm:top-7 sm:right-8 lg:top-9 lg:right-10 z-20">
         <Link
           href="/"
           aria-label="Wudo home"
@@ -248,7 +248,7 @@ export default function DashboardHero() {
         </div>
 
         {/* Market signals & Quick CTAs */}
-        <div className="mt-10 pt-6 border-t border-slate-200/70 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+        <div className="mt-10 pt-6 border-t border-slate-200/70 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-[8px] sm:text-sm text-slate-500 dark:text-slate-400">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
             <span className="inline-flex items-center gap-2">
               <span

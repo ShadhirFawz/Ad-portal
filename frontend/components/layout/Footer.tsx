@@ -6,16 +6,16 @@ export default function Footer() {
   return (
     <footer className="mt-auto border-t border-slate-200 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/50 py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-5">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-2">
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center">
             {/* Light mode logo */}
             <Image
               src="/Wudo_logo_light.png"
               alt="Wudo"
               width={160}
               height={40}
-              className="h-10 w-auto object-contain dark:hidden"
+              className="h-10 w-auto object-contain pb-2 dark:hidden"
             />
             {/* Dark mode logo */}
             <Image
@@ -23,7 +23,7 @@ export default function Footer() {
               alt="Wudo"
               width={160}
               height={40}
-              className="h-10 w-auto object-contain hidden dark:block"
+              className="h-10 w-auto object-contain pb-2 hidden dark:block"
             />
             <span
               className="text-sm font-semibold text-slate-700 dark:text-slate-300"

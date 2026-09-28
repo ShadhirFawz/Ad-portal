@@ -212,7 +212,7 @@ function LoginContent() {
             href={redirectParam ? `/register?redirect=${encodeURIComponent(redirectParam)}` : "/register"}
             className="font-semibold text-emerald-600 hover:text-emerald-500 dark:text-emerald-400 transition-colors"
           >
-            Create one now
+            Create one
           </Link>
         </div>
       </div>

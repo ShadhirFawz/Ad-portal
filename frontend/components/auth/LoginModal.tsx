@@ -222,7 +222,7 @@ export default function LoginModal({
             className="font-semibold text-emerald-600 hover:text-emerald-500 dark:text-emerald-400 transition-colors"
             onClick={onClose}
           >
-            Create one now
+            Create one
           </Link>
         </div>
       </div>

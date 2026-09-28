@@ -51,18 +51,12 @@ export default function LatestListingsSection({
       {/* Section Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-            <Package className="w-4 h-4" />
-          </div>
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
-                Latest Marketplace Listings
+                Latest Listings
               </h2>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Fresh items, services, and live auctions added across categories
-            </p>
           </div>
         </div>
 
@@ -140,8 +134,8 @@ export default function LatestListingsSection({
               onClick={() => setCurrentPage(i)}
               aria-label={`Go to listings page ${i + 1}`}
               className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${currentPage === i
-                  ? "w-7 bg-emerald-500"
-                  : "w-2 bg-slate-300 dark:bg-slate-700 hover:bg-emerald-300"
+                ? "w-7 bg-emerald-500"
+                : "w-2 bg-slate-300 dark:bg-slate-700 hover:bg-emerald-300"
                 }`}
             />
           ))}
