@@ -63,9 +63,6 @@ export default function PromotionsOverviewPage() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Hero Section */}
         <div className="text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-emerald-600 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-400">
-            <Zap className="h-3.5 w-3.5" /> Promotion Center
-          </div>
 
           <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
             Supercharge Your Listings & Sell Faster
@@ -78,7 +75,7 @@ export default function PromotionsOverviewPage() {
           <div className="mt-8 flex justify-center gap-4">
             <Link
               href="/listings"
-              className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-7 py-3.5 text-base font-bold text-white shadow-xl shadow-emerald-600/20 transition-all hover:from-emerald-500 hover:to-teal-500 hover:shadow-2xl"
+              className="btn-primary inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-7 py-3.5 text-base font-bold text-white shadow-xl shadow-emerald-600/20 transition-all hover:from-emerald-500 hover:to-teal-500 hover:shadow-2xl"
             >
               Boost an Existing Listing <ArrowRight className="h-4 w-4" />
             </Link>
