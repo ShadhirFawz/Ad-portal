@@ -10,8 +10,6 @@ import {
   Bookmark,
   Star,
   Flame,
-  Crown,
-  TrendingUp,
   Tag,
   Loader2,
 } from "lucide-react";
@@ -22,6 +20,7 @@ import { useToast } from "@/hooks/useToast";
 interface DashboardListingCardProps {
   listing: Listing;
   className?: string;
+  layout?: "row" | "grid";
 }
 
 function formatTimeAgo(dateStr?: string | null): string {
@@ -43,6 +42,7 @@ function formatPrice(price: number, currency = "LKR"): string {
 export default function DashboardListingCard({
   listing,
   className = "",
+  layout = "row",
 }: DashboardListingCardProps) {
   const { user, accessToken } = useAuth();
   const { error: toastError, success: toastSuccess } = useToast();
@@ -92,6 +92,110 @@ export default function DashboardListingCard({
 
   const targetHref = `/listings/${listing.slug || listing.id}`;
 
+  // ── Vertical Grid Layout (Optimized for Mobile 2x2 & Desktop Grid) ────────
+  if (layout === "grid") {
+    return (
+      <Link
+        href={targetHref}
+        className={`group relative flex flex-col rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 hover:border-indigo-500/40 dark:hover:border-indigo-500/40 hover:shadow-md transition-all duration-200 overflow-hidden h-full ${className}`}
+      >
+        {/* Top Image */}
+        <div className="relative w-full aspect-[4/3] bg-slate-100 dark:bg-slate-800 overflow-hidden shrink-0">
+          {primaryImage ? (
+            <Image
+              src={primaryImage}
+              alt={listing.title}
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              className="object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-slate-400 dark:text-slate-600">
+              <Tag className="w-6 h-6" />
+            </div>
+          )}
+
+          {/* Promotion Badge */}
+          {listing.isSpotlight && (
+            <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-amber-500 text-white text-[9px] font-extrabold tracking-wide uppercase flex items-center gap-1 shadow-sm">
+              <Star className="w-2.5 h-2.5 fill-white" />
+              <span>Spotlight</span>
+            </div>
+          )}
+          {!listing.isSpotlight && listing.isUrgent && (
+            <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-rose-600 text-white text-[9px] font-extrabold tracking-wide uppercase flex items-center gap-1 shadow-sm">
+              <Flame className="w-2.5 h-2.5 fill-white" />
+              <span>Urgent</span>
+            </div>
+          )}
+
+          {/* Bookmark Button Overlay */}
+          <button
+            type="button"
+            onClick={handleBookmarkToggle}
+            aria-label={bookmarked ? "Remove Bookmark" : "Save Bookmark"}
+            disabled={bookmarkLoading}
+            className="absolute top-2 right-2 p-1.5 rounded-full bg-white/85 dark:bg-slate-900/85 backdrop-blur-sm text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 shadow-sm transition-colors cursor-pointer"
+          >
+            {bookmarkLoading ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-500" />
+            ) : (
+              <Bookmark
+                className={`w-3.5 h-3.5 ${
+                  bookmarked
+                    ? "fill-indigo-600 text-indigo-600 dark:fill-indigo-400 dark:text-indigo-400"
+                    : ""
+                }`}
+              />
+            )}
+          </button>
+        </div>
+
+        {/* Bottom Content Body */}
+        <div className="p-3 sm:p-3.5 flex flex-col justify-between flex-1 gap-2">
+          <div className="space-y-1">
+            <span className="inline-block text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 rounded-md truncate max-w-full">
+              {listing.categoryName || "General"}
+            </span>
+
+            <h3 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-2 leading-snug">
+              {listing.title}
+            </h3>
+          </div>
+
+          <div className="space-y-1.5 pt-1 mt-auto">
+            {/* Price */}
+            <div className="flex items-baseline gap-1">
+              <span className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white truncate">
+                {formatPrice(listing.price, listing.currency)}
+              </span>
+              {listing.negotiable && (
+                <span className="text-[9px] font-medium text-slate-400 uppercase">
+                  (Nego)
+                </span>
+              )}
+            </div>
+
+            {/* Location & Time Footer */}
+            <div className="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 pt-1.5 border-t border-slate-100 dark:border-slate-800/80">
+              <span className="flex items-center gap-1 truncate max-w-[55%]">
+                <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                <span className="truncate">
+                  {listing.city || listing.district || "Sri Lanka"}
+                </span>
+              </span>
+              <span className="flex items-center gap-0.5 shrink-0">
+                <Clock className="w-3 h-3 text-slate-400" />
+                <span>{formatTimeAgo(listing.createdAt)}</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </Link>
+    );
+  }
+
+  // ── Horizontal Row Layout (Default for Latest Listings Section) ────────────
   return (
     <Link
       href={targetHref}
@@ -141,7 +245,7 @@ export default function DashboardListingCard({
             onClick={handleBookmarkToggle}
             aria-label={bookmarked ? "Remove Bookmark" : "Save Bookmark"}
             disabled={bookmarkLoading}
-            className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors shrink-0"
+            className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors shrink-0 cursor-pointer"
           >
             {bookmarkLoading ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-500" />
