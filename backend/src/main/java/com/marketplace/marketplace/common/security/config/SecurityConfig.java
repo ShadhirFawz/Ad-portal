@@ -4,6 +4,9 @@ import com.marketplace.marketplace.common.security.filter.JwtAuthenticationFilte
 import com.marketplace.marketplace.common.security.handler.CustomAccessDeniedHandler;
 import com.marketplace.marketplace.common.security.handler.CustomAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -47,102 +50,107 @@ public class SecurityConfig {
 
                                 .authorizeHttpRequests(auth -> auth
 
-                                // ── Root & Error ──────────────────────────────
-                                .requestMatchers(HttpMethod.GET, "/")
-                                .permitAll()
+                                                // ── Root & Error ──────────────────────────────
+                                                .requestMatchers(HttpMethod.GET, "/")
+                                                .permitAll()
 
-                                .requestMatchers("/error", "/error/**")
-                                .permitAll()
+                                                .requestMatchers("/error", "/error/**")
+                                                .permitAll()
 
-                                // ── Swagger / OpenAPI ─────────────────────────
-                                .requestMatchers(
-                                                "/swagger-ui/**",
-                                                "/swagger-ui.html",
-                                                "/v3/api-docs/**")
-                                .permitAll()
+                                                // ── Swagger / OpenAPI ─────────────────────────
+                                                .requestMatchers(
+                                                                "/swagger-ui/**",
+                                                                "/swagger-ui.html",
+                                                                "/v3/api-docs/**")
+                                                .permitAll()
 
-                                // ── Auth — requires authentication ────────────
-                                .requestMatchers(HttpMethod.GET, "/api/v1/auth/me")
-                                .authenticated()
+                                                // ── Auth — requires authentication ────────────
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/auth/me")
+                                                .authenticated()
 
-                                .requestMatchers(HttpMethod.POST, "/api/v1/auth/sync")
-                                .authenticated()
+                                                .requestMatchers(HttpMethod.POST, "/api/v1/auth/sync")
+                                                .authenticated()
 
-                                // ── Users — requires authentication ───────────
-                                .requestMatchers(HttpMethod.GET, "/api/v1/users/me")
-                                .authenticated()
+                                                // ── Users — requires authentication ───────────
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/users/me")
+                                                .authenticated()
 
-                                .requestMatchers(HttpMethod.PATCH, "/api/v1/users/me")
-                                .authenticated()
+                                                .requestMatchers(HttpMethod.PATCH, "/api/v1/users/me")
+                                                .authenticated()
 
-                                .requestMatchers(HttpMethod.PATCH, "/api/v1/users/me/password")
-                                .authenticated()
+                                                .requestMatchers(HttpMethod.PATCH, "/api/v1/users/me/password")
+                                                .authenticated()
 
-                                .requestMatchers(HttpMethod.DELETE, "/api/v1/users/me")
-                                .authenticated()
+                                                .requestMatchers(HttpMethod.DELETE, "/api/v1/users/me")
+                                                .authenticated()
 
-                                .requestMatchers(HttpMethod.POST, "/api/v1/users/become-seller", "/api/v1/users/me/become-seller")
-                                .authenticated()
+                                                .requestMatchers(HttpMethod.POST, "/api/v1/users/become-seller",
+                                                                "/api/v1/users/me/become-seller")
+                                                .authenticated()
 
-                                .requestMatchers("/api/v1/users/me/images/**")
-                                .authenticated()
+                                                .requestMatchers("/api/v1/users/me/images/**")
+                                                .authenticated()
 
-                                // ── Users — public ────────────────────────────
-                                .requestMatchers(HttpMethod.GET, "/api/v1/users/check-username")
-                                .permitAll()
+                                                // ── Users — public ────────────────────────────
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/users/check-username")
+                                                .permitAll()
 
-                                .requestMatchers(HttpMethod.GET, "/api/v1/users/{username}")
-                                .permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/users/{username}")
+                                                .permitAll()
 
-                                // ── Categories — all public (read-only) ───────
-                                .requestMatchers(HttpMethod.GET, "/api/v1/categories", "/api/v1/categories/**")
-                                .permitAll()
+                                                // ── Categories — all public (read-only) ───────
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/categories",
+                                                                "/api/v1/categories/**")
+                                                .permitAll()
 
-                                // ── Listings — requires authentication ────────
-                                .requestMatchers(HttpMethod.GET, "/api/v1/listings/mine")
-                                .authenticated()
+                                                // ── Listings — requires authentication ────────
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/listings/mine")
+                                                .authenticated()
 
-                                .requestMatchers(HttpMethod.GET, "/api/v1/listings/favorites")
-                                .authenticated()
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/listings/favorites")
+                                                .authenticated()
 
-                                .requestMatchers(HttpMethod.GET, "/api/v1/listings/bookmarks")
-                                .authenticated()
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/listings/bookmarks")
+                                                .authenticated()
 
-                                .requestMatchers(HttpMethod.GET, "/api/v1/listings/{listingId}/auction/seller")
-                                .authenticated()
+                                                .requestMatchers(HttpMethod.GET,
+                                                                "/api/v1/listings/{listingId}/auction/seller")
+                                                .authenticated()
 
-                                .requestMatchers(HttpMethod.POST, "/api/v1/listings", "/api/v1/listings/**")
-                                .authenticated()
+                                                .requestMatchers(HttpMethod.POST, "/api/v1/listings",
+                                                                "/api/v1/listings/**")
+                                                .authenticated()
 
-                                .requestMatchers(HttpMethod.PATCH, "/api/v1/listings/**")
-                                .authenticated()
+                                                .requestMatchers(HttpMethod.PATCH, "/api/v1/listings/**")
+                                                .authenticated()
 
-                                .requestMatchers(HttpMethod.DELETE, "/api/v1/listings/**")
-                                .authenticated()
+                                                .requestMatchers(HttpMethod.DELETE, "/api/v1/listings/**")
+                                                .authenticated()
 
-                                .requestMatchers(HttpMethod.PUT, "/api/v1/listings/**")
-                                .authenticated()
+                                                .requestMatchers(HttpMethod.PUT, "/api/v1/listings/**")
+                                                .authenticated()
 
-                                // ── Listings — public reads ───────────────────
-                                .requestMatchers(HttpMethod.GET, "/api/v1/listings", "/api/v1/listings/**")
-                                .permitAll()
+                                                // ── Listings — public reads ───────────────────
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/listings",
+                                                                "/api/v1/listings/**")
+                                                .permitAll()
 
-                                // ── Boosts & Promotions ────────────────────────
-                                .requestMatchers(HttpMethod.POST, "/api/v1/boosts/notify")
-                                .permitAll()
+                                                // ── Boosts & Promotions ────────────────────────
+                                                .requestMatchers(HttpMethod.POST, "/api/v1/boosts/notify")
+                                                .permitAll()
 
-                                .requestMatchers(HttpMethod.GET, "/api/v1/boosts/plans")
-                                .permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/boosts/plans")
+                                                .permitAll()
 
-                                .requestMatchers(HttpMethod.GET, "/api/v1/boosts/listing/**")
-                                .permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/boosts/listing/**")
+                                                .permitAll()
 
-                                .requestMatchers("/api/v1/boosts/**")
-                                .authenticated()
+                                                .requestMatchers("/api/v1/boosts/**")
+                                                .authenticated()
 
-                                // ── Deny everything else ──────────────────────
-                                .anyRequest()
-                                .authenticated())
+                                                // ── Deny everything else ──────────────────────
+                                                .anyRequest()
+                                                .authenticated())
 
                                 .addFilterBefore(
                                                 jwtAuthenticationFilter,
@@ -156,17 +164,27 @@ public class SecurityConfig {
 
                 CorsConfiguration configuration = new CorsConfiguration();
 
-                configuration.setAllowedOrigins(
+                configuration.setAllowedOriginPatterns(
                                 corsProperties.allowedOrigins());
 
                 configuration.setAllowedMethods(
-                                corsProperties.allowedMethods());
+                                corsProperties.allowedMethods() != null
+                                                ? corsProperties.allowedMethods()
+                                                : List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 
                 configuration.setAllowedHeaders(
-                                corsProperties.allowedHeaders());
+                                corsProperties.allowedHeaders() != null
+                                                ? corsProperties.allowedHeaders()
+                                                : List.of("*"));
+
+                configuration.setExposedHeaders(
+                                List.of("Authorization", "Content-Type", "Access-Control-Allow-Origin",
+                                                "Access-Control-Allow-Credentials"));
 
                 configuration.setAllowCredentials(
                                 corsProperties.allowCredentials());
+
+                configuration.setMaxAge(3600L);
 
                 UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 
