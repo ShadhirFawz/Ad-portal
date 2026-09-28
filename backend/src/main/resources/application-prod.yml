@@ -35,7 +35,7 @@ payhere:
   app-id: ${PAYHERE_APP_ID}
   app-secret: ${PAYHERE_APP_SECRET}
   base-url: ${PAYHERE_BASE_URL:https://sandbox.payhere.lk}
-  notify-url: ${PAYHERE_NOTIFY_URL}
+  notify-url: ${PAYHERE_NOTIFY_URL:https://wudo-backend.vercel.app/api/v1/boosts/notify}
   return-url: ${PAYHERE_RETURN_URL:https://wudo-two.vercel.app/promotions/success}
   cancel-url: ${PAYHERE_CANCEL_URL:https://wudo-two.vercel.app/promotions/cancel}
   currency: LKR
