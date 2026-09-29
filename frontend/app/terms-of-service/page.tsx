@@ -1,19 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import {
-  FileText,
-  CheckCircle2,
-  XCircle,
-  ShieldAlert,
-  CreditCard,
-  Scale,
-  UserX,
-  RefreshCw,
-  AlertTriangle,
-  Gavel,
-  Mail,
-  ChevronRight,
-} from "lucide-react";
+  FaFileAlt,
+  FaCheckCircle,
+  FaBan,
+  FaShieldAlt,
+  FaCreditCard,
+  FaUserShield,
+  FaSyncAlt,
+  FaExclamationTriangle,
+  FaGavel,
+  FaEnvelope,
+  FaBalanceScale,
+} from "react-icons/fa";
 
 export const metadata: Metadata = {
   title: "Terms of Service | Wudo",
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 const sections = [
   {
     id: "acceptance",
-    icon: CheckCircle2,
+    icon: FaCheckCircle,
     color: "emerald",
     title: "Acceptance of Terms",
     content: [
@@ -44,7 +44,7 @@ const sections = [
   },
   {
     id: "user-accounts",
-    icon: UserX,
+    icon: FaUserShield,
     color: "blue",
     title: "User Accounts",
     content: [
@@ -68,7 +68,7 @@ const sections = [
   },
   {
     id: "listings",
-    icon: FileText,
+    icon: FaFileAlt,
     color: "purple",
     title: "Listings & Content",
     content: [
@@ -92,7 +92,7 @@ const sections = [
   },
   {
     id: "transactions",
-    icon: CreditCard,
+    icon: FaCreditCard,
     color: "amber",
     title: "Transactions & Payments",
     content: [
@@ -116,7 +116,7 @@ const sections = [
   },
   {
     id: "prohibited",
-    icon: XCircle,
+    icon: FaBan,
     color: "rose",
     title: "Prohibited Conduct",
     content: [
@@ -140,7 +140,7 @@ const sections = [
   },
   {
     id: "intellectual-property",
-    icon: ShieldAlert,
+    icon: FaShieldAlt,
     color: "indigo",
     title: "Intellectual Property",
     content: [
@@ -160,7 +160,7 @@ const sections = [
   },
   {
     id: "disclaimers",
-    icon: AlertTriangle,
+    icon: FaExclamationTriangle,
     color: "orange",
     title: "Disclaimers & Liability",
     content: [
@@ -180,7 +180,7 @@ const sections = [
   },
   {
     id: "termination",
-    icon: RefreshCw,
+    icon: FaSyncAlt,
     color: "teal",
     title: "Account Termination",
     content: [
@@ -200,7 +200,7 @@ const sections = [
   },
   {
     id: "governing-law",
-    icon: Gavel,
+    icon: FaGavel,
     color: "slate",
     title: "Governing Law & Disputes",
     content: [
@@ -246,7 +246,7 @@ export default function TermsOfServicePage() {
         />
         <div className="relative mx-auto max-w-4xl text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-indigo-300 mb-6">
-            <Scale className="h-3.5 w-3.5" />
+            <FaBalanceScale className="h-3.5 w-3.5" />
             Effective: September 2026
           </div>
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white mb-5">
@@ -284,7 +284,7 @@ export default function TermsOfServicePage() {
                   href="mailto:legal@wudo.lk"
                   className="flex items-center gap-2 text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
                 >
-                  <Mail className="h-4 w-4" />
+                  <FaEnvelope className="h-4 w-4" />
                   legal@wudo.lk
                 </a>
               </div>
@@ -295,7 +295,7 @@ export default function TermsOfServicePage() {
           <div className="flex-1 space-y-8">
             {/* Important Notice */}
             <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 dark:bg-amber-500/10 p-6 flex gap-4">
-              <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <FaExclamationTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-1">
                   Important Notice
@@ -363,7 +363,7 @@ export default function TermsOfServicePage() {
                   href="mailto:legal@wudo.lk"
                   className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors shadow-sm"
                 >
-                  <Mail className="h-4 w-4" />
+                  <FaEnvelope className="h-4 w-4" />
                   legal@wudo.lk
                 </a>
                 <Link

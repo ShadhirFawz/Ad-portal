@@ -4,14 +4,8 @@ import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  Crown,
-  Star,
-  Flame,
-  TrendingUp,
   Clock,
   ExternalLink,
-  Receipt,
-  Zap,
   RotateCw,
   Tag,
   MapPin,
@@ -22,6 +16,14 @@ import {
   Radio,
   CalendarClock,
 } from "lucide-react";
+import {
+  FaCrown,
+  FaStar,
+  FaFire,
+  FaArrowUp,
+  FaBolt,
+  FaReceipt,
+} from "react-icons/fa";
 import type { AdBoost, BoostType } from "@/types/boost";
 import type { ListingSubscriptionGroup } from "./ListingPromotionsModal";
 
@@ -47,7 +49,7 @@ export default function SubscriptionCard({
         return {
           title: "Power Pack",
           subtitle: "Spotlight + Urgent + Push Up VIP Boost",
-          icon: Crown,
+          icon: FaCrown,
           iconColor: "text-purple-600 dark:text-purple-400",
           badgeBg:
             "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60",
@@ -56,7 +58,7 @@ export default function SubscriptionCard({
         return {
           title: "Spotlight",
           subtitle: "Pinned to top of search results",
-          icon: Star,
+          icon: FaStar,
           iconColor: "text-amber-500 dark:text-amber-400",
           badgeBg:
             "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60",
@@ -65,7 +67,7 @@ export default function SubscriptionCard({
         return {
           title: "Urgent",
           subtitle: "High-priority red badge & ribbon",
-          icon: Flame,
+          icon: FaFire,
           iconColor: "text-rose-600 dark:text-rose-400",
           badgeBg:
             "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60",
@@ -74,7 +76,7 @@ export default function SubscriptionCard({
         return {
           title: "Push Up",
           subtitle: "Refreshed to top of search feeds",
-          icon: TrendingUp,
+          icon: FaArrowUp,
           iconColor: "text-teal-600 dark:text-teal-400",
           badgeBg:
             "bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800/60",
@@ -83,7 +85,7 @@ export default function SubscriptionCard({
         return {
           title: type,
           subtitle: "Promotional Boost",
-          icon: Zap,
+          icon: FaBolt,
           iconColor: "text-slate-500 dark:text-slate-400",
           badgeBg:
             "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700",

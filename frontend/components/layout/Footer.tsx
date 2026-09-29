@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Zap } from "lucide-react";
+import { FaRocket } from "react-icons/fa";
 
 export default function Footer() {
   return (
@@ -56,7 +56,7 @@ export default function Footer() {
               href="/boost"
               className="inline-flex items-center gap-1 font-semibold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
             >
-              <Zap className="h-3 w-3" />
+              <FaRocket className="h-3 w-3" />
               Boost Your Ad
             </Link>
           </div>

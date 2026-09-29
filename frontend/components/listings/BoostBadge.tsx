@@ -1,5 +1,5 @@
 import React from "react";
-import { Star, Flame, TrendingUp, Crown, Zap } from "lucide-react";
+import { FaStar, FaFire, FaCrown, FaArrowUp, FaBolt } from "react-icons/fa";
 import type { BoostType } from "@/types/boost";
 
 /* POWER PACK — Full-width banner at the very top of the card */
@@ -14,8 +14,8 @@ export function PowerPackBadge() {
         boxShadow: "0 3px 14px rgba(91,33,182,0.45)",
       }}
     >
-      <Crown
-        style={{ width: 11, height: 11, color: "#fde68a", fill: "#fde68a", flexShrink: 0 }}
+      <FaCrown
+        style={{ width: 11, height: 11, color: "#fde68a", flexShrink: 0 }}
       />
       <span
         style={{
@@ -29,8 +29,8 @@ export function PowerPackBadge() {
       >
         Top ad
       </span>
-      <Crown
-        style={{ width: 11, height: 11, color: "#fde68a", fill: "#fde68a", flexShrink: 0 }}
+      <FaCrown
+        style={{ width: 11, height: 11, color: "#fde68a", flexShrink: 0 }}
       />
     </div>
   );
@@ -62,7 +62,7 @@ export function SpotlightBadge() {
           boxShadow: "0 2px 12px rgba(245,158,11,0.55)",
         }}
       >
-        <Star
+        <FaStar
           style={{
             width: 10,
             height: 10,
@@ -138,7 +138,7 @@ export function PushUpBadge() {
         borderTop: "1px solid rgba(255,255,255,0.12)",
       }}
     >
-      <TrendingUp
+      <FaArrowUp
         style={{ width: 9, height: 9, color: "#d1fae5", flexShrink: 0 }}
       />
       <span
@@ -170,8 +170,8 @@ export const BoostBadge: React.FC<BoostBadgeProps> = ({
   className = "",
   showIconOnly = false,
 }) => {
-  const iconPx: Record<string, number> = { sm: 12, md: 14, lg: 16 };
-  const px = iconPx[size] ?? 12;
+  const iconPx: Record<string, number> = { sm: 11, md: 13, lg: 15 };
+  const px = iconPx[size] ?? 11;
 
   const pill =
     "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-bold text-[10px] uppercase tracking-wide cursor-help border select-none";
@@ -184,7 +184,7 @@ export const BoostBadge: React.FC<BoostBadgeProps> = ({
           aria-label="Spotlight — Pinned to the top of search results"
           className={`${pill} bg-amber-500 text-white border-amber-600/40 shadow-sm ${className}`}
         >
-          <Star style={{ width: px, height: px, fill: "white", flexShrink: 0 }} />
+          <FaStar style={{ width: px, height: px, fill: "white", flexShrink: 0 }} />
           {!showIconOnly && "Spotlight"}
         </span>
       );
@@ -195,7 +195,7 @@ export const BoostBadge: React.FC<BoostBadgeProps> = ({
           aria-label="Urgent — High priority quick sale"
           className={`${pill} bg-red-600 text-white border-red-700/40 shadow-sm ${className}`}
         >
-          <Flame style={{ width: px, height: px, fill: "white", flexShrink: 0 }} />
+          <FaFire style={{ width: px, height: px, fill: "white", flexShrink: 0 }} />
           {!showIconOnly && "Urgent"}
         </span>
       );
@@ -206,7 +206,7 @@ export const BoostBadge: React.FC<BoostBadgeProps> = ({
           aria-label="Push Up — Bumped to top of results today"
           className={`${pill} bg-emerald-600 text-white border-emerald-700/40 shadow-sm ${className}`}
         >
-          <TrendingUp style={{ width: px, height: px, flexShrink: 0 }} />
+          <FaArrowUp style={{ width: px, height: px, flexShrink: 0 }} />
           {!showIconOnly && "Push Up"}
         </span>
       );
@@ -217,7 +217,7 @@ export const BoostBadge: React.FC<BoostBadgeProps> = ({
           aria-label="Power Pack — Spotlight + Urgent + Push Up combined"
           className={`${pill} bg-violet-700 text-white border-violet-800/40 shadow-sm ${className}`}
         >
-          <Crown style={{ width: px, height: px, fill: "#fde68a", flexShrink: 0 }} />
+          <FaCrown style={{ width: px, height: px, fill: "#fde68a", color: "#fde68a", flexShrink: 0 }} />
           {!showIconOnly && "Power Pack"}
         </span>
       );

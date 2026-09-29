@@ -11,15 +11,17 @@ import {
   CheckCircle2,
   Circle,
   ArrowRight,
-  User,
-  Phone,
-  FileText,
-  PlusCircle,
-  Gavel,
-  ShieldCheck,
   X,
-  Layers,
 } from "lucide-react";
+import {
+  FaUserAlt,
+  FaPhoneAlt,
+  FaFileAlt,
+  FaPlusCircle,
+  FaGavel,
+  FaShieldAlt,
+  FaListAlt,
+} from "react-icons/fa";
 
 interface AccountSetupProgressWidgetProps {
   size?: number;
@@ -30,17 +32,17 @@ interface AccountSetupProgressWidgetProps {
 function getStepIcon(key: string) {
   switch (key) {
     case "USERNAME":
-      return User;
+      return FaUserAlt;
     case "PHONE_NUMBER":
-      return Phone;
+      return FaPhoneAlt;
     case "DESCRIPTION":
-      return FileText;
+      return FaFileAlt;
     case "FIRST_LISTING":
-      return PlusCircle;
+      return FaPlusCircle;
     case "AUCTION_PARTICIPATION":
-      return Gavel;
+      return FaGavel;
     default:
-      return Layers;
+      return FaListAlt;
   }
 }
 
@@ -236,7 +238,7 @@ export default function AccountSetupProgressWidget({
               style={{ width: size, height: size }}
             >
               {isFullyCompleted ? (
-                <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                <FaShieldAlt className="w-4 h-4 text-emerald-500" />
               ) : (
                 <span className="font-mono font-extrabold text-[11px] text-slate-800 dark:text-slate-100 leading-none">
                   {completedCount}/{totalCount}
@@ -436,7 +438,7 @@ export default function AccountSetupProgressWidget({
               <div className="shrink-0 p-3 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 text-center">
                 {isFullyCompleted ? (
                   <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                    <ShieldCheck className="w-4 h-4" />
+                    <FaShieldAlt className="w-4 h-4" />
                     <span>Verified &amp; Fully Configured Profile</span>
                   </div>
                 ) : (

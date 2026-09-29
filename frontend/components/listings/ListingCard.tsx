@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useRef, useState, useCallback } from "react";
+import { FaWhatsapp, FaPhoneAlt } from "react-icons/fa";
 import type { Listing, ListingCardData } from "@/types/listing";
 import type { ListingImage } from "@/types/listing-image";
 import {
@@ -583,7 +584,7 @@ export default function ListingCard({
                     className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 transition shadow-xs"
                     title="Call Seller directly"
                   >
-                    <Phone className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <FaPhoneAlt className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                     <span>Call</span>
                   </a>
                 )}
@@ -596,7 +597,7 @@ export default function ListingCard({
                     className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-2 text-xs font-bold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition shadow-xs"
                     title="Chat on WhatsApp"
                   >
-                    <MessageCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <FaWhatsapp className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                     <span>WhatsApp</span>
                   </a>
                 )}

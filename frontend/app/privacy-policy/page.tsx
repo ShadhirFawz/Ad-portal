@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import {
-  Shield,
-  Eye,
-  Lock,
-  Database,
-  Share2,
-  UserCheck,
-  Bell,
-  Trash2,
-  Globe,
-  Mail,
-  ChevronRight,
-} from "lucide-react";
+  FaShieldAlt,
+  FaEye,
+  FaLock,
+  FaDatabase,
+  FaShareAlt,
+  FaUserCheck,
+  FaBell,
+  FaTrashAlt,
+  FaGlobe,
+  FaEnvelope,
+} from "react-icons/fa";
 
 export const metadata: Metadata = {
   title: "Privacy Policy | Wudo",
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 const sections = [
   {
     id: "information-we-collect",
-    icon: Database,
+    icon: FaDatabase,
     color: "emerald",
     title: "Information We Collect",
     content: [
@@ -47,7 +47,7 @@ const sections = [
   },
   {
     id: "how-we-use-information",
-    icon: Eye,
+    icon: FaEye,
     color: "blue",
     title: "How We Use Your Information",
     content: [
@@ -71,7 +71,7 @@ const sections = [
   },
   {
     id: "data-sharing",
-    icon: Share2,
+    icon: FaShareAlt,
     color: "purple",
     title: "Data Sharing & Disclosure",
     content: [
@@ -95,7 +95,7 @@ const sections = [
   },
   {
     id: "your-rights",
-    icon: UserCheck,
+    icon: FaUserCheck,
     color: "amber",
     title: "Your Rights & Choices",
     content: [
@@ -119,7 +119,7 @@ const sections = [
   },
   {
     id: "data-security",
-    icon: Lock,
+    icon: FaLock,
     color: "rose",
     title: "Data Security",
     content: [
@@ -139,7 +139,7 @@ const sections = [
   },
   {
     id: "cookies",
-    icon: Globe,
+    icon: FaGlobe,
     color: "teal",
     title: "Cookies & Tracking",
     content: [
@@ -159,7 +159,7 @@ const sections = [
   },
   {
     id: "notifications",
-    icon: Bell,
+    icon: FaBell,
     color: "orange",
     title: "Communications & Notifications",
     content: [
@@ -179,7 +179,7 @@ const sections = [
   },
   {
     id: "data-retention",
-    icon: Trash2,
+    icon: FaTrashAlt,
     color: "slate",
     title: "Data Retention",
     content: [
@@ -224,7 +224,7 @@ export default function PrivacyPolicyPage() {
         />
         <div className="relative mx-auto max-w-4xl text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400 mb-6">
-            <Shield className="h-3.5 w-3.5" />
+            <FaShieldAlt className="h-3.5 w-3.5" />
             Last Updated: September 2026
           </div>
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white mb-5">
@@ -264,7 +264,7 @@ export default function PrivacyPolicyPage() {
                   href="mailto:privacy@wudo.lk"
                   className="flex items-center gap-2 text-sm font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
                 >
-                  <Mail className="h-4 w-4" />
+                  <FaEnvelope className="h-4 w-4" />
                   privacy@wudo.lk
                 </a>
               </div>
@@ -336,7 +336,7 @@ export default function PrivacyPolicyPage() {
                   href="mailto:privacy@wudo.lk"
                   className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors shadow-sm"
                 >
-                  <Mail className="h-4 w-4" />
+                  <FaEnvelope className="h-4 w-4" />
                   privacy@wudo.lk
                 </a>
                 <Link
