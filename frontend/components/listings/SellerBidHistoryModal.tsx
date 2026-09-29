@@ -10,6 +10,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import {
+  FaGavel,
   FaTrophy,
   FaShieldAlt,
 } from "react-icons/fa";
@@ -172,7 +173,7 @@ export default function SellerBidHistoryModal({
           {bids.length === 0 ? (
             <div className="py-12 text-center space-y-3">
               <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto">
-                <Gavel className="w-6 h-6" />
+                <FaGavel className="w-6 h-6" />
               </div>
               <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                 No bids recorded yet
