@@ -17,12 +17,15 @@ const POPULAR_TERMS = [
   "Honda Vezel",
 ];
 
+const ROTATING_WORDS = ["phones", "vehicles", "property", "gadgets", "services"];
+
 export default function DashboardHero() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [suggestOpen, setSuggestOpen] = useState(false);
+  const [wordIndex, setWordIndex] = useState(0);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -37,6 +40,13 @@ export default function DashboardHero() {
     };
   }, []);
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setWordIndex((prev) => (prev + 1) % ROTATING_WORDS.length);
+    }, 2200);
+    return () => clearInterval(timer);
+  }, []);
+
   // Close suggestions on outside click
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -48,7 +58,6 @@ export default function DashboardHero() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Filter categories matching the typed keyword
   const suggestedCategories = useMemo(() => {
     if (!searchTerm.trim()) return [];
     const query = searchTerm.toLowerCase();
@@ -74,11 +83,26 @@ export default function DashboardHero() {
   };
 
   return (
-    <section className="relative overflow-hidden border-b border-slate-200/80 dark:border-slate-800/80 bg-gradient-to-b from-slate-50/70 via-white to-white dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 transition-colors">
+    <section className="relative overflow-hidden rounded-tl-4xl rounded-br-4xl border-b border-slate-200/80 dark:border-slate-800/80 bg-gradient-to-b from-slate-50/70 via-white to-white dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 transition-colors">
       {/* Subtle radial ambient highlight */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[48rem] h-[24rem] rounded-full bg-indigo-500/5 dark:bg-indigo-500/10 blur-3xl"
+      />
+
+      {/* Fine grid overlay */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 opacity-[0.35] dark:opacity-[0.15]"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, rgba(100,116,139,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(100,116,139,0.08) 1px, transparent 1px)",
+          backgroundSize: "44px 44px",
+          maskImage:
+            "radial-gradient(ellipse 70% 60% at 50% 30%, black 40%, transparent 100%)",
+          WebkitMaskImage:
+            "radial-gradient(ellipse 70% 60% at 50% 30%, black 40%, transparent 100%)",
+        }}
       />
 
       {/* ── Top-right logo ─────────────────────────────────────────── */}
@@ -88,7 +112,6 @@ export default function DashboardHero() {
           aria-label="Wudo home"
           className="pointer-events-auto inline-flex items-center group"
         >
-          {/* Light mode logo */}
           <Image
             src="/Wudo_logo_light.png"
             alt="Wudo"
@@ -97,7 +120,6 @@ export default function DashboardHero() {
             priority
             className="h-14 sm:h-16 lg:h-20 w-auto object-contain opacity-90 group-hover:opacity-100 transition-opacity dark:hidden"
           />
-          {/* Dark mode logo */}
           <Image
             src="/Wudo_logo_dark.png"
             alt="Wudo"
@@ -109,24 +131,42 @@ export default function DashboardHero() {
         </Link>
       </div>
 
-      <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 pb-12 sm:pb-14">
+      <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-15 sm:pt-16 pb-12 sm:pb-14">
         {/* Eyebrow badge */}
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold tracking-wider uppercase bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/60">
+        <div className="flex items-center gap-2.5">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-semibold tracking-[0.14em] uppercase bg-slate-100 dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/60">
             Sri Lanka
           </span>
-          <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">
+          <span className="text-xs text-slate-400 dark:text-slate-500 font-medium tracking-wide">
             Verified Community Marketplace
           </span>
         </div>
 
         {/* Main Headline */}
-        <div className="mt-5 max-w-3xl space-y-3">
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-[1.08]">
-            Find what you need.
-            <br />
+        <div className="mt-6 max-w-3xl space-y-4">
+          <h1 className="text-[2rem] sm:text-5xl lg:text-[3.5rem] font-extrabold tracking-[-0.02em] text-slate-900 dark:text-white leading-[1.05]">
+            Buy and sell
+            {/* Mobile */}
+            <br className="sm:hidden" />
+            {/* Desktop */}
+            <span className="hidden sm:inline"> </span>
+
+            <span className="relative inline-block">
+              <span
+                key={wordIndex}
+                className="inline-block text-indigo-600 dark:text-indigo-400 animate-in fade-in slide-in-from-bottom-2 duration-500"
+              >
+                {ROTATING_WORDS[wordIndex]}
+              </span>
+            </span>
+
+            {/* Desktop */}
+            <br className="hidden sm:block" />
+            {/* Mobile: space keeps "in your" on the same line as the rotating word */}
+            <span className="inline sm:hidden"> </span>
+
             <span className="text-slate-400 dark:text-slate-500 font-bold">
-              Sell what you don&apos;t.
+              in your neighbourhood.
             </span>
           </h1>
           <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed">
@@ -136,10 +176,10 @@ export default function DashboardHero() {
         </div>
 
         {/* Search Bar Container */}
-        <div ref={wrapperRef} className="relative mt-8 sm:mt-10 max-w-3xl">
+        <div ref={wrapperRef} className="relative mt-9 sm:mt-11 max-w-3xl">
           <form
             onSubmit={handleSubmit}
-            className="flex flex-col sm:flex-row items-stretch rounded-2xl bg-white dark:bg-slate-900 border border-slate-300/90 dark:border-slate-700/80 shadow-lg shadow-slate-900/5 dark:shadow-black/20 focus-within:border-indigo-600 dark:focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-500/10 transition-all overflow-hidden p-1 sm:p-1.5 gap-1.5"
+            className="flex flex-col sm:flex-row items-stretch rounded-2xl bg-white dark:bg-slate-900 border border-slate-300/90 dark:border-slate-700/80 shadow-xl shadow-slate-900/[0.06] dark:shadow-black/30 focus-within:border-indigo-600 dark:focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-500/10 focus-within:shadow-indigo-500/10 transition-all overflow-hidden p-1 sm:p-1.5 gap-1.5"
           >
             {/* Category Select Dropdown */}
             <div className="relative sm:w-48 shrink-0 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/60 dark:border-slate-700/40">
@@ -204,7 +244,7 @@ export default function DashboardHero() {
           {suggestOpen && suggestedCategories.length > 0 && (
             <div className="absolute z-30 left-0 right-0 mt-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl shadow-slate-900/10 dark:shadow-black/40 overflow-hidden">
               <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/60 dark:bg-slate-800/40">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
                   Matching Categories
                 </p>
               </div>
@@ -230,9 +270,10 @@ export default function DashboardHero() {
 
         {/* Popular searches inline text */}
         <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs sm:text-sm">
-          <span className="text-slate-400 dark:text-slate-500 font-medium">
-            Popular:
+          <span className="text-[10px] uppercase tracking-[0.14em] font-semibold text-slate-400 dark:text-slate-500">
+            Popular
           </span>
+          <span className="hidden sm:block w-px h-3.5 bg-slate-200 dark:bg-slate-700" />
           <div className="flex flex-wrap items-center gap-1.5">
             {POPULAR_TERMS.map((term) => (
               <button
@@ -248,49 +289,53 @@ export default function DashboardHero() {
         </div>
 
         {/* Market signals & Quick CTAs */}
-        <div className="mt-10 pt-6 border-t border-slate-200/70 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-[8px] sm:text-sm text-slate-500 dark:text-slate-400">
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-            <span className="inline-flex items-center gap-2">
+        <div className="mt-10 pt-6 border-t border-slate-200/70 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-[11px] sm:text-xs text-slate-500 dark:text-slate-400">
+          <div
+            className="flex flex-wrap items-center justify-center sm:justify-start gap-x-5 sm:gap-x-7 gap-y-3 w-full sm:w-auto"
+            style={{ fontFamily: "'Quicksand', 'Calibri Light', sans-serif" }}
+          >
+            <span className="inline-flex items-center gap-2 sm:gap-3">
               <span
                 aria-hidden="true"
-                className="inline-flex items-center justify-center w-5 h-5 rounded-[5px] bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                className="inline-flex items-center justify-center w-[18px] h-[18px] sm:w-7 sm:h-7 rounded-[5px] sm:rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shrink-0"
               >
-                <UserRoundCheck className="w-3 h-3 text-indigo-500 dark:text-indigo-400" />
+                <UserRoundCheck className="w-[11px] h-[11px] sm:w-4 sm:h-4 text-indigo-500 dark:text-indigo-400" />
               </span>
-              <span className="font-medium text-slate-700 dark:text-slate-300">
+              <span className="font-medium text-slate-700 dark:text-slate-300 tracking-wide text-[11px] sm:text-sm">
                 Verified Profiles
               </span>
             </span>
 
-            <span className="inline-flex items-center gap-2">
+            <span className="inline-flex items-center gap-2 sm:gap-3">
               <span
                 aria-hidden="true"
-                className="inline-flex items-center justify-center w-5 h-5 rounded-[5px] bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                className="inline-flex items-center justify-center w-[18px] h-[18px] sm:w-7 sm:h-7 rounded-[5px] sm:rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shrink-0"
               >
-                <Gavel className="w-3 h-3 text-indigo-500 dark:text-indigo-400" />
+                <Gavel className="w-[11px] h-[11px] sm:w-4 sm:h-4 text-indigo-500 dark:text-indigo-400" />
               </span>
-              <span className="font-medium text-slate-700 dark:text-slate-300">
+              <span className="font-medium text-slate-700 dark:text-slate-300 tracking-wide text-[11px] sm:text-sm">
                 Live Bidding
               </span>
             </span>
 
-            <span className="inline-flex items-center gap-2">
+            <span className="inline-flex items-center gap-2 sm:gap-3">
               <span
                 aria-hidden="true"
-                className="inline-flex items-center justify-center w-5 h-5 rounded-[5px] bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                className="inline-flex items-center justify-center w-[18px] h-[18px] sm:w-7 sm:h-7 rounded-[5px] sm:rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shrink-0"
               >
-                <Phone className="w-3 h-3 text-indigo-500 dark:text-indigo-400" />
+                <Phone className="w-[11px] h-[11px] sm:w-4 sm:h-4 text-indigo-500 dark:text-indigo-400" />
               </span>
-              <span className="font-medium text-slate-700 dark:text-slate-300">
+              <span className="font-medium text-slate-700 dark:text-slate-300 tracking-wide text-[11px] sm:text-sm">
                 Direct Contact
               </span>
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center sm:justify-end gap-3 w-full sm:w-auto">
             <Link
               href="/listings/new"
-              className="text-xs sm:text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:underline underline-offset-4 transition-colors"
+              className="text-xs sm:text-[13px] font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:underline underline-offset-4 transition-colors"
+              style={{ fontFamily: "'Quicksand', 'Calibri Light', sans-serif" }}
             >
               Post an Ad
             </Link>
@@ -302,9 +347,10 @@ export default function DashboardHero() {
             </span>
             <Link
               href="/listings"
-              className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+              className="text-xs sm:text-[13px] font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+              style={{ fontFamily: "'Quicksand', 'Calibri Light', sans-serif" }}
             >
-              Browse All Listings
+              Browse listings
             </Link>
           </div>
         </div>
