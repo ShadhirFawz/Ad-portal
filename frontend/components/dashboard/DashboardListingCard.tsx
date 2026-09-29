@@ -64,7 +64,7 @@ export default function DashboardListingCard({
 
       setBookmarkLoading(true);
       try {
-        const res = await toggleBookmarkListing(listing.id, accessToken);
+        const res = await toggleBookmarkListing(accessToken, listing.slug || String(listing.id));
         setBookmarked(res.isBookmarked);
         toastSuccess(
           res.isBookmarked ? "Listing Bookmarked" : "Bookmark Removed",
