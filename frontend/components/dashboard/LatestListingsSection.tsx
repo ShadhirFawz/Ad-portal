@@ -49,51 +49,18 @@ export default function LatestListingsSection({
   return (
     <section className="space-y-4">
       {/* Section Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
-                Latest Listings
-              </h2>
-            </div>
-          </div>
-        </div>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
+          Latest Listings
+        </h2>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-2.5 self-end sm:self-auto">
-          {totalPages > 1 && (
-            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
-              <button
-                type="button"
-                onClick={prevPage}
-                aria-label="Previous 12 items"
-                className="w-7 h-7 rounded-lg bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 flex items-center justify-center transition-colors shadow-xs cursor-pointer"
-              >
-                <ChevronLeft className="w-3.5 h-3.5" />
-              </button>
-              <span className="px-2 text-[11px] font-semibold text-slate-600 dark:text-slate-300">
-                {currentPage + 1} / {totalPages}
-              </span>
-              <button
-                type="button"
-                onClick={nextPage}
-                aria-label="Next 12 items"
-                className="w-7 h-7 rounded-lg bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 flex items-center justify-center transition-colors shadow-xs cursor-pointer"
-              >
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
-
-          <Link
-            href="/listings"
-            className="btn-outline text-xs px-3.5 py-1.5 flex items-center gap-1.5"
-          >
-            <span>View All</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
+        <Link
+          href="/listings"
+          className="btn-outline text-xs px-3.5 py-1.5 flex items-center gap-1.5 shrink-0"
+        >
+          <span>View All</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </Link>
       </div>
 
       {/* 3 Columns x 4 Rows Grid (12 Compact Rectangular Cards per Page) */}
@@ -126,19 +93,45 @@ export default function LatestListingsSection({
 
       {/* Bottom Horizontal Pagination Dots */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 pt-2">
-          {pages.map((_, i) => (
+        <div className="relative flex items-center justify-center pt-2 min-h-[36px]">
+          {/* Dots — stay centered */}
+          <div className="flex items-center gap-2">
+            {pages.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setCurrentPage(i)}
+                aria-label={`Go to listings page ${i + 1}`}
+                className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${currentPage === i
+                  ? "w-7 bg-emerald-500"
+                  : "w-2 bg-slate-300 dark:bg-slate-700 hover:bg-emerald-300"
+                  }`}
+              />
+            ))}
+          </div>
+
+          {/* Chevron controls — absolute right edge of the section */}
+          <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
             <button
-              key={i}
               type="button"
-              onClick={() => setCurrentPage(i)}
-              aria-label={`Go to listings page ${i + 1}`}
-              className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${currentPage === i
-                ? "w-7 bg-emerald-500"
-                : "w-2 bg-slate-300 dark:bg-slate-700 hover:bg-emerald-300"
-                }`}
-            />
-          ))}
+              onClick={prevPage}
+              aria-label="Previous 12 items"
+              className="w-7 h-7 rounded-lg bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 flex items-center justify-center transition-colors shadow-xs cursor-pointer"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            <span className="px-1.5 text-[11px] font-semibold text-slate-600 dark:text-slate-300 tabular-nums">
+              {currentPage + 1} / {totalPages}
+            </span>
+            <button
+              type="button"
+              onClick={nextPage}
+              aria-label="Next 12 items"
+              className="w-7 h-7 rounded-lg bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 flex items-center justify-center transition-colors shadow-xs cursor-pointer"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       )}
     </section>
