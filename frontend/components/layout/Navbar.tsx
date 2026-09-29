@@ -8,7 +8,17 @@ import { useToast } from "@/hooks/useToast";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 import AccountSetupProgressWidget from "@/components/layout/AccountSetupProgressWidget";
 import GlobalListingSearch from "@/components/layout/GlobalListingSearch";
-import { Menu, X, ChevronDown, LogOut, User, Heart, Bookmark, Package, Settings, BadgeCheck, User2, LucideUserRoundArrowLeft, UserStar } from "lucide-react";
+import { Menu, X, ChevronDown } from "lucide-react";
+import {
+  FaUserAlt,
+  FaHeart,
+  FaBookmark,
+  FaBoxOpen,
+  FaCheckCircle,
+  FaStore,
+  FaCog,
+  FaSignOutAlt,
+} from "react-icons/fa";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 
@@ -205,7 +215,7 @@ export default function Navbar() {
                           href="/profile"
                           className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                         >
-                          <User className="w-4 h-4" />
+                          <FaUserAlt className="w-3.5 h-3.5" />
                           Profile
                         </Link>
                         {(user.role === "SELLER" || user.role === "ADMIN") ? (
@@ -214,14 +224,14 @@ export default function Navbar() {
                               href="/my-listings"
                               className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                             >
-                              <Package className="w-4 h-4" />
+                              <FaBoxOpen className="w-3.5 h-3.5" />
                               My Listings
                             </Link>
                             <Link
                               href="/subscriptions"
                               className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                             >
-                              <BadgeCheck className="w-4 h-4 text-emerald-500" />
+                              <FaCheckCircle className="w-3.5 h-3.5 text-emerald-500" />
                               My Subscriptions
                             </Link>
                           </>
@@ -230,7 +240,7 @@ export default function Navbar() {
                             href="/become-a-seller"
                             className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors font-medium"
                           >
-                            <UserStar className="w-4 h-4" />
+                            <FaStore className="w-3.5 h-3.5" />
                             Become a Seller
                           </Link>
                         )}
@@ -238,21 +248,21 @@ export default function Navbar() {
                           href="/favorites"
                           className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                         >
-                          <Heart className="w-4 h-4" />
+                          <FaHeart className="w-3.5 h-3.5" />
                           Favorites
                         </Link>
                         <Link
                           href="/bookmarks"
                           className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                         >
-                          <Bookmark className="w-4 h-4" />
+                          <FaBookmark className="w-3.5 h-3.5" />
                           Bookmarks
                         </Link>
                         <Link
                           href="/settings"
                           className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                         >
-                          <Settings className="w-4 h-4" />
+                          <FaCog className="w-3.5 h-3.5" />
                           Settings
                         </Link>
                         <hr className="my-1 border-slate-100 dark:border-slate-800" />
@@ -263,7 +273,7 @@ export default function Navbar() {
                           }}
                           className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors w-full text-left cursor-pointer"
                         >
-                          <LogOut className="w-4 h-4" />
+                          <FaSignOutAlt className="w-3.5 h-3.5" />
                           Sign Out
                         </button>
                       </div>
@@ -365,7 +375,7 @@ export default function Navbar() {
                       className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      <User className="w-5 h-5" />
+                      <FaUserAlt className="w-4 h-4" />
                       Profile
                     </Link>
                     {(user.role === "SELLER" || user.role === "ADMIN") ? (
@@ -375,7 +385,7 @@ export default function Navbar() {
                           className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                           onClick={() => setIsMenuOpen(false)}
                         >
-                          <Package className="w-5 h-5" />
+                          <FaBoxOpen className="w-4 h-4" />
                           My Listings
                         </Link>
                         <Link
@@ -383,7 +393,7 @@ export default function Navbar() {
                           className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                           onClick={() => setIsMenuOpen(false)}
                         >
-                          <BadgeCheck className="w-5 h-5 text-emerald-500" />
+                          <FaCheckCircle className="w-4 h-4 text-emerald-500" />
                           My Subscriptions
                         </Link>
                       </>
@@ -393,7 +403,7 @@ export default function Navbar() {
                         className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors"
                         onClick={() => setIsMenuOpen(false)}
                       >
-                        <UserStar className="w-5 h-5" />
+                        <FaStore className="w-4 h-4" />
                         Become a Seller
                       </Link>
                     )}
@@ -402,7 +412,7 @@ export default function Navbar() {
                       className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      <Heart className="w-5 h-5" />
+                      <FaHeart className="w-4 h-4" />
                       Favorites
                     </Link>
                     <Link
@@ -410,7 +420,7 @@ export default function Navbar() {
                       className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      <Bookmark className="w-5 h-5" />
+                      <FaBookmark className="w-4 h-4" />
                       Bookmarks
                     </Link>
                     <Link
@@ -418,7 +428,7 @@ export default function Navbar() {
                       className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      <Settings className="w-5 h-5" />
+                      <FaCog className="w-4 h-4" />
                       Settings
                     </Link>
                     <hr className="my-2 border-slate-200 dark:border-slate-800" />
@@ -430,7 +440,7 @@ export default function Navbar() {
                       }}
                       className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors w-full text-left"
                     >
-                      <LogOut className="w-5 h-5" />
+                      <FaSignOutAlt className="w-4 h-4" />
                       Sign Out
                     </button>
                   </>

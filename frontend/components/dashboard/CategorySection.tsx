@@ -4,51 +4,52 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  Package,
-  Car,
-  Smartphone,
-  Shirt,
-  Home as HomeIcon,
-  Trophy,
-  BookOpen,
-  Wrench,
-  Building2,
-  Briefcase,
-  Dog,
-  Sparkles,
-  Apple,
-  Plug2,
-  BriefcaseBusiness,
-  Leaf,
   ChevronDown,
   ArrowRight,
-  LucideIcon,
 } from "lucide-react";
+import {
+  FaCar,
+  FaMobileAlt,
+  FaLaptop,
+  FaTshirt,
+  FaCouch,
+  FaBuilding,
+  FaTrophy,
+  FaBook,
+  FaTools,
+  FaBriefcase,
+  FaPaw,
+  FaLeaf,
+  FaUtensils,
+  FaHeart,
+  FaBox,
+  FaIndustry,
+} from "react-icons/fa";
+import { IconType } from "react-icons";
 import { getRootCategories } from "@/lib/api/categories";
 import { getListings } from "@/lib/api/listings";
 import type { Category } from "@/types/category";
 import type { Listing } from "@/types/listing";
 import DashboardListingCard from "./DashboardListingCard";
 
-function getCategoryIcon(slug: string, name: string): LucideIcon {
+function getCategoryIcon(slug: string, name: string): IconType {
   const key = `${slug} ${name}`.toLowerCase();
-  if (key.includes("vehic") || key.includes("car") || key.includes("motor") || key.includes("bike")) return Car;
-  if (key.includes("elect") || key.includes("phone") || key.includes("comput") || key.includes("laptop") || key.includes("gadget")) return Plug2;
-  if (key.includes("fash") || key.includes("cloth") || key.includes("wear") || key.includes("shoe") || key.includes("bag")) return Shirt;
-  if (key.includes("home") || key.includes("furnit") || key.includes("garden") || key.includes("appliance")) return HomeIcon;
-  if (key.includes("sport") || key.includes("hobb") || key.includes("fit") || key.includes("game")) return Trophy;
-  if (key.includes("book") || key.includes("media") || key.includes("music") || key.includes("educa")) return BookOpen;
-  if (key.includes("serv") || key.includes("repair") || key.includes("skill")) return Wrench;
-  if (key.includes("prop") || key.includes("estate") || key.includes("land") || key.includes("house")) return Building2;
-  if (key.includes("job") || key.includes("work") || key.includes("career")) return Briefcase;
-  if (key.includes("pet") || key.includes("animal")) return Dog;
-  if (key.includes("mob")) return Smartphone;
-  if (key.includes("agri")) return Leaf;
-  if (key.includes("food") || key.includes("grocery")) return Apple;
-  if (key.includes("health") || key.includes("beauty") || key.includes("toy") || key.includes("kid")) return Sparkles;
-  if (key.includes("pack")) return Package;
-  if (key.includes("business") || key.includes("industry")) return BriefcaseBusiness;
-  return Package;
+  if (key.includes("vehic") || key.includes("car") || key.includes("motor") || key.includes("bike")) return FaCar;
+  if (key.includes("phone") || key.includes("mob")) return FaMobileAlt;
+  if (key.includes("elect") || key.includes("comput") || key.includes("laptop") || key.includes("gadget")) return FaLaptop;
+  if (key.includes("fash") || key.includes("cloth") || key.includes("wear") || key.includes("shoe") || key.includes("bag")) return FaTshirt;
+  if (key.includes("home") || key.includes("furnit") || key.includes("garden") || key.includes("appliance")) return FaCouch;
+  if (key.includes("sport") || key.includes("hobb") || key.includes("fit") || key.includes("game")) return FaTrophy;
+  if (key.includes("book") || key.includes("media") || key.includes("music") || key.includes("educa")) return FaBook;
+  if (key.includes("serv") || key.includes("repair") || key.includes("skill")) return FaTools;
+  if (key.includes("prop") || key.includes("estate") || key.includes("land") || key.includes("house")) return FaBuilding;
+  if (key.includes("job") || key.includes("work") || key.includes("career")) return FaBriefcase;
+  if (key.includes("pet") || key.includes("animal")) return FaPaw;
+  if (key.includes("agri")) return FaLeaf;
+  if (key.includes("food") || key.includes("grocery")) return FaUtensils;
+  if (key.includes("health") || key.includes("beauty") || key.includes("toy") || key.includes("kid")) return FaHeart;
+  if (key.includes("business") || key.includes("industry")) return FaIndustry;
+  return FaBox;
 }
 
 export default function CategorySection() {

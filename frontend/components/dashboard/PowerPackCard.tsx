@@ -4,14 +4,15 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Listing } from "@/types/listing";
 import {
-  Crown,
   MapPin,
   Clock,
   Tag,
   ArrowRight,
-  ShieldCheck,
-  UserCheck,
 } from "lucide-react";
+import {
+  FaCrown,
+  FaShieldAlt,
+} from "react-icons/fa";
 
 interface PowerPackCardProps {
   listing: Listing;
@@ -65,7 +66,7 @@ export default function PowerPackCard({ listing }: PowerPackCardProps) {
 
         {/* Top Power Pack Crown Badge */}
         <div className="absolute top-3 left-3 px-2.5 py-1 rounded-xl bg-violet-700 text-white text-[10px] font-extrabold uppercase tracking-wider flex items-center gap-1.5 shadow-md border border-violet-400/30">
-          <Crown className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+          <FaCrown className="w-3.5 h-3.5 text-amber-300" />
           <span>Power Pack</span>
         </div>
 
@@ -86,7 +87,7 @@ export default function PowerPackCard({ listing }: PowerPackCardProps) {
               {listing.categoryName || "Featured"}
             </span>
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold border border-emerald-500/20">
-              <ShieldCheck className="w-3 h-3 text-emerald-500" />
+              <FaShieldAlt className="w-3 h-3 text-emerald-500" />
               <span>Verified Seller</span>
             </span>
           </div>

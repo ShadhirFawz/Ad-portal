@@ -4,29 +4,31 @@ import { useMemo, useState, useEffect } from "react";
 import Image from "next/image";
 import type { Category } from "@/types/category";
 import {
-  Package,
-  Car,
-  Smartphone,
-  Shirt,
-  Home as HomeIcon,
-  Trophy,
-  BookOpen,
-  Wrench,
-  Building2,
-  Briefcase,
-  Dog,
-  Sparkles,
-  Apple,
   ChevronRight,
   Check,
   FolderTree,
   X,
   Layers,
-  LucideIcon,
-  Plug2,
-  BriefcaseBusiness,
-  Leaf,
 } from "lucide-react";
+import {
+  FaCar,
+  FaMobileAlt,
+  FaLaptop,
+  FaTshirt,
+  FaCouch,
+  FaTrophy,
+  FaBook,
+  FaTools,
+  FaBuilding,
+  FaBriefcase,
+  FaPaw,
+  FaLeaf,
+  FaUtensils,
+  FaHeart,
+  FaIndustry,
+  FaBox,
+} from "react-icons/fa";
+import { IconType } from "react-icons";
 
 interface NestedCategorySelectorProps {
   categories: Category[];
@@ -36,26 +38,29 @@ interface NestedCategorySelectorProps {
   disabled?: boolean;
 }
 
-// Return a clean single-color monochrome Lucide icon based on category keywords
-function getCategoryIcon(name: string, slug?: string): LucideIcon {
+// Return a clean single-color monochrome Fa icon based on category keywords
+function getCategoryIcon(name: string, slug?: string): IconType {
   const text = `${name} ${slug || ""}`.toLowerCase();
-  if (text.includes("vehic") || text.includes("car") || text.includes("motor") || text.includes("bike")) return Car;
-  if (text.includes("elect") || text.includes("phone") || text.includes("comput") || text.includes("laptop") || text.includes("gadget")) return Plug2;
-  if (text.includes("fash") || text.includes("cloth") || text.includes("wear") || text.includes("shoe") || text.includes("bag")) return Shirt;
-  if (text.includes("home") || text.includes("furnit") || text.includes("garden") || text.includes("appliance")) return HomeIcon;
-  if (text.includes("sport") || text.includes("hobb") || text.includes("fit") || text.includes("game")) return Trophy;
-  if (text.includes("book") || text.includes("media") || text.includes("music") || text.includes("educa")) return BookOpen;
-  if (text.includes("serv") || text.includes("repair") || text.includes("skill")) return Wrench;
-  if (text.includes("prop") || text.includes("estate") || text.includes("land") || text.includes("house")) return Building2;
-  if (text.includes("job") || text.includes("work") || text.includes("career")) return Briefcase;
-  if (text.includes("pet") || text.includes("animal")) return Dog;
-  if (text.includes("mob")) return Smartphone;
-  if (text.includes("agri")) return Leaf;
-  if (text.includes("food") || text.includes("grocery")) return Apple;
-  if (text.includes("health") || text.includes("beauty") || text.includes("toy") || text.includes("kid")) return Sparkles;
-  if (text.includes("pack")) return Package;
-  if (text.includes("business") || text.includes("industry")) return BriefcaseBusiness;
-  return Package;
+  if (text.includes("vehic") || text.includes("car") || text.includes("motor") || text.includes("bike")) return FaCar;
+  if (text.includes("phone") || text.includes("mob")) return FaMobileAlt;
+  if (text.includes("elect") || text.includes("comput") || text.includes("laptop") || text.includes("gadget")) return FaLaptop;
+  if (text.includes("fash") || text.includes("cloth") || text.includes("wear") || text.includes("shoe") || text.includes("bag")) return FaTshirt;
+  if (text.includes("home") || text.includes("furnit") || text.includes("garden") || text.includes("appliance")) return FaCouch;
+  if (text.includes("sport") || text.includes("hobb") || text.includes("fit") || text.includes("game")) return FaTrophy;
+  if (text.includes("book") || text.includes("media") || text.includes("music") || text.includes("educa")) return FaBook;
+  if (text.includes("serv") || text.includes("repair") || text.includes("skill")) return FaTools;
+  if (text.includes("prop") || text.includes("estate") || text.includes("land") || text.includes("house")) return FaBuilding;
+  if (text.includes("job") || text.includes("work") || text.includes("career")) return FaBriefcase;
+  if (text.includes("pet") || text.includes("animal")) return FaPaw;
+  if (text.includes("agri")) return FaLeaf;
+  if (text.includes("food") || text.includes("grocery")) return FaUtensils;
+  if (text.includes("health") || text.includes("beauty") || text.includes("toy") || key(text)) return FaHeart;
+  if (text.includes("business") || text.includes("industry")) return FaIndustry;
+  return FaBox;
+}
+
+function key(text: string) {
+  return text.includes("kid") || text.includes("toy");
 }
 
 export default function NestedCategorySelector({
@@ -160,7 +165,7 @@ export default function NestedCategorySelector({
   const selectedCategory = categoryMap.get(selectedCategoryId);
   const SelectedIcon = selectedCategory
     ? getCategoryIcon(selectedCategory.name, selectedCategory.slug)
-    : Package;
+    : FaBox;
 
   return (
     <div className="space-y-3">

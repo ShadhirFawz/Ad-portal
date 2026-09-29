@@ -3,11 +3,11 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
-  Star,
   ChevronLeft,
   ChevronRight,
   ArrowRight,
 } from "lucide-react";
+import { FaStar } from "react-icons/fa";
 import type { Listing } from "@/types/listing";
 import DashboardListingCard from "./DashboardListingCard";
 
@@ -71,7 +71,7 @@ export default function SpotlightSection({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="p-2 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
-            <Star className="w-4 h-4 fill-amber-500" />
+            <FaStar className="w-4 h-4" />
           </div>
           <div>
             <div className="flex items-center gap-2">

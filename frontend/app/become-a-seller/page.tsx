@@ -18,6 +18,7 @@ import {
   Zap,
   HelpCircle,
 } from "lucide-react";
+import { FaWhatsapp, FaPhoneAlt } from "react-icons/fa";
 
 function BecomeSellerContent() {
   const router = useRouter();
@@ -282,9 +283,9 @@ function BecomeSellerContent() {
                   </label>
                   <div className="grid grid-cols-3 gap-2.5">
                     {[
-                      { id: "BOTH", label: "Calls & WhatsApp", icon: MessageSquare },
-                      { id: "CALL", label: "Phone Calls Only", icon: Phone },
-                      { id: "WHATSAPP", label: "WhatsApp Only", icon: MessageSquare },
+                      { id: "BOTH", label: "Calls & WhatsApp", icon: FaWhatsapp },
+                      { id: "CALL", label: "Phone Calls Only", icon: FaPhoneAlt },
+                      { id: "WHATSAPP", label: "WhatsApp Only", icon: FaWhatsapp },
                     ].map((opt) => (
                       <button
                         key={opt.id}

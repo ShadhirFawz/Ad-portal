@@ -12,18 +12,21 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: "/Wudo_logo_light.png",
-        media: "(prefers-color-scheme: light)",
-        type: "image/png",
+        url: "/favicon.ico",
       },
       {
         url: "/Wudo_logo_dark.png",
         media: "(prefers-color-scheme: dark)",
         type: "image/png",
       },
+      {
+        url: "/Wudo_logo_light.png",
+        media: "(prefers-color-scheme: light)",
+        type: "image/png",
+      },
     ],
-    shortcut: "/Wudo_logo_light.png",
-    apple: "/Wudo_logo_light.png",
+    shortcut: "/favicon.ico",
+    apple: "/Wudo_logo_dark.png",
   },
 };
 

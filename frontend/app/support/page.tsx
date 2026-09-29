@@ -18,6 +18,7 @@ import {
   AlertCircle,
   ExternalLink,
 } from "lucide-react";
+import { FaWhatsapp, FaEnvelope, FaShieldAlt, FaComments } from "react-icons/fa";
 
 const faqs = [
   {
@@ -135,31 +136,40 @@ const faqs = [
 
 const contactChannels = [
   {
-    icon: Mail,
+    icon: FaWhatsapp,
+    label: "WhatsApp Support",
+    description: "Instant chat with our customer helpdesk",
+    action: "Chat on WhatsApp",
+    href: "https://wa.me/94770000000",
+    badge: "Fastest response",
+    color: "emerald",
+  },
+  {
+    icon: FaEnvelope,
     label: "Email Support",
     description: "Detailed queries and account issues",
     action: "support@wudo.lk",
     href: "mailto:support@wudo.lk",
     badge: "Replies within 24h",
-    color: "emerald",
-  },
-  {
-    icon: MessageSquare,
-    label: "Community Forum",
-    description: "Connect with other Wudo users",
-    action: "Visit Forum",
-    href: "#",
-    badge: "Coming Soon",
     color: "blue",
   },
   {
-    icon: AlertCircle,
+    icon: FaShieldAlt,
     label: "Report Abuse",
-    description: "Safety and content violations",
+    description: "Safety, scams, and content violations",
     action: "safety@wudo.lk",
     href: "mailto:safety@wudo.lk",
     badge: "Urgent issues",
     color: "rose",
+  },
+  {
+    icon: FaComments,
+    label: "Community Forum",
+    description: "Connect with other verified Wudo users",
+    action: "Visit Forum",
+    href: "#",
+    badge: "Coming Soon",
+    color: "purple",
   },
 ];
 

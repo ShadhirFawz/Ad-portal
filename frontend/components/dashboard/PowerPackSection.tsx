@@ -3,11 +3,11 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
-  Crown,
   ChevronLeft,
   ChevronRight,
   ArrowRight,
 } from "lucide-react";
+import { FaCrown } from "react-icons/fa";
 import type { Listing } from "@/types/listing";
 import PowerPackCard from "./PowerPackCard";
 
@@ -62,7 +62,7 @@ export default function PowerPackSection({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="p-2 rounded-xl bg-violet-500/15 text-violet-600 dark:text-violet-400">
-            <Crown className="w-4 h-4 fill-violet-500" />
+            <FaCrown className="w-4 h-4" />
           </div>
           <div>
             <div className="flex items-center gap-2">

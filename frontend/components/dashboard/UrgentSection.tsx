@@ -3,11 +3,11 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
-  Flame,
   ChevronLeft,
   ChevronRight,
   ArrowRight,
 } from "lucide-react";
+import { FaFire } from "react-icons/fa";
 import type { Listing } from "@/types/listing";
 import DashboardListingCard from "./DashboardListingCard";
 
@@ -71,7 +71,7 @@ export default function UrgentSection({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="p-2 rounded-xl bg-rose-500/15 text-rose-600 dark:text-rose-400">
-            <Flame className="w-4 h-4 fill-rose-500" />
+            <FaFire className="w-4 h-4" />
           </div>
           <div>
             <div className="flex items-center gap-2">
