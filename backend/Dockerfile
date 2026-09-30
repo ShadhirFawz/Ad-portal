@@ -21,8 +21,8 @@ WORKDIR /app
 # Copy jar from build stage
 COPY --from=build /app/target/*.jar app.jar
 
-# Expose default Spring Boot port
-EXPOSE 8080
+# Expose container ports for Vercel
+EXPOSE 8080 80
 
 # Run Spring Boot binding dynamically to Vercel's assigned PORT with fast startup flags
 ENTRYPOINT ["sh", "-c", "java -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -XX:+UseSerialGC -Djava.security.egd=file:/dev/./urandom -Dserver.port=${PORT:-8080} -jar app.jar"]
