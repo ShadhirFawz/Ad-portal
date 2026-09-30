@@ -155,7 +155,7 @@ export default function BoostListingPage({ params }: PageProps) {
       form.method = "POST";
       form.action = checkoutData.payHereCheckoutUrl;
       form.style.display = "none";
-      form.referrerPolicy = "unsafe-url";
+      form.referrerPolicy = "no-referrer-when-downgrade";
 
       Object.entries(checkoutData.payHereParams).forEach(([key, value]) => {
         const input = document.createElement("input");
