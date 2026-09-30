@@ -26,7 +26,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Referrer-Policy",
-            value: "unsafe-url",
+            value: "no-referrer-when-downgrade",
           },
         ],
       },
