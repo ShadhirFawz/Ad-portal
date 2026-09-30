@@ -24,5 +24,5 @@ COPY --from=build /app/target/*.jar app.jar
 # Expose default Spring Boot port
 EXPOSE 8080
 
-# Run Spring Boot binding dynamically to Vercel's assigned PORT
-ENTRYPOINT ["sh", "-c", "java -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Dserver.port=${PORT:-8080} -jar app.jar"]
+# Run Spring Boot binding dynamically to Vercel's assigned PORT with fast startup flags
+ENTRYPOINT ["sh", "-c", "java -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -XX:+UseSerialGC -Djava.security.egd=file:/dev/./urandom -Dserver.port=${PORT:-8080} -jar app.jar"]

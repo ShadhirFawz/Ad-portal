@@ -8,20 +8,29 @@ spring:
       minimum-idle: 1
       connection-timeout: 10000
       idle-timeout: 30000
-      max-lifetime: 60000
+      max-lifetime: 120000
+      keepalive-time: 30000
 
   jpa:
     hibernate:
-      ddl-auto: ${HIBERNATE_DDL_AUTO:validate}
+      ddl-auto: ${HIBERNATE_DDL_AUTO:none}
     open-in-view: false
     properties:
       hibernate:
         format_sql: false
+        temp:
+          use_jdbc_metadata_defaults: false
 
   flyway:
     enabled: true
-    repair-check-location: true
+    repair-check-location: false
     validate-on-migrate: false
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
 
 server:
   port: ${PORT:8080}
