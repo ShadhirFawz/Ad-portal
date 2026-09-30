@@ -23,7 +23,7 @@ COPY --from=build /app/target/*.jar app.jar
 
 # Default PORT fallback (Vercel overrides this dynamically)
 ENV PORT=8080
-EXPOSE ${PORT}
+EXPOSE 8080 80
 
 # Run Spring Boot binding to Vercel's dynamic $PORT
 ENTRYPOINT ["sh", "-c", "java -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -XX:+UseSerialGC -Djava.security.egd=file:/dev/./urandom -Dserver.port=${PORT:-8080} -jar app.jar"]

@@ -22,9 +22,7 @@ spring:
           use_jdbc_metadata_defaults: false
 
   flyway:
-    enabled: true
-    repair-check-location: false
-    validate-on-migrate: false
+    enabled: false
 
 springdoc:
   api-docs:
