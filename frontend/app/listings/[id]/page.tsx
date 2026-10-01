@@ -109,6 +109,7 @@ export default function ListingDetailsPage() {
   const [markingSold, setMarkingSold] = useState(false);
   const [markSoldError, setMarkSoldError] = useState<string | null>(null);
   const [showAdditionalInfo, setShowAdditionalInfo] = useState(false);
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
   useEffect(() => {
     if (!listingId) return;
@@ -356,6 +357,9 @@ export default function ListingDetailsPage() {
   const listedAgo = formatTimeAgo(listing.createdAt);
   const updatedAgo = formatTimeAgo(listing.updatedAt);
   const publishedAgo = formatTimeAgo(listing.publishedAt);
+
+  const descriptionText = listing.description ?? "";
+  const isDescriptionLong = descriptionText.length > 220;
 
   return (
     <>
@@ -718,9 +722,27 @@ export default function ListingDetailsPage() {
         <div className="space-y-6 mt-6 lg:mt-8">
           {/* Full Screen Width Description */}
           <SectionCard title="Description" icon={Tag}>
-            <div className="prose prose-slate dark:prose-invert max-w-none text-sm leading-relaxed whitespace-pre-line text-slate-700 dark:text-slate-300">
-              {listing.description}
+            <div
+              className={`prose prose-slate dark:prose-invert max-w-none text-sm leading-relaxed whitespace-pre-line text-slate-700 dark:text-slate-300 sm:line-clamp-none ${descriptionExpanded ? "" : "line-clamp-3"
+                }`}
+            >
+              {descriptionText}
             </div>
+
+            {isDescriptionLong && (
+              <button
+                type="button"
+                onClick={() => setDescriptionExpanded((prev) => !prev)}
+                className="mt-3 sm:hidden inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
+              >
+                <span>{descriptionExpanded ? "View less" : "View more"}</span>
+                {descriptionExpanded ? (
+                  <ChevronUp className="w-3.5 h-3.5" />
+                ) : (
+                  <ChevronDown className="w-3.5 h-3.5" />
+                )}
+              </button>
+            )}
           </SectionCard>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
