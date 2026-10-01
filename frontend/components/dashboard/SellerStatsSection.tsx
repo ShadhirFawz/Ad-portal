@@ -168,7 +168,7 @@ export default function SellerStatsSection() {
           </Link>
 
           <Link
-            href="/profile/edit"
+            href="/settings"
             className="flex items-center justify-between p-3 rounded-xl bg-white/60 dark:bg-slate-800/40 hover:bg-emerald-500/10 dark:hover:bg-emerald-500/10 border border-slate-200/60 dark:border-slate-700/60 transition-colors text-xs font-semibold text-slate-700 dark:text-slate-200"
           >
             <span className="flex items-center gap-2">

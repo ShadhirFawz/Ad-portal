@@ -6,11 +6,11 @@ import CategorySection from "@/components/dashboard/CategorySection";
 import SellerStatsSection from "@/components/dashboard/SellerStatsSection";
 import SpotlightSection from "@/components/dashboard/SpotlightSection";
 import LatestListingsSection from "@/components/dashboard/LatestListingsSection";
-import DashboardNavigationHighlights from "@/components/dashboard/DashboardNavigationHighlights";
 import PowerPackSection from "@/components/dashboard/PowerPackSection";
 import UrgentSection from "@/components/dashboard/UrgentSection";
 import { getListings } from "@/lib/api/listings";
 import type { Listing } from "@/types/listing";
+import TradingPlaybook from "@/components/dashboard/TradingPlaybook";
 
 export default function Home() {
   const [allListings, setAllListings] = useState<Listing[]>([]);
@@ -74,7 +74,7 @@ export default function Home() {
       <LatestListingsSection listings={allListings} loading={loading} />
 
       {/* 6. Dashboard Platform Navigation & Feature Highlights in Middle */}
-      <DashboardNavigationHighlights />
+      <TradingPlaybook />
 
       {/* 7. SEPARATE SECTION: Power Pack Showcase (1 Single Wide 2-Card Sized Showcase Slider) */}
       {effectivePowerPack.length > 0 && (
