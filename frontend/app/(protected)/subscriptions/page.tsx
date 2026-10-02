@@ -502,7 +502,7 @@ export default function SubscriptionsPage() {
               <p className="mx-auto mt-2 max-w-md text-sm text-slate-500 dark:text-slate-400">
                 {searchQuery || filterTab !== "ALL"
                   ? "Try adjusting your tab selection or search query to find your active ads."
-                  : "Boost your active listings with Spotlight, Urgent, Push Up, or Power Pack to reach thousands of buyers instantly."}
+                  : "Boost your active listings to reach thousands of buyers instantly."}
               </p>
               <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
                 <Link

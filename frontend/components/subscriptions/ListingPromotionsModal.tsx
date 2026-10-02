@@ -171,7 +171,14 @@ export default function ListingPromotionsModal({
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-slate-400 text-[10px]">
-                No Photo
+                <Image
+                  src="/Wudo_watermark.png"
+                  alt="Wudo"
+                  width={160}
+                  height={40}
+                  priority
+                  className="h-12 w-auto object-contain mx-auto opacity-50"
+                />
               </div>
             )}
           </div>

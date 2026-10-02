@@ -6,7 +6,6 @@ import type { Listing } from "@/types/listing";
 import {
   MapPin,
   Clock,
-  Tag,
   ArrowRight,
 } from "lucide-react";
 import {
@@ -59,8 +58,18 @@ export default function PowerPackCard({ listing }: PowerPackCardProps) {
             className="object-cover group-hover:scale-105 transition-transform duration-500"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-slate-500">
-            <Tag className="w-10 h-10" />
+          <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 p-4 text-center">
+            <Image
+              src="/Wudo_watermark.png"
+              alt="Wudo"
+              width={160}
+              height={40}
+              priority
+              className="h-6 w-auto object-contain mx-auto"
+            />
+            <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">
+              No image
+            </span>
           </div>
         )}
 

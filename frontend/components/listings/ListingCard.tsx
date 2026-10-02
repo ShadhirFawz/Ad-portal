@@ -490,8 +490,18 @@ export default function ListingCard({
                     priority
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-slate-400">
-                    <Tag className="h-10 w-10 opacity-40" />
+                  <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 p-3 text-center">
+                    <Image
+                      src="/Wudo_watermark.png"
+                      alt="Wudo"
+                      width={160}
+                      height={40}
+                      priority
+                      className="h-12 w-auto object-contain mx-auto opacity-50"
+                    />
+                    <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">
+                      No image
+                    </span>
                   </div>
                 )}
                 {conditionLabel && (
@@ -683,9 +693,18 @@ export default function ListingCard({
                 className="object-cover transition-all duration-500 group-hover:scale-105"
               />
             ) : (
-              <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-slate-400 dark:text-slate-500 p-2 text-center">
-                <Tag className="h-6 w-6 stroke-[1.5] opacity-50" />
-                <span className="text-[9px] uppercase font-bold tracking-wider opacity-60">No Photo</span>
+              <div className="flex h-full w-full flex-col items-center justify-center gap-1 p-2 text-center">
+                <Image
+                  src="/Wudo_watermark.png"
+                  alt="Wudo"
+                  width={160}
+                  height={40}
+                  priority
+                  className="h-12 w-auto object-contain mx-auto opacity-50"
+                />
+                <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">
+                  No image
+                </span>
               </div>
             )}
 
@@ -877,9 +896,18 @@ export default function ListingCard({
               className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
-            <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 text-slate-400 dark:text-slate-500 p-3 text-center">
-              <Tag className="h-8 w-8 stroke-[1.5] opacity-40" />
-              <span className="text-[10px] font-semibold uppercase tracking-wider opacity-60">No image</span>
+            <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 p-3 text-center">
+              <Image
+                src="/Wudo_watermark.png"
+                alt="Wudo"
+                width={160}
+                height={40}
+                priority
+                className="h-12 w-auto object-contain mx-auto opacity-70"
+              />
+              <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">
+                No image
+              </span>
             </div>
           )}
 
