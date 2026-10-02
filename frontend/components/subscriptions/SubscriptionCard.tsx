@@ -7,13 +7,11 @@ import {
   Clock,
   ExternalLink,
   RotateCw,
-  Tag,
   MapPin,
   Copy,
   Check,
   ChevronRight,
   Layers,
-  Radio,
   CalendarClock,
 } from "lucide-react";
 import {
@@ -161,9 +159,18 @@ export default function SubscriptionCard({
                 sizes="(max-width: 768px) 100px, 120px"
               />
             ) : (
-              <div className="flex h-full w-full flex-col items-center justify-center text-slate-400 p-2 text-center">
-                <Tag className="h-6 w-6 mb-1 opacity-50" />
-                <span className="text-[10px] font-medium leading-tight">No Photo</span>
+              <div className="flex h-full w-full flex-col items-center justify-center gap-1 p-2 text-center">
+                <Image
+                  src="/Wudo_watermark.png"
+                  alt="Wudo"
+                  width={160}
+                  height={40}
+                  priority
+                  className="h-12 w-auto object-contain mx-auto opacity-50"
+                />
+                <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">
+                  No image
+                </span>
               </div>
             )}
           </div>

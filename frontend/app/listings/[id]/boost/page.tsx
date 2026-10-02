@@ -323,23 +323,21 @@ export default function BoostListingPage({ params }: PageProps) {
                           setSelectedType(plan.boostType);
                         }
                       }}
-                      className={`relative flex flex-col justify-between rounded-2xl border-2 p-5 transition-all duration-200 ${
-                        isDisabled
+                      className={`relative flex flex-col justify-between rounded-2xl border-2 p-5 transition-all duration-200 ${isDisabled
                           ? "cursor-not-allowed border-slate-200 bg-slate-50/70 opacity-60 dark:border-slate-800 dark:bg-slate-900/40"
                           : "cursor-pointer"
-                      } ${
-                        isSelected && !isDisabled
+                        } ${isSelected && !isDisabled
                           ? plan.boostType === "SPOTLIGHT"
                             ? "border-amber-500 bg-amber-500/5 shadow-lg shadow-amber-500/10 dark:border-amber-400 dark:bg-amber-400/5"
                             : plan.boostType === "PUSH_UP"
-                            ? "border-emerald-500 bg-emerald-500/5 shadow-lg shadow-emerald-500/10 dark:border-emerald-400 dark:bg-emerald-400/5"
-                            : plan.boostType === "URGENT"
-                            ? "border-rose-500 bg-rose-500/5 shadow-lg shadow-rose-500/10 dark:border-rose-400 dark:bg-rose-400/5"
-                            : "border-purple-500 bg-purple-500/5 shadow-lg shadow-purple-500/10 dark:border-purple-400 dark:bg-purple-400/5"
+                              ? "border-emerald-500 bg-emerald-500/5 shadow-lg shadow-emerald-500/10 dark:border-emerald-400 dark:bg-emerald-400/5"
+                              : plan.boostType === "URGENT"
+                                ? "border-rose-500 bg-rose-500/5 shadow-lg shadow-rose-500/10 dark:border-rose-400 dark:bg-rose-400/5"
+                                : "border-purple-500 bg-purple-500/5 shadow-lg shadow-purple-500/10 dark:border-purple-400 dark:bg-purple-400/5"
                           : !isDisabled
-                          ? "border-slate-200/90 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700"
-                          : ""
-                      }`}
+                            ? "border-slate-200/90 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700"
+                            : ""
+                        }`}
                     >
                       {/* Status Badges for Active / Extension / Conflict */}
                       {hasScheduledQueue && (
@@ -410,11 +408,10 @@ export default function BoostListingPage({ params }: PageProps) {
                         </div>
 
                         <div
-                          className={`flex h-5 w-5 items-center justify-center rounded-full border ${
-                            isSelected && !isDisabled
+                          className={`flex h-5 w-5 items-center justify-center rounded-full border ${isSelected && !isDisabled
                               ? "border-emerald-500 bg-emerald-500 text-white"
                               : "border-slate-300 dark:border-slate-600"
-                          }`}
+                            }`}
                         >
                           {isSelected && !isDisabled && <CheckCircle2 className="h-4 w-4" />}
                         </div>
@@ -608,7 +605,14 @@ export default function BoostListingPage({ params }: PageProps) {
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-xs text-slate-400">
-                      No photo
+                      <Image
+                        src="/Wudo_watermark.png"
+                        alt="Wudo"
+                        width={160}
+                        height={40}
+                        priority
+                        className="h-12 w-auto object-contain mx-auto opacity-50"
+                      />
                     </div>
                   )}
                 </div>

@@ -131,7 +131,14 @@ export default function SimilarListingsColumn({
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs text-center p-1 font-medium">
-                      No Photo
+                      <Image
+                        src="/Wudo_watermark.png"
+                        alt="Wudo"
+                        width={160}
+                        height={40}
+                        priority
+                        className="h-12 w-auto object-contain mx-auto opacity-50"
+                      />
                     </div>
                   )}
 

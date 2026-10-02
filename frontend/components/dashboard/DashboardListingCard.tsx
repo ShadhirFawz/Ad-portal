@@ -10,7 +10,6 @@ import {
   Bookmark,
   Star,
   Flame,
-  Tag,
   Loader2,
 } from "lucide-react";
 import { toggleBookmarkListing } from "@/lib/api/listings";
@@ -110,8 +109,18 @@ export default function DashboardListingCard({
               className="object-cover group-hover:scale-105 transition-transform duration-300"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-slate-400 dark:text-slate-600">
-              <Tag className="w-6 h-6" />
+            <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 p-3 text-center">
+              <Image
+                src="/Wudo_watermark.png"
+                alt="Wudo"
+                width={160}
+                height={40}
+                priority
+                className="h-10 w-auto object-contain mx-auto opacity-70"
+              />
+              <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">
+                No image
+              </span>
             </div>
           )}
 
@@ -141,11 +150,10 @@ export default function DashboardListingCard({
               <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-500" />
             ) : (
               <Bookmark
-                className={`w-3.5 h-3.5 ${
-                  bookmarked
-                    ? "fill-indigo-600 text-indigo-600 dark:fill-indigo-400 dark:text-indigo-400"
-                    : ""
-                }`}
+                className={`w-3.5 h-3.5 ${bookmarked
+                  ? "fill-indigo-600 text-indigo-600 dark:fill-indigo-400 dark:text-indigo-400"
+                  : ""
+                  }`}
               />
             )}
           </button>
@@ -212,8 +220,18 @@ export default function DashboardListingCard({
             className="object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-slate-400 dark:text-slate-600">
-            <Tag className="w-6 h-6" />
+          <div className="w-full h-full flex flex-col items-center justify-center gap-1 p-2 text-center">
+            <Image
+              src="/Wudo_watermark.png"
+              alt="Wudo"
+              width={160}
+              height={40}
+              priority
+              className="h-8 w-auto object-contain mx-auto opacity-70"
+            />
+            <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 opacity-60">
+              No image
+            </span>
           </div>
         )}
 
@@ -251,11 +269,10 @@ export default function DashboardListingCard({
               <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-500" />
             ) : (
               <Bookmark
-                className={`w-3.5 h-3.5 ${
-                  bookmarked
-                    ? "fill-emerald-600 text-emerald-600 dark:fill-emerald-400 dark:text-emerald-400"
-                    : ""
-                }`}
+                className={`w-3.5 h-3.5 ${bookmarked
+                  ? "fill-emerald-600 text-emerald-600 dark:fill-emerald-400 dark:text-emerald-400"
+                  : ""
+                  }`}
               />
             )}
           </button>
