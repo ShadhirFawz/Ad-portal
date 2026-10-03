@@ -70,6 +70,12 @@ public class User extends BaseUuidEntity {
     @Column(columnDefinition = "TEXT")
     private String bio;
 
+    @Column(name = "business_name", length = 200)
+    private String businessName;
+
+    @Column(name = "business_email", length = 255)
+    private String businessEmail;
+
     @Column(length = 255)
     private String location;
 

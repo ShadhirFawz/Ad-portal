@@ -65,3 +65,16 @@ export async function confirmBoostPayment(
   );
   return res.data;
 }
+
+export async function applyBonusBoost(
+  request: BoostCheckoutRequest
+): Promise<AdBoost> {
+  const res = await apiRequest<ApiResponse<AdBoost>>(
+    "/boosts/apply-bonus",
+    {
+      method: "POST",
+      body: JSON.stringify(request),
+    }
+  );
+  return res.data;
+}

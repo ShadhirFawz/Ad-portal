@@ -200,7 +200,25 @@ public class UserServiceImpl implements UserService {
         }
 
         if (request.bio() != null) {
-            user.setBio(trimToNull(request.bio()));
+            String trimmedBio = trimToNull(request.bio());
+            if (trimmedBio != null && user.getRole() != Role.VERIFIED_SELLER && user.getRole() != Role.ADMIN) {
+                throw new BadRequestException("Profile bio is exclusively available for Verified Sellers.");
+            }
+            user.setBio(trimmedBio);
+        }
+
+        if (request.businessName() != null) {
+            if (user.getRole() != Role.VERIFIED_SELLER && user.getRole() != Role.ADMIN) {
+                throw new BadRequestException("Business details are exclusively available for Verified Sellers.");
+            }
+            user.setBusinessName(trimToNull(request.businessName()));
+        }
+
+        if (request.businessEmail() != null) {
+            if (user.getRole() != Role.VERIFIED_SELLER && user.getRole() != Role.ADMIN) {
+                throw new BadRequestException("Business details are exclusively available for Verified Sellers.");
+            }
+            user.setBusinessEmail(trimToNull(request.businessEmail()));
         }
 
         if (request.location() != null) {
@@ -247,13 +265,20 @@ public class UserServiceImpl implements UserService {
                 throw new ConflictException("Only one WhatsApp number is allowed.");
             }
 
+            long businessCount = request.phoneNumbers().stream()
+                    .filter(p -> Boolean.TRUE.equals(p.isBusiness()))
+                    .count();
+            if (businessCount > 1) {
+                throw new ConflictException("Only one designated business phone number is allowed.");
+            }
+
             if (!request.phoneNumbers().isEmpty()) {
                 boolean hasExplicitPrimary = request.phoneNumbers().stream()
                         .anyMatch(p -> Boolean.TRUE.equals(p.isPrimary()));
 
                 String primaryPhone = null;
                 boolean primaryAssigned = false;
-                record PhoneConfig(boolean isPrimary, boolean isWhatsapp) {
+                record PhoneConfig(boolean isPrimary, boolean isWhatsapp, boolean isBusiness) {
                 }
                 java.util.Map<String, PhoneConfig> requestedNumberConfigMap = new java.util.LinkedHashMap<>();
 
@@ -275,7 +300,8 @@ public class UserServiceImpl implements UserService {
                     }
 
                     boolean isWhatsapp = Boolean.TRUE.equals(phoneReq.isWhatsapp());
-                    requestedNumberConfigMap.put(cleanNum, new PhoneConfig(isPrimary, isWhatsapp));
+                    boolean isBusiness = Boolean.TRUE.equals(phoneReq.isBusiness());
+                    requestedNumberConfigMap.put(cleanNum, new PhoneConfig(isPrimary, isWhatsapp, isBusiness));
                 }
 
                 // 1. Remove phone numbers that are no longer present in the request
@@ -294,12 +320,14 @@ public class UserServiceImpl implements UserService {
                     if (existingOpt.isPresent()) {
                         existingOpt.get().setIsPrimary(cfg.isPrimary());
                         existingOpt.get().setIsWhatsapp(cfg.isWhatsapp());
+                        existingOpt.get().setIsBusiness(cfg.isBusiness());
                     } else {
                         UserPhoneNumber upn = UserPhoneNumber.builder()
                                 .user(user)
                                 .phoneNumber(num)
                                 .isPrimary(cfg.isPrimary())
                                 .isWhatsapp(cfg.isWhatsapp())
+                                .isBusiness(cfg.isBusiness())
                                 .build();
                         user.getPhoneNumbers().add(upn);
                     }
@@ -313,8 +341,11 @@ public class UserServiceImpl implements UserService {
         }
 
         if (request.openingHours() != null) {
+            if (user.getRole() != Role.VERIFIED_SELLER && user.getRole() != Role.ADMIN) {
+                throw new BadRequestException("Store opening hours are exclusively available for Verified Sellers.");
+            }
             applyOpeningHours(user, request.openingHours());
-        } else {
+        } else if (user.getRole() == Role.VERIFIED_SELLER || user.getRole() == Role.ADMIN) {
             user.ensureDefaultOpeningHours();
         }
 

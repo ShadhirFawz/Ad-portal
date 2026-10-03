@@ -6,6 +6,8 @@ public enum Role {
 
     SELLER,
 
+    VERIFIED_SELLER,
+
     ADMIN
 
 }

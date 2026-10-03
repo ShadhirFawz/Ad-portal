@@ -31,6 +31,8 @@ function PromotionSuccessContent() {
   const [isPrinting, setIsPrinting] = useState(false);
   const [invoiceSaved, setInvoiceSaved] = useState(false);
 
+  const isBonus = searchParams.get("is_bonus") === "true" || boost?.paymentMethod === "MEMBERSHIP_BONUS_CREDIT" || boost?.amount === 0;
+
   useEffect(() => {
     async function confirm() {
       if (!orderId) {
@@ -93,7 +95,7 @@ function PromotionSuccessContent() {
       </div>
 
       <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-        Payment Successful
+        {isBonus ? "Verified Seller Bonus Applied" : "Payment Successful"}
       </div>
 
       <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
@@ -101,7 +103,9 @@ function PromotionSuccessContent() {
       </h1>
 
       <p className="mt-3 text-base text-slate-600 dark:text-slate-400">
-        Thank you! Your payment has been received and verified. Your promotion is now active across marketplace feeds.
+        {isBonus
+          ? "Your promotion has been activated using your Verified Seller membership bonus credits. Your listing is now prominently ranked across feeds."
+          : "Thank you! Your payment has been received and verified. Your promotion is now active across marketplace feeds."}
       </p>
 
       {/* Order Badge Box */}
@@ -135,11 +139,16 @@ function PromotionSuccessContent() {
           <div className="flex items-center justify-between border-b border-slate-100 py-3 dark:border-slate-800">
             <span className="text-xs font-semibold text-slate-500">Amount Paid</span>
             <span className="text-xs font-bold text-slate-900 dark:text-white">
-              {boost.currency || "LKR"}{" "}
-              {Number(boost.amount).toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
+              {Number(boost.amount) === 0 || isBonus ? (
+                <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">
+                  Free (Membership Bonus Credit)
+                </span>
+              ) : (
+                `${boost.currency || "LKR"} ${Number(boost.amount).toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}`
+              )}
             </span>
           </div>
         )}

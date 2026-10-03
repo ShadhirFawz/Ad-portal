@@ -43,6 +43,10 @@ public class UserPhoneNumber {
     @Builder.Default
     private Boolean isWhatsapp = false;
 
+    @Column(name = "is_business", nullable = false)
+    @Builder.Default
+    private Boolean isBusiness = false;
+
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 
