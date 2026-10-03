@@ -3,6 +3,7 @@ import type { OpeningHour } from "@/lib/openingHours";
 export type UserRole =
   | "MEMBER"
   | "SELLER"
+  | "VERIFIED_SELLER"
   | "ADMIN"
   | "USER";
 
@@ -18,6 +19,7 @@ export interface UserPhoneNumber {
   phoneNumber: string;
   isPrimary: boolean;
   isWhatsapp?: boolean;
+  isBusiness?: boolean;
 }
 
 export interface UserResponse {
@@ -31,6 +33,8 @@ export interface UserResponse {
   avatarUrl: string | null;
   coverPhotoUrl: string | null;
   bio: string | null;
+  businessName?: string | null;
+  businessEmail?: string | null;
   location: string | null;
   role: UserRole;
   status: UserStatus;

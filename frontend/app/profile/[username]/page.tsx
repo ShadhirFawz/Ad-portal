@@ -5,6 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { Calendar, MapPin, Search } from "lucide-react";
 import OpeningHoursDisplay from "@/components/profile/OpeningHoursDisplay";
+import VerifiedSellerBadge from "@/components/common/VerifiedSellerBadge";
+import MemberBadge from "@/components/common/MemberBadge";
 
 interface PageProps {
   params: Promise<{
@@ -56,6 +58,10 @@ export default async function PublicProfilePage({ params }: PageProps) {
     );
   }
 
+  const isVerifiedSeller = user.role === "VERIFIED_SELLER";
+  const isSeller = user.role === "SELLER";
+  const isAdmin = user.role === "ADMIN";
+
   return (
     <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
       <div className="glass-panel overflow-hidden">
@@ -96,15 +102,23 @@ export default async function PublicProfilePage({ params }: PageProps) {
               </div>
             )}
 
-            <span className="badge-emerald px-3 py-1 text-sm">
-              Verified Seller
-            </span>
+            <div>
+              {isVerifiedSeller ? (
+                <VerifiedSellerBadge size="md" />
+              ) : isSeller ? (
+                <span className="badge-emerald px-3 py-1 text-xs uppercase font-semibold">
+                  Seller
+                </span>
+              ) : (
+                <MemberBadge size="sm" />
+              )}
+            </div>
           </div>
 
           {/* Name & Handle */}
           <div className="space-y-1">
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
-              {user.firstName} {user.lastName ?? ""}
+              {user.businessName && isVerifiedSeller ? user.businessName : `${user.firstName} ${user.lastName ?? ""}`}
             </h1>
             <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
               @{user.username}
@@ -123,8 +137,8 @@ export default async function PublicProfilePage({ params }: PageProps) {
             </span>
           </div>
 
-          {/* Bio */}
-          {user.bio && (
+          {/* Bio - Exclusive to Verified Sellers and Admins */}
+          {(isVerifiedSeller || isAdmin) && user.bio && (
             <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800">
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
                 About
@@ -135,7 +149,10 @@ export default async function PublicProfilePage({ params }: PageProps) {
             </div>
           )}
 
-          <OpeningHoursDisplay hours={user.openingHours} />
+          {/* Opening Hours - Exclusive to Verified Sellers and Admins */}
+          {(isVerifiedSeller || isAdmin) && (
+            <OpeningHoursDisplay hours={user.openingHours} />
+          )}
 
         </div>
       </div>
