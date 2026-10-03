@@ -148,6 +148,16 @@ public class SecurityConfig {
                                                 .requestMatchers("/api/v1/boosts/**")
                                                 .authenticated()
 
+                                                // ── Membership ────────────────────────────────
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/membership/plans")
+                                                .permitAll()
+
+                                                .requestMatchers(HttpMethod.POST, "/api/v1/membership/payhere-notify")
+                                                .permitAll()
+
+                                                .requestMatchers("/api/v1/membership/**")
+                                                .authenticated()
+
                                                 // ── Deny everything else ──────────────────────
                                                 .anyRequest()
                                                 .authenticated())

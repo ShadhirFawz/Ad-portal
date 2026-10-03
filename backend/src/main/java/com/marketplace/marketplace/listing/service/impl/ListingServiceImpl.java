@@ -67,6 +67,8 @@ public class ListingServiceImpl implements ListingService {
         private final ListingBookmarkRepository listingBookmarkRepository;
         private final ListingStatsRepository listingStatsRepository;
         private final AuctionRepository auctionRepository;
+        private final com.marketplace.marketplace.membership.service.MembershipService membershipService;
+        private final com.marketplace.marketplace.membership.repository.SellerMembershipRepository sellerMembershipRepository;
 
         @Override
         @Transactional
@@ -86,6 +88,28 @@ public class ListingServiceImpl implements ListingService {
                 }
 
                 Category category = getCategoryForListing(request.categoryId());
+
+                com.marketplace.marketplace.membership.entity.SellerMembership activeMembership = null;
+                if (seller.getRole() == com.marketplace.marketplace.common.enums.Role.VERIFIED_SELLER) {
+                        activeMembership = membershipService.getActiveMembershipEntity(seller.getId())
+                                        .orElseThrow(() -> new com.marketplace.marketplace.common.exception.ForbiddenException("No active verified seller membership found. Please renew your membership."));
+
+                        Category currentCat = category;
+                        while (currentCat.getParent() != null) {
+                                currentCat = currentCat.getParent();
+                        }
+                        Category listingRootCategory = currentCat;
+
+                        if (!listingRootCategory.getId().equals(activeMembership.getRootCategory().getId())) {
+                                throw new com.marketplace.marketplace.common.exception.ForbiddenException("As a Verified Seller, you are restricted to posting listings exclusively within your subscribed root category: "
+                                                + activeMembership.getRootCategory().getName());
+                        }
+
+                        if (activeMembership.getListingsUsed() >= activeMembership.getListingLimit()) {
+                                throw new BadRequestException("You have reached your membership listing quota of "
+                                                + activeMembership.getListingLimit() + " listings for this period. Please renew or upgrade your plan.");
+                        }
+                }
 
                 Listing listing = new Listing();
 
@@ -171,6 +195,11 @@ public class ListingServiceImpl implements ListingService {
 
                 Listing saved = listingRepository.save(listing);
                 listingStatsRepository.save(new ListingStats(saved.getId(), 0L));
+
+                if (activeMembership != null) {
+                        activeMembership.setListingsUsed((activeMembership.getListingsUsed() != null ? activeMembership.getListingsUsed() : 0) + 1);
+                        sellerMembershipRepository.save(activeMembership);
+                }
 
                 return toResponse(saved, false, false, false, 0L, 0L, false);
         }
@@ -1074,7 +1103,10 @@ public class ListingServiceImpl implements ListingService {
                                 isBookmarked,
                                 listing.isSpotlight(),
                                 listing.isUrgent(),
-                                listing.isPushedUp());
+                                listing.isPushedUp(),
+                                listing.getSeller() != null && listing.getSeller().getRole() != null
+                                                ? listing.getSeller().getRole().name()
+                                                : null);
         }
 
         private String generateUniqueSlug(String title, UUID listingId) {

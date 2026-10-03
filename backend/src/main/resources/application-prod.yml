@@ -51,6 +51,9 @@ payhere:
   notify-url: ${PAYHERE_NOTIFY_URL:https://wudo-backend.vercel.app/api/v1/boosts/notify}
   return-url: ${PAYHERE_RETURN_URL:https://wudo-two.vercel.app/promotions/success}
   cancel-url: ${PAYHERE_CANCEL_URL:https://wudo-two.vercel.app/promotions/cancel}
+  membership-notify-url: ${PAYHERE_MEMBERSHIP_NOTIFY_URL:https://wudo-backend.vercel.app/api/v1/membership/payhere-notify}
+  membership-return-url: ${PAYHERE_MEMBERSHIP_RETURN_URL:https://wudo-two.vercel.app/membership/success}
+  membership-cancel-url: ${PAYHERE_MEMBERSHIP_CANCEL_URL:https://wudo-two.vercel.app/membership/cancel}
   currency: LKR
 
 security:

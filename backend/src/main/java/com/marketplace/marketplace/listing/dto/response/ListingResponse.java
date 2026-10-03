@@ -98,7 +98,9 @@ public record ListingResponse(
 
         boolean isUrgent,
 
-        boolean isPushedUp
+        boolean isPushedUp,
+
+        String sellerRole
 
 ) {
 }

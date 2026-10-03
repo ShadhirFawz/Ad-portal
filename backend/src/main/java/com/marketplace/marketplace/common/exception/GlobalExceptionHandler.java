@@ -65,6 +65,13 @@ public class GlobalExceptionHandler {
                                                                 ex.getMessage()));
         }
 
+        @ExceptionHandler(ForbiddenException.class)
+        public ResponseEntity<ApiResponse<Void>> handleForbiddenException(ForbiddenException ex) {
+                return ResponseEntity
+                                .status(HttpStatus.FORBIDDEN)
+                                .body(ApiResponse.error(ex.getMessage()));
+        }
+
         @ExceptionHandler(Exception.class)
         public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
                 log.error("Unhandled exception: ", ex);
