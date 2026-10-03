@@ -48,6 +48,7 @@ export interface Listing {
 
   sellerId: string;
   sellerUsername: string;
+  sellerRole?: string | null;
   sellerPhoneNumber?: string | null;
   sellerWhatsappNumber?: string | null;
 
@@ -164,6 +165,7 @@ export interface ListingCardData {
   id: string;
   sellerId?: string;
   sellerUsername?: string;
+  sellerRole?: string | null;
   sellerPhoneNumber?: string | null;
   sellerWhatsappNumber?: string | null;
   categoryId?: string;

@@ -7,6 +7,8 @@ import Link from "next/link";
 import { useAuth } from "@/providers/AuthProvider";
 import { getCategories } from "@/lib/api/categories";
 import { createListing, publishListing, updateListing } from "@/lib/api/listings";
+import { getMyActiveMembership } from "@/lib/api/membership";
+import type { SellerMembership } from "@/types/membership";
 import { useToast } from "@/hooks/useToast";
 import NestedCategorySelector from "@/components/listings/NestedCategorySelector";
 import ListingImageUploader from "@/components/listings/ListingImageUploader";
@@ -203,6 +205,7 @@ export default function NewListingPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeMembership, setActiveMembership] = useState<SellerMembership | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -210,7 +213,13 @@ export default function NewListingPage() {
       return;
     }
 
-    if (!authLoading && user && user.role !== "SELLER" && user.role !== "ADMIN") {
+    if (
+      !authLoading &&
+      user &&
+      user.role !== "SELLER" &&
+      user.role !== "VERIFIED_SELLER" &&
+      user.role !== "ADMIN"
+    ) {
       router.replace("/become-a-seller?next=/listings/new");
       return;
     }
@@ -219,30 +228,58 @@ export default function NewListingPage() {
     if (categories.length > 0) return;
 
     let isMounted = true;
-    getCategories()
-      .then((data) => {
-        if (isMounted) {
-          const valid = data.filter(
-            (cat) => cat.active !== false && cat.allowListings !== false
-          );
-          setCategories(valid.length > 0 ? valid : data);
+
+    async function loadData() {
+      try {
+        let membershipData: SellerMembership | null = null;
+        if (user?.role === "VERIFIED_SELLER" && accessToken) {
+          membershipData = await getMyActiveMembership(accessToken);
+          if (isMounted) {
+            setActiveMembership(membershipData);
+          }
         }
-      })
-      .catch((err) => {
+
+        const data = await getCategories();
+        if (!isMounted) return;
+
+        let valid = data.filter(
+          (cat) => cat.active !== false && cat.allowListings !== false
+        );
+
+        if (membershipData && membershipData.rootCategoryId) {
+          const rootId = membershipData.rootCategoryId;
+          const allowedIds = new Set<string>([rootId]);
+          let added = true;
+          while (added) {
+            added = false;
+            for (const cat of valid) {
+              if (cat.parentId && allowedIds.has(cat.parentId) && !allowedIds.has(cat.id)) {
+                allowedIds.add(cat.id);
+                added = true;
+              }
+            }
+          }
+          valid = valid.filter((cat) => allowedIds.has(cat.id));
+        }
+
+        setCategories(valid.length > 0 ? valid : data);
+      } catch (err) {
         if (isMounted) {
           setError(
             err instanceof Error ? err.message : "Failed to load categories."
           );
         }
-      })
-      .finally(() => {
+      } finally {
         if (isMounted) setLoadingCategories(false);
-      });
+      }
+    }
+
+    loadData();
 
     return () => {
       isMounted = false;
     };
-  }, [user, authLoading, router, categories.length]);
+  }, [user, accessToken, authLoading, router, categories.length]);
 
   const handlePricingTypeChange = (type: PricingType) => {
     setPricingType(type);
@@ -595,6 +632,21 @@ export default function NewListingPage() {
                 </button>
               </div>
             </div>
+
+            {/* Verified Seller category restriction notice */}
+            {user?.role === "VERIFIED_SELLER" && activeMembership && (
+              <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold">
+                    Verified Seller Category Lock: {activeMembership.rootCategoryName}
+                  </p>
+                  <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80 mt-0.5">
+                    Your {activeMembership.planTier} membership restricts posting to this category branch ({activeMembership.listingsUsed}/{activeMembership.listingLimit} listings posted this period).
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Nested Cascading Category Selector */}
             <NestedCategorySelector
