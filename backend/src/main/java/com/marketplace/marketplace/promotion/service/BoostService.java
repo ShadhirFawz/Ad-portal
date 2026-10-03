@@ -15,6 +15,8 @@ public interface BoostService {
 
     BoostCheckoutResponse createCheckout(BoostCheckoutRequest request);
 
+    AdBoostResponse applyBonusBoost(BoostCheckoutRequest request);
+
     void processPayHereIpn(BoostIpnRequest ipnRequest);
 
     List<AdBoostResponse> getMyBoosts();

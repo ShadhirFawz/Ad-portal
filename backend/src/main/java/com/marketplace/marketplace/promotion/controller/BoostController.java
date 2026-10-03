@@ -45,6 +45,15 @@ public class BoostController {
         return ResponseEntity.ok(ApiResponse.success("Checkout session created successfully", response));
     }
 
+    @PostMapping("/apply-bonus")
+    @Operation(summary = "Apply a Verified Seller membership bonus credit to immediately activate a boost")
+    public ResponseEntity<ApiResponse<AdBoostResponse>> applyBonusBoost(
+            @Valid @RequestBody BoostCheckoutRequest request
+    ) {
+        AdBoostResponse response = boostService.applyBonusBoost(request);
+        return ResponseEntity.ok(ApiResponse.success("Bonus credit applied successfully and boost activated", response));
+    }
+
     @PostMapping(value = "/notify", consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE})
     @Operation(summary = "PayHere server-to-server IPN webhook notification (form-urlencoded)")
     public ResponseEntity<String> handlePayHereIpnForm(
