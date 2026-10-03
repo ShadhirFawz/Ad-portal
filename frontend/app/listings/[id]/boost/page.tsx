@@ -191,7 +191,7 @@ export default function BoostListingPage({ params }: PageProps) {
 
         router.push(
           `/promotions/success?order_id=${encodeURIComponent(
-            activatedBoost.payhereOrderId || activatedBoost.id
+            activatedBoost.orderId || activatedBoost.id
           )}&is_bonus=true`
         );
         return;
