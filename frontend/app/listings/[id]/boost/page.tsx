@@ -4,6 +4,14 @@ import React, { useEffect, useState, use } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { getListing } from "@/lib/api/listings";
+import { getBoostPlans, createBoostCheckout, getListingBoosts, applyBonusBoost } from "@/lib/api/boosts";
+import { getMyActiveMembership } from "@/lib/api/membership";
+import type { Listing } from "@/types/listing";
+import type { BoostPlan, BoostType, BoostDuration, AdBoost, BoostPricingTier } from "@/types/boost";
+import type { SellerMembership } from "@/types/membership";
+import { useAuth } from "@/providers/AuthProvider";
+import { useToast } from "@/hooks/useToast";
 import {
   Megaphone,
   Star,
@@ -22,13 +30,9 @@ import {
   Award,
   Tag,
   Percent,
+  Sparkles,
+  Gift,
 } from "lucide-react";
-import { getListing } from "@/lib/api/listings";
-import { getBoostPlans, createBoostCheckout, getListingBoosts } from "@/lib/api/boosts";
-import type { Listing } from "@/types/listing";
-import type { BoostPlan, BoostType, BoostDuration, AdBoost, BoostPricingTier } from "@/types/boost";
-import { useAuth } from "@/providers/AuthProvider";
-import { useToast } from "@/hooks/useToast";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -45,13 +49,14 @@ export default function BoostListingPage({ params }: PageProps) {
   const resolvedParams = use(params);
   const listingId = resolvedParams.id;
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, accessToken, loading: authLoading } = useAuth();
   const isAuthenticated = Boolean(user);
   const { success: toastSuccess, error: toastError } = useToast();
 
   const [listing, setListing] = useState<Listing | null>(null);
   const [plans, setPlans] = useState<BoostPlan[]>([]);
   const [existingBoosts, setExistingBoosts] = useState<AdBoost[]>([]);
+  const [activeMembership, setActiveMembership] = useState<SellerMembership | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +64,7 @@ export default function BoostListingPage({ params }: PageProps) {
   // Form selections
   const [selectedType, setSelectedType] = useState<BoostType>("SPOTLIGHT");
   const [selectedDuration, setSelectedDuration] = useState<BoostDuration>("SEVEN_DAYS");
+  const [useBonusCredit, setUseBonusCredit] = useState(false);
   const [isScheduled, setIsScheduled] = useState(false);
   const [scheduledDate, setScheduledDate] = useState("");
   const [scheduledTime, setScheduledTime] = useState("");
@@ -69,10 +75,11 @@ export default function BoostListingPage({ params }: PageProps) {
         setLoading(true);
         setError(null);
 
-        const [listingData, plansData, activeBoosts] = await Promise.all([
+        const [listingData, plansData, activeBoosts, membershipData] = await Promise.all([
           getListing(listingId),
           getBoostPlans().catch(() => []),
           getListingBoosts(listingId).catch(() => []),
+          accessToken ? getMyActiveMembership(accessToken).catch(() => null) : Promise.resolve(null),
         ]);
 
         if (listingData && user && listingData.sellerId && listingData.sellerId !== user.id) {
@@ -83,6 +90,7 @@ export default function BoostListingPage({ params }: PageProps) {
 
         setListing(listingData);
         setExistingBoosts(activeBoosts);
+        setActiveMembership(membershipData);
 
         if (plansData && plansData.length > 0) {
           setPlans(plansData);
@@ -107,7 +115,7 @@ export default function BoostListingPage({ params }: PageProps) {
     }
 
     loadData();
-  }, [listingId]);
+  }, [listingId, accessToken, user]);
 
   // Selected Plan and Pricing Tier Details from Database
   const currentPlan = plans.find((p) => p.boostType === selectedType) || plans[0];
@@ -126,6 +134,32 @@ export default function BoostListingPage({ params }: PageProps) {
   const currentDays = DURATION_OPTIONS.find((d) => d.key === selectedDuration)?.days || 7;
   const pricePerDay = Math.round(finalPrice / currentDays);
 
+  // Available Bonus Credits for current selected boost type
+  const availableBonusCredits = React.useMemo(() => {
+    if (!activeMembership || !activeMembership.isActive) return 0;
+    if (selectedType === "SPOTLIGHT") return activeMembership.remainingSpotlights ?? 0;
+    if (selectedType === "PUSH_UP") return activeMembership.remainingPushUps ?? 0;
+    if (selectedType === "URGENT") return activeMembership.remainingUrgents ?? 0;
+    return 0; // POWER_PACK is not redeemable via individual bonus credits
+  }, [activeMembership, selectedType]);
+
+  // Check if selected duration is completely within active membership validity period
+  const isWithinMembershipPeriod = React.useMemo(() => {
+    if (!activeMembership || !activeMembership.endDate) return false;
+    const days = DURATION_OPTIONS.find((d) => d.key === selectedDuration)?.days || 7;
+    const startTimestamp = isScheduled && scheduledDate ? new Date(`${scheduledDate}T${scheduledTime || "00:00"}:00`).getTime() : Date.now();
+    const expiryTimestamp = startTimestamp + days * 24 * 60 * 60 * 1000;
+    const membershipEndTimestamp = new Date(activeMembership.endDate).getTime();
+    return expiryTimestamp <= membershipEndTimestamp;
+  }, [activeMembership, selectedDuration, isScheduled, scheduledDate, scheduledTime]);
+
+  // Reset useBonusCredit if switched to an ineligible boost type or duration exceeding membership
+  useEffect(() => {
+    if (availableBonusCredits <= 0 || !isWithinMembershipPeriod) {
+      setUseBonusCredit(false);
+    }
+  }, [availableBonusCredits, isWithinMembershipPeriod, selectedType, selectedDuration]);
+
   const handleCheckout = async () => {
     if (!isAuthenticated) {
       toastError("Sign in required", "Please log in to boost your listing.");
@@ -141,6 +175,29 @@ export default function BoostListingPage({ params }: PageProps) {
         scheduledStartTime = new Date(`${scheduledDate}T${scheduledTime}:00`).toISOString();
       }
 
+      // Bonus Credit Redemption Flow (Skips PayHere Gateway entirely)
+      if (useBonusCredit) {
+        const activatedBoost = await applyBonusBoost({
+          listingId,
+          boostType: selectedType,
+          duration: selectedDuration,
+          scheduledStartTime,
+        });
+
+        toastSuccess(
+          "Verified Seller Perk Applied!",
+          "Your boost has been activated immediately using your membership bonus credit."
+        );
+
+        router.push(
+          `/promotions/success?order_id=${encodeURIComponent(
+            activatedBoost.payhereOrderId || activatedBoost.id
+          )}&is_bonus=true`
+        );
+        return;
+      }
+
+      // Standard PayHere Gateway Flow
       const checkoutData = await createBoostCheckout({
         listingId,
         boostType: selectedType,
@@ -324,8 +381,8 @@ export default function BoostListingPage({ params }: PageProps) {
                         }
                       }}
                       className={`relative flex flex-col justify-between rounded-2xl border-2 p-5 transition-all duration-200 ${isDisabled
-                          ? "cursor-not-allowed border-slate-200 bg-slate-50/70 opacity-60 dark:border-slate-800 dark:bg-slate-900/40"
-                          : "cursor-pointer"
+                        ? "cursor-not-allowed border-slate-200 bg-slate-50/70 opacity-60 dark:border-slate-800 dark:bg-slate-900/40"
+                        : "cursor-pointer"
                         } ${isSelected && !isDisabled
                           ? plan.boostType === "SPOTLIGHT"
                             ? "border-amber-500 bg-amber-500/5 shadow-lg shadow-amber-500/10 dark:border-amber-400 dark:bg-amber-400/5"
@@ -409,8 +466,8 @@ export default function BoostListingPage({ params }: PageProps) {
 
                         <div
                           className={`flex h-5 w-5 items-center justify-center rounded-full border ${isSelected && !isDisabled
-                              ? "border-emerald-500 bg-emerald-500 text-white"
-                              : "border-slate-300 dark:border-slate-600"
+                            ? "border-emerald-500 bg-emerald-500 text-white"
+                            : "border-slate-300 dark:border-slate-600"
                             }`}
                         >
                           {isSelected && !isDisabled && <CheckCircle2 className="h-4 w-4" />}
@@ -522,6 +579,74 @@ export default function BoostListingPage({ params }: PageProps) {
                 })}
               </div>
             </section>
+
+            {/* Verified Seller Bonus Credits Perk Card (Optional Application) */}
+            {activeMembership && activeMembership.isActive && selectedType !== "POWER_PACK" && (
+              <section className="space-y-3">
+                {availableBonusCredits > 0 ? (
+                  isWithinMembershipPeriod ? (
+                    <div
+                      className={`rounded-3xl border-2 p-5 transition-all ${useBonusCredit
+                        ? "border-emerald-500 bg-emerald-500/10 shadow-md shadow-emerald-500/10 dark:border-emerald-400 dark:bg-emerald-950/30"
+                        : "border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900/90"
+                        }`}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-3.5">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/20">
+                            <Sparkles className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                                Verified Seller Benefit
+                              </span>
+                              <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-black text-emerald-800 dark:bg-emerald-900/80 dark:text-emerald-200">
+                                {availableBonusCredits} {availableBonusCredits === 1 ? "credit" : "credits"} available
+                              </span>
+                            </div>
+                            <h3 className="mt-0.5 text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                              Use 1 Free Bonus {currentPlan?.name} Credit
+                            </h3>
+                            <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+                              Redeem from your {activeMembership.planTier} Membership ({activeMembership.rootCategoryName}). Skips payment gateway and activates immediately.
+                            </p>
+                          </div>
+                        </div>
+
+                        <label className="relative inline-flex cursor-pointer items-center shrink-0 mt-1">
+                          <input
+                            type="checkbox"
+                            checked={useBonusCredit}
+                            onChange={(e) => setUseBonusCredit(e.target.checked)}
+                            className="peer sr-only"
+                          />
+                          <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-emerald-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-hidden dark:bg-slate-700"></div>
+                        </label>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-3xl border border-amber-500/30 bg-amber-50/80 p-4.5 dark:border-amber-400/30 dark:bg-amber-950/20">
+                      <div className="flex items-start gap-3">
+                        <Clock className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                        <div>
+                          <h4 className="text-xs sm:text-sm font-bold text-amber-900 dark:text-amber-200">
+                            Bonus Credit Period Constraint
+                          </h4>
+                          <p className="mt-0.5 text-xs text-amber-800 dark:text-amber-300">
+                            You have {availableBonusCredits} free {currentPlan?.name} {availableBonusCredits === 1 ? "credit" : "credits"}, but the selected {currentDays}-day boost exceeds your membership expiry date ({activeMembership.endDate ? new Date(activeMembership.endDate).toLocaleDateString() : "N/A"}). Select a shorter duration to redeem.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                ) : (
+                  <div className="rounded-2xl border border-slate-200/60 bg-slate-50/80 p-3.5 text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-900/60">
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">Verified Seller Plan:</span> You have used all bonus {currentPlan?.name} credits for this billing cycle ({activeMembership.planTier} Plan).
+                  </div>
+                )}
+              </section>
+            )}
 
             {/* Step 3: Schedule Boost (Optional) */}
             <section className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-800/80 dark:bg-slate-900/90">
@@ -684,7 +809,7 @@ export default function BoostListingPage({ params }: PageProps) {
                   </span>
                 </div>
 
-                {discountAmount > 0 && (
+                {discountAmount > 0 && !useBonusCredit && (
                   <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-medium">
                     <span className="flex items-center gap-1">
                       <Percent className="h-3.5 w-3.5" />
@@ -694,15 +819,26 @@ export default function BoostListingPage({ params }: PageProps) {
                   </div>
                 )}
 
-                {taxAmount > 0 ? (
+                {taxAmount > 0 && !useBonusCredit ? (
                   <div className="flex justify-between text-slate-600 dark:text-slate-400">
                     <span>Tax / VAT ({taxPercentage}%)</span>
                     <span>+Rs {taxAmount.toLocaleString()}</span>
                   </div>
-                ) : (
+                ) : !useBonusCredit ? (
                   <div className="flex justify-between text-slate-500 text-xs">
                     <span>Taxes &amp; Fees</span>
                     <span>0% (Inclusive)</span>
+                  </div>
+                ) : null}
+
+                {/* Bonus Credit Application Line Item */}
+                {useBonusCredit && (
+                  <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-bold">
+                    <span className="flex items-center gap-1">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Verified Seller Bonus
+                    </span>
+                    <span>-Rs {finalPrice.toLocaleString()} (100% OFF)</span>
                   </div>
                 )}
 
@@ -711,7 +847,9 @@ export default function BoostListingPage({ params }: PageProps) {
                   <span className="font-medium text-emerald-600 dark:text-emerald-400">
                     {isScheduled && scheduledDate
                       ? `Scheduled: ${scheduledDate} ${scheduledTime || ""}`
-                      : "Instant (Upon payment)"}
+                      : useBonusCredit
+                        ? "Instant (Bonus Credit Applied)"
+                        : "Instant (Upon payment)"}
                   </span>
                 </div>
               </div>
@@ -721,23 +859,33 @@ export default function BoostListingPage({ params }: PageProps) {
                 <span className="text-base font-bold text-slate-900 dark:text-white">Total Amount</span>
                 <div className="text-right">
                   <span className="text-2xl font-black text-slate-900 dark:text-white">
-                    Rs {finalPrice.toLocaleString()}
+                    Rs {useBonusCredit ? "0" : finalPrice.toLocaleString()}
                   </span>
-                  <span className="block text-[10px] text-slate-500">LKR (Final payable amount)</span>
+                  <span className="block text-[10px] text-slate-500">
+                    {useBonusCredit ? "Free with Membership Perk" : "LKR (Final payable amount)"}
+                  </span>
                 </div>
               </div>
 
-              {/* Pay Button */}
+              {/* Pay or Activate Button */}
               <button
                 type="button"
                 onClick={handleCheckout}
                 disabled={submitting}
-                className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 py-3.5 text-base font-bold text-white shadow-lg shadow-emerald-600/25 transition-all duration-200 hover:from-emerald-500 hover:to-teal-500 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60"
+                className={`mt-6 flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-base font-bold text-white shadow-lg transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer ${useBonusCredit
+                  ? "bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 shadow-emerald-600/30 hover:from-emerald-500 hover:to-teal-500 hover:shadow-xl"
+                  : "bg-gradient-to-r from-emerald-600 to-teal-600 shadow-emerald-600/25 hover:from-emerald-500 hover:to-teal-500 hover:shadow-xl"
+                  }`}
               >
                 {submitting ? (
                   <>
                     <Loader2 className="h-5 w-5 animate-spin" />
-                    Connecting to PayHere...
+                    {useBonusCredit ? "Applying Bonus Perk..." : "Connecting to PayHere..."}
+                  </>
+                ) : useBonusCredit ? (
+                  <>
+                    <Sparkles className="h-5 w-5" />
+                    Activate Free with Bonus Credit
                   </>
                 ) : (
                   <>

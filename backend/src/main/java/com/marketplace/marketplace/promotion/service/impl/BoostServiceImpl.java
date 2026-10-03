@@ -1,5 +1,7 @@
 package com.marketplace.marketplace.promotion.service.impl;
 
+import com.marketplace.marketplace.category.entity.Category;
+import com.marketplace.marketplace.common.exception.BadRequestException;
 import com.marketplace.marketplace.common.exception.ConflictException;
 import com.marketplace.marketplace.common.exception.ResourceNotFoundException;
 import com.marketplace.marketplace.common.security.util.SecurityUtils;
@@ -8,6 +10,8 @@ import com.marketplace.marketplace.listing.enums.ListingStatus;
 import com.marketplace.marketplace.listing.repository.ListingRepository;
 import com.marketplace.marketplace.listing.repository.ListingImageRepository;
 import com.marketplace.marketplace.listing.mapper.ListingImageMapper;
+import com.marketplace.marketplace.membership.entity.SellerMembership;
+import com.marketplace.marketplace.membership.repository.SellerMembershipRepository;
 import com.marketplace.marketplace.promotion.config.PayHereProperties;
 import com.marketplace.marketplace.promotion.dto.request.BoostCheckoutRequest;
 import com.marketplace.marketplace.promotion.dto.request.BoostIpnRequest;
@@ -50,6 +54,7 @@ public class BoostServiceImpl implements BoostService {
     private final ListingImageRepository listingImageRepository;
     private final ListingImageMapper listingImageMapper;
     private final UserRepository userRepository;
+    private final SellerMembershipRepository sellerMembershipRepository;
     private final PayHereProperties payHereProperties;
 
     @Override
@@ -303,6 +308,167 @@ public class BoostServiceImpl implements BoostService {
                 currency,
                 checkoutUrl,
                 payHereParams);
+    }
+
+    @Override
+    @Transactional
+    public AdBoostResponse applyBonusBoost(BoostCheckoutRequest request) {
+        UUID currentUserId = SecurityUtils.getCurrentUserId();
+        User user = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + currentUserId));
+
+        Listing listing = listingRepository.findById(request.listingId())
+                .orElseThrow(() -> new ResourceNotFoundException("Listing not found: " + request.listingId()));
+
+        if (!listing.getSeller().getId().equals(currentUserId)) {
+            throw new ConflictException("You can only boost listings that you own.");
+        }
+
+        if (listing.getStatus() != ListingStatus.ACTIVE) {
+            throw new ConflictException("Only active listings can be boosted.");
+        }
+
+        OffsetDateTime now = OffsetDateTime.now();
+
+        // 1. Verify active Verified Seller membership
+        SellerMembership membership = sellerMembershipRepository.findActiveMembershipByUserId(currentUserId)
+                .orElseThrow(() -> new BadRequestException(
+                        "You do not have an active Verified Seller membership to redeem bonus credits."));
+
+        // 2. Verify listing category matches membership root category
+        Category rootCat = listing.getCategory();
+        while (rootCat != null && rootCat.getParent() != null) {
+            rootCat = rootCat.getParent();
+        }
+        if (rootCat != null && !membership.getRootCategory().getId().equals(rootCat.getId())) {
+            throw new ConflictException("Bonus credits can only be applied to listings under '"
+                    + membership.getRootCategory().getName()
+                    + "' category.");
+        }
+
+        // 3. Power Pack cannot be redeemed with individual credits
+        if (request.boostType() == BoostType.POWER_PACK) {
+            throw new BadRequestException(
+                    "Power Pack VIP bundle cannot be redeemed with individual bonus credits. Please select Spotlight, Push Up, or Urgent.");
+        }
+
+        // 4. Validate boost conflicts & scheduling (Spotlight / Push-Up / Urgent rules)
+        if (adBoostRepository.existsActiveOrScheduledBoost(listing.getId(), BoostType.POWER_PACK, now)) {
+            throw new ConflictException("This listing already has an active or scheduled Power Pack VIP promotion.");
+        }
+
+        if (adBoostRepository.existsScheduledBoost(listing.getId(), request.boostType(), now)) {
+            throw new ConflictException(
+                    "This listing already has a scheduled " + request.boostType().name().replace("_", " ")
+                            + " boost in queue. Only one scheduled extension is allowed at a time.");
+        }
+
+        OffsetDateTime startsAt;
+        OffsetDateTime expiresAt;
+
+        List<AdBoost> activeSameBoosts = adBoostRepository.findActiveByListingIdAndBoostType(listing.getId(),
+                request.boostType(), now);
+        if (!activeSameBoosts.isEmpty()) {
+            AdBoost activeBoost = activeSameBoosts.get(0);
+            startsAt = (request.scheduledStartTime() != null
+                    && request.scheduledStartTime().isAfter(activeBoost.getExpiresAt()))
+                            ? request.scheduledStartTime()
+                            : activeBoost.getExpiresAt();
+        } else {
+            startsAt = (request.scheduledStartTime() != null && request.scheduledStartTime().isAfter(now))
+                    ? request.scheduledStartTime()
+                    : now;
+        }
+
+        expiresAt = startsAt.plusDays(request.duration().getDays());
+
+        // 5. Verify boost duration does not exceed membership end date
+        if (membership.getEndDate() != null && expiresAt.isAfter(membership.getEndDate())) {
+            throw new BadRequestException("The selected boost period (" + request.duration().getDays()
+                    + " days) extends past your active membership expiration date ("
+                    + membership.getEndDate().toLocalDate()
+                    + "). Bonus boosts must conclude within your active membership period.");
+        }
+
+        // 6. Check and deduct bonus credit from membership
+        switch (request.boostType()) {
+            case SPOTLIGHT -> {
+                int used = membership.getSpotlightCreditsUsed() != null ? membership.getSpotlightCreditsUsed() : 0;
+                int total = membership.getSpotlightCreditsTotal() != null ? membership.getSpotlightCreditsTotal() : 0;
+                if (used >= total) {
+                    throw new BadRequestException(
+                            "You have used all (" + total + ") bonus Spotlight credits in your current membership.");
+                }
+                membership.setSpotlightCreditsUsed(used + 1);
+            }
+            case PUSH_UP -> {
+                int used = membership.getPushUpCreditsUsed() != null ? membership.getPushUpCreditsUsed() : 0;
+                int total = membership.getPushUpCreditsTotal() != null ? membership.getPushUpCreditsTotal() : 0;
+                if (used >= total) {
+                    throw new BadRequestException(
+                            "You have used all (" + total + ") bonus Push Up credits in your current membership.");
+                }
+                membership.setPushUpCreditsUsed(used + 1);
+            }
+            case URGENT -> {
+                int used = membership.getUrgentCreditsUsed() != null ? membership.getUrgentCreditsUsed() : 0;
+                int total = membership.getUrgentCreditsTotal() != null ? membership.getUrgentCreditsTotal() : 0;
+                if (used >= total) {
+                    throw new BadRequestException(
+                            "You have used all (" + total + ") bonus Urgent credits in your current membership.");
+                }
+                membership.setUrgentCreditsUsed(used + 1);
+            }
+            default -> throw new BadRequestException("Invalid boost type for bonus credit redemption.");
+        }
+
+        sellerMembershipRepository.save(membership);
+
+        // 7. Create AdBoost
+        AdBoost adBoost = new AdBoost();
+        adBoost.setListing(listing);
+        adBoost.setUser(user);
+        adBoost.setBoostType(request.boostType());
+        adBoost.setDurationDays(request.duration().getDays());
+        adBoost.setStartsAt(startsAt);
+        adBoost.setExpiresAt(expiresAt);
+
+        if (startsAt.isAfter(now)) {
+            adBoost.setBoostStatus(BoostStatus.SCHEDULED);
+            log.info("Bonus boost {} scheduled for future activation at {}", request.boostType(), startsAt);
+        } else {
+            adBoost.setBoostStatus(BoostStatus.ACTIVE);
+            adBoost.setActivatedAt(now);
+            applyBoostFlagsToListing(listing, request.boostType(), now);
+            listingRepository.save(listing);
+            log.info("Bonus boost {} activated immediately for listing {}", request.boostType(), listing.getId());
+        }
+
+        adBoost = adBoostRepository.save(adBoost);
+
+        // 8. Create completed zero-amount payment record
+        String orderId = "BOOST-BONUS-" + adBoost.getId().toString().substring(0, 8).toUpperCase() + "-"
+                + System.currentTimeMillis();
+        BoostPayment payment = new BoostPayment();
+        payment.setBoostSubscription(adBoost);
+        payment.setPayhereOrderId(orderId);
+        payment.setPayherePaymentId("MEMBERSHIP-BONUS-CREDIT");
+        payment.setAmount(BigDecimal.ZERO);
+        payment.setCurrency("LKR");
+        payment.setPaymentStatus(PaymentStatus.COMPLETED);
+
+        Map<String, Object> raw = new HashMap<>();
+        raw.put("order_id", orderId);
+        raw.put("payment_id", "MEMBERSHIP-BONUS-CREDIT");
+        raw.put("status_code", "2");
+        raw.put("status_message", "Activated via Verified Seller Membership Bonus Credit");
+        raw.put("method", "MEMBERSHIP_BONUS_CREDIT");
+        raw.put("membership_id", membership.getId().toString());
+        payment.setPayhereRawResponse(raw);
+
+        boostPaymentRepository.save(payment);
+
+        return mapToResponse(adBoost);
     }
 
     @Override
