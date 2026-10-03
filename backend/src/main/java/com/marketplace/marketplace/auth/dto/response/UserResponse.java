@@ -31,6 +31,10 @@ public record UserResponse(
 
         String bio,
 
+        String businessName,
+
+        String businessEmail,
+
         String location,
 
         Role role,

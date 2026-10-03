@@ -17,6 +17,10 @@ public record UpdateProfileRequest(
 
         @Size(max = 500, message = "Bio must not exceed 500 characters") String bio,
 
+        @Size(max = 200, message = "Business name must not exceed 200 characters") String businessName,
+
+        @Size(max = 255, message = "Business email must not exceed 255 characters") String businessEmail,
+
         @Size(max = 100, message = "Location must not exceed 100 characters") String location,
 
         Boolean publicProfile,

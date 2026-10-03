@@ -36,7 +36,8 @@ public class UserMapper {
                                         pn.getId(),
                                         pn.getPhoneNumber(),
                                         Boolean.TRUE.equals(pn.getIsPrimary()),
-                                        Boolean.TRUE.equals(pn.getIsWhatsapp())
+                                        Boolean.TRUE.equals(pn.getIsWhatsapp()),
+                                        Boolean.TRUE.equals(pn.getIsBusiness())
                                 ))
                                 .toList();
 
@@ -49,6 +50,12 @@ public class UserMapper {
                     .orElse(phoneResponses.get(0).phoneNumber());
         }
 
+        boolean isVerifiedSellerOrAdmin = user.getRole() == com.marketplace.marketplace.common.enums.Role.VERIFIED_SELLER
+                || user.getRole() == com.marketplace.marketplace.common.enums.Role.ADMIN;
+
+        String bio = isVerifiedSellerOrAdmin ? user.getBio() : null;
+        List<UserOpeningHourResponse> openingHours = isVerifiedSellerOrAdmin ? toOpeningHourResponses(user.getOpeningHours()) : java.util.Collections.emptyList();
+
         return new UserResponse(
                 user.getId(),
                 user.getFirstName(),
@@ -59,7 +66,9 @@ public class UserMapper {
                 phoneResponses,
                 avatarUrl,
                 coverPhotoUrl,
-                user.getBio(),
+                bio,
+                user.getBusinessName(),
+                user.getBusinessEmail(),
                 user.getLocation(),
                 user.getRole(),
                 user.getStatus(),
@@ -68,7 +77,7 @@ public class UserMapper {
                 user.getPhoneVerified(),
                 user.getPublicProfile(),
                 user.getCreatedAt(),
-                toOpeningHourResponses(user.getOpeningHours())
+                openingHours
         );
     }
 

@@ -45,9 +45,12 @@ import {
   X as XIcon,
   User2,
   UserStar,
+  ShieldCheck,
 } from "lucide-react";
 import OpeningHoursDisplay from "@/components/profile/OpeningHoursDisplay";
 import WhatsAppIcon from "@/components/common/WhatsAppIcon";
+import VerifiedSellerBadge from "@/components/common/VerifiedSellerBadge";
+import MemberBadge from "@/components/common/MemberBadge";
 import { useToast as _useToast } from "@/hooks/useToast";
 
 const PAGE_SIZE = 8;
@@ -685,16 +688,19 @@ function ProfileContent() {
               )}
             </div>
 
-            <span
-              className={`px-3 py-1 text-xs font-bold rounded-full border ${user.role === "ADMIN"
-                ? "bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border-purple-300 dark:border-purple-800"
-                : user.role === "SELLER"
-                  ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800"
-                  : "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border-blue-300 dark:border-blue-800"
-                }`}
-            >
-              {user.role === "ADMIN" ? "Admin" : user.role === "SELLER" ? "Seller" : "Member"}
-            </span>
+            {user.role === "VERIFIED_SELLER" ? (
+              <VerifiedSellerBadge size="md" />
+            ) : user.role === "ADMIN" ? (
+              <span className="px-3 py-1 text-xs font-bold rounded-full border bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border-purple-300 dark:border-purple-800">
+                Admin
+              </span>
+            ) : user.role === "SELLER" ? (
+              <span className="px-3 py-1 text-xs font-bold rounded-full border bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800">
+                Seller
+              </span>
+            ) : (
+              <MemberBadge size="md" />
+            )}
           </div>
 
           {/* Name & Handle */}
@@ -705,6 +711,11 @@ function ProfileContent() {
             {user.username && (
               <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                 @{user.username}
+              </p>
+            )}
+            {user.businessName && (
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                🏢 {user.businessName}
               </p>
             )}
           </div>
@@ -721,8 +732,37 @@ function ProfileContent() {
             </span>
           </div>
 
+          {/* Upgrade to Verified Seller Banner for Sellers */}
+          {user.role === "SELLER" && (
+            <div className="mt-6 p-4 rounded-2xl bg-linear-to-r from-emerald-500/15 via-teal-500/10 to-indigo-500/10 border border-emerald-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>Upgrade to Verified Seller</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500 text-white font-black uppercase tracking-wider">
+                      Pro / Premium
+                    </span>
+                  </h4>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                    Unlock official Verified Seller badge on all ads, custom store bio, opening hours & free Spotlight boost bundles.
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/membership/upgrade"
+                className="btn-primary text-xs px-4 py-2 shrink-0 flex items-center gap-1.5"
+              >
+                <span>Upgrade Now</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          )}
+
           {/* Become a Seller Banner for Members */}
-          {user.role !== "SELLER" && user.role !== "ADMIN" && (
+          {user.role === "MEMBER" && (
             <div className="mt-6 p-4 rounded-xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-transparent border border-emerald-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0">
@@ -761,6 +801,11 @@ function ProfileContent() {
                     >
                       <span className="font-mono">{phone.phoneNumber}</span>
                       <div className="flex items-center gap-1">
+                        {phone.isBusiness && (
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 font-bold">
+                            Business
+                          </span>
+                        )}
                         {phone.isPrimary && (
                           <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                             <Star className="w-2.5 h-2.5 fill-emerald-500 text-emerald-500" />
@@ -789,11 +834,11 @@ function ProfileContent() {
             </div>
           )}
 
-          {/* Bio */}
-          {user.bio && (
+          {/* Bio (Verified Sellers & Admins only) */}
+          {(user.role === "VERIFIED_SELLER" || user.role === "ADMIN") && user.bio && (
             <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800">
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                About
+                Store Bio &amp; About
               </h3>
               <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">
                 {user.bio}
@@ -801,7 +846,8 @@ function ProfileContent() {
             </div>
           )}
 
-          {(user.role === "SELLER" || user.role === "ADMIN") && (
+          {/* Opening Hours (Verified Sellers & Admins only) */}
+          {(user.role === "VERIFIED_SELLER" || user.role === "ADMIN") && (
             <OpeningHoursDisplay hours={user.openingHours} />
           )}
 

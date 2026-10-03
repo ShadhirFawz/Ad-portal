@@ -27,6 +27,8 @@ export function defaultOpeningHours(): OpeningHour[] {
   });
 }
 
+export const DEFAULT_OPENING_HOURS: OpeningHour[] = defaultOpeningHours();
+
 function toHHmm(value: string | null | undefined): string | null {
   if (!value) return null;
   const trimmed = value.trim();
