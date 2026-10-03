@@ -31,6 +31,7 @@ import {
   PowerPackBadge,
   UrgentRibbonBadge,
 } from "@/components/listings/BoostBadge";
+import VerifiedSellerBadge from "@/components/common/VerifiedSellerBadge";
 
 interface ListingCardProps {
   listing: Listing | ListingCardData;
@@ -752,6 +753,9 @@ export default function ListingCard({
                       <span className="truncate">{listing.categoryName}</span>
                     </span>
                   )}
+                  {listing.sellerRole === "VERIFIED_SELLER" && (
+                    <VerifiedSellerBadge size="xs" />
+                  )}
                   {listing.status && listing.status !== "ACTIVE" && (
                     <span
                       className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${listing.status === "DRAFT"
@@ -922,6 +926,9 @@ export default function ListingCard({
               <span className="rounded bg-emerald-600/90 px-1.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur-md shadow-xs">
                 Negotiable
               </span>
+            )}
+            {listing.sellerRole === "VERIFIED_SELLER" && (
+              <VerifiedSellerBadge size="xs" />
             )}
           </div>
 

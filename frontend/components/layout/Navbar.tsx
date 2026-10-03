@@ -8,7 +8,8 @@ import { useToast } from "@/hooks/useToast";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 import AccountSetupProgressWidget from "@/components/layout/AccountSetupProgressWidget";
 import GlobalListingSearch from "@/components/layout/GlobalListingSearch";
-import { Menu, X, ChevronDown } from "lucide-react";
+import VerifiedSellerBadge from "@/components/common/VerifiedSellerBadge";
+import { Menu, X, ChevronDown, Award } from "lucide-react";
 import {
   FaUserAlt,
   FaHeart,
@@ -68,6 +69,11 @@ export default function Navbar() {
     if (path !== "/" && pathname?.startsWith(path)) return true;
     return false;
   };
+
+  const isVerifiedSeller = user?.role === "VERIFIED_SELLER";
+  const isSeller = user?.role === "SELLER";
+  const isAdmin = user?.role === "ADMIN";
+  const isSellerOrAbove = isSeller || isVerifiedSeller || isAdmin;
 
   return (
     <header className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800/80">
@@ -148,7 +154,7 @@ export default function Navbar() {
               Explore
             </Link>
 
-            {user && (user.role === "SELLER" || user.role === "ADMIN") && (
+            {user && isSellerOrAbove && (
               <Link
                 href="/my-listings"
                 className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive("/my-listings")
@@ -190,6 +196,9 @@ export default function Navbar() {
                     >
                       {user.firstName || user.email?.split("@")[0] || "Account"}
                     </span>
+                    {isVerifiedSeller && (
+                      <VerifiedSellerBadge size="xs" showText={false} />
+                    )}
                     <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isProfileDropdownOpen ? "rotate-180" : ""}`} />
                     {!user.emailVerified && (
                       <span
@@ -201,12 +210,15 @@ export default function Navbar() {
 
                   {/* Dropdown Menu */}
                   {isProfileDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+                    <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 z-50">
                       <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800">
-                        <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
-                          {user.firstName || "User"}
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                        <div className="flex items-center justify-between gap-1">
+                          <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                            {user.firstName || "User"}
+                          </p>
+                          {isVerifiedSeller && <VerifiedSellerBadge size="xs" />}
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
                           {user.email}
                         </p>
                       </div>
@@ -218,7 +230,16 @@ export default function Navbar() {
                           <FaUserAlt className="w-3.5 h-3.5" />
                           Profile
                         </Link>
-                        {(user.role === "SELLER" || user.role === "ADMIN") ? (
+                        {isSeller && (
+                          <Link
+                            href="/membership/upgrade"
+                            className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors"
+                          >
+                            <Award className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                            Upgrade to Verified
+                          </Link>
+                        )}
+                        {isSellerOrAbove ? (
                           <>
                             <Link
                               href="/my-listings"
@@ -357,9 +378,12 @@ export default function Navbar() {
                           onNavigate={() => setIsMenuOpen(false)}
                         />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                            {user.firstName || "User"}
-                          </p>
+                          <div className="flex items-center justify-between gap-1">
+                            <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                              {user.firstName || "User"}
+                            </p>
+                            {isVerifiedSeller && <VerifiedSellerBadge size="xs" />}
+                          </div>
                           <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                             {user.email}
                           </p>
@@ -378,7 +402,17 @@ export default function Navbar() {
                       <FaUserAlt className="w-4 h-4" />
                       Profile
                     </Link>
-                    {(user.role === "SELLER" || user.role === "ADMIN") ? (
+                    {isSeller && (
+                      <Link
+                        href="/membership/upgrade"
+                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <Award className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        Upgrade to Verified
+                      </Link>
+                    )}
+                    {isSellerOrAbove ? (
                       <>
                         <Link
                           href="/my-listings"

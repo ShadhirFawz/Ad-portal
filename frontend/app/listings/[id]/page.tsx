@@ -23,6 +23,8 @@ import {
   formatPricingType,
 } from "@/lib/format/listing-labels";
 import type { Listing } from "@/types/listing";
+import VerifiedSellerBadge from "@/components/common/VerifiedSellerBadge";
+import MemberBadge from "@/components/common/MemberBadge";
 import {
   Clock,
   Eye,
@@ -572,13 +574,24 @@ export default function ListingDetailsPage() {
                       {isOwner ? "Your Listing" : "Listed By"}
                     </p>
                     {listing.sellerUsername ? (
-                      <Link
-                        href={`/profile/${listing.sellerUsername}`}
-                        className="font-bold text-slate-900 dark:text-white hover:text-emerald-600 dark:hover:text-emerald-400 hover:underline transition-colors truncate block"
-                        title={`View @${listing.sellerUsername}'s profile`}
-                      >
-                        @{listing.sellerUsername}
-                      </Link>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Link
+                          href={`/profile/${listing.sellerUsername}`}
+                          className="font-bold text-slate-900 dark:text-white hover:text-emerald-600 dark:hover:text-emerald-400 hover:underline transition-colors truncate block"
+                          title={`View @${listing.sellerUsername}'s profile`}
+                        >
+                          @{listing.sellerUsername}
+                        </Link>
+                        {listing.sellerRole === "VERIFIED_SELLER" ? (
+                          <VerifiedSellerBadge size="xs" />
+                        ) : listing.sellerRole === "SELLER" ? (
+                          <span className="badge-emerald px-1.5 py-0.5 text-[10px] uppercase font-bold">
+                            SELLER
+                          </span>
+                        ) : (
+                          <MemberBadge size="xs" />
+                        )}
+                      </div>
                     ) : (
                       <p className="font-bold text-slate-900 dark:text-white truncate">
                         @Seller
