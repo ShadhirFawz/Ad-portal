@@ -526,7 +526,7 @@ function ProfileContent() {
               className="w-full h-full object-cover transition-transform duration-500 group-hover/cover:scale-[1.02]"
             />
           ) : (
-            <div className="h-full w-full bg-linear-to-r from-emerald-600 via-teal-600 to-indigo-700" />
+            <div className="h-full w-full bg-gradient-to-b from-slate-200 via-slate=100 to-white dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 transition-colors" />
           )}
 
           {/* Hover overlay */}
@@ -728,7 +728,11 @@ function ProfileContent() {
               </span>
             )}
             <span className="flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5 text-emerald-500" /> Joined {new Date(user.createdAt).toLocaleDateString()}
+              <Calendar className="w-3.5 h-3.5 text-emerald-500" /> Member since{" "}
+              {new Date(user.createdAt).toLocaleDateString("en-US", {
+                month: "long",
+                year: "numeric",
+              })}
             </span>
           </div>
 
@@ -747,7 +751,7 @@ function ProfileContent() {
                     </span>
                   </h4>
                   <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                    Unlock official Verified Seller badge on all ads, custom store bio, opening hours & free Spotlight boost bundles.
+                    Unlock official Verified Seller badge on all ads and much more benefits.
                   </p>
                 </div>
               </div>

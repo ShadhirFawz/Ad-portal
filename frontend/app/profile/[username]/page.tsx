@@ -78,7 +78,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
             />
           </div>
         ) : (
-          <div className="h-32 sm:h-48 bg-linear-to-r from-emerald-600 via-teal-600 to-indigo-700" />
+          <div className="h-32 sm:h-48 bg-gradient-to-b from-slate-200 via-slate=100 to-white dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 transition-colors" />
         )}
 
         {/* Profile Card Body */}
@@ -133,7 +133,11 @@ export default async function PublicProfilePage({ params }: PageProps) {
               </span>
             )}
             <span className="flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5 text-emerald-500" /> Joined {new Date(user.createdAt).toLocaleDateString()}
+              <Calendar className="w-3.5 h-3.5 text-emerald-500" /> Member since{" "}
+              {new Date(user.createdAt).toLocaleDateString("en-US", {
+                month: "long",
+                year: "numeric",
+              })}
             </span>
           </div>
 
