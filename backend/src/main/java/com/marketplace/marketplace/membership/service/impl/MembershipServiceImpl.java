@@ -1,5 +1,7 @@
 package com.marketplace.marketplace.membership.service.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.marketplace.marketplace.category.entity.Category;
 import com.marketplace.marketplace.category.repository.CategoryRepository;
 import com.marketplace.marketplace.common.enums.Role;
@@ -49,6 +51,7 @@ public class MembershipServiceImpl implements MembershipService {
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
     private final PayHereProperties payHereProperties;
+    private final ObjectMapper objectMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -87,7 +90,7 @@ public class MembershipServiceImpl implements MembershipService {
     @Override
     @Transactional
     public InitiateMembershipResponse initiateMembership(User detachedUser, InitiateMembershipRequest request) {
-        // Re-fetch inside this transaction so lazy collections (phoneNumbers, openingHours) load without a session error
+        // Re-fetch inside this transaction so lazy collections load without a session error
         User user = userRepository.findById(detachedUser.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
@@ -102,60 +105,35 @@ public class MembershipServiceImpl implements MembershipService {
                     + active.getRootCategory().getName() + "'. A seller is only allowed to subscribe to one active membership at a time.");
         }
 
-        Category rootCategory = categoryRepository.findById(request.rootCategoryId())
-                .orElseThrow(() -> new ResourceNotFoundException("Root category not found"));
-
-        if (rootCategory.getParent() != null) {
-            throw new BadRequestException("Selected category is not a root category.");
-        }
-
         MembershipPricingPlan plan = pricingPlanRepository.findById(request.pricingPlanId())
                 .orElseThrow(() -> new ResourceNotFoundException("Pricing plan not found"));
 
-        if (!plan.getRootCategory().getId().equals(rootCategory.getId())) {
-            throw new BadRequestException("The selected pricing plan does not match the chosen root category.");
+        Category rootCategory = plan.getRootCategory();
+        if (rootCategory == null) {
+            throw new BadRequestException("The selected pricing plan is not associated with any category.");
         }
 
-        // Handle Business Phone Number update / addition
-        String rawPhone = request.businessPhone().trim();
-        List<UserPhoneNumber> phoneNumbers = user.getPhoneNumbers();
-        if (phoneNumbers == null) {
-            phoneNumbers = new ArrayList<>();
-            user.setPhoneNumbers(phoneNumbers);
-        }
-
-        // Unset previous isBusiness flags
-        for (UserPhoneNumber p : phoneNumbers) {
-            p.setIsBusiness(false);
-        }
-
-        Optional<UserPhoneNumber> existingPhoneOpt = phoneNumbers.stream()
-                .filter(p -> p.getPhoneNumber().replaceAll("[^0-9]", "").equals(rawPhone.replaceAll("[^0-9]", "")))
-                .findFirst();
-
-        if (existingPhoneOpt.isPresent()) {
-            existingPhoneOpt.get().setIsBusiness(true);
-        } else {
-            if (phoneNumbers.size() >= 3) {
-                throw new ConflictException("You have reached the maximum allowed count of 3 phone numbers. Please select an existing phone number to designate as your business phone.");
+        // Validate requested username if provided and changed
+        String rawUsername = request.username();
+        String targetUsername = null;
+        if (rawUsername != null && !rawUsername.isBlank()) {
+            targetUsername = rawUsername.trim().toLowerCase();
+            if (!targetUsername.equals(user.getUsername()) && userRepository.existsByUsernameIgnoreCase(targetUsername)) {
+                throw new ConflictException("Username @" + targetUsername + " is already taken by another account.");
             }
-            UserPhoneNumber newPhone = UserPhoneNumber.builder()
-                    .user(user)
-                    .phoneNumber(rawPhone)
-                    .isPrimary(phoneNumbers.isEmpty())
-                    .isWhatsapp(false)
-                    .isBusiness(true)
-                    .build();
-            phoneNumbers.add(newPhone);
         }
 
-        // Update opening hours if provided
+        // Serialize opening hours to JSON if provided (to be applied ONLY on payment confirmation)
+        String openingHoursJson = null;
         if (request.openingHours() != null && !request.openingHours().isEmpty()) {
-            applyOpeningHours(user, request.openingHours());
+            try {
+                openingHoursJson = objectMapper.writeValueAsString(request.openingHours());
+            } catch (Exception e) {
+                log.warn("Failed to serialize opening hours to JSON for membership initiation", e);
+            }
         }
 
-        userRepository.save(user);
-
+        String rawPhone = request.businessPhone().trim();
         String orderId = "MEM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase() + "-" + System.currentTimeMillis();
 
         SellerMembership membership = SellerMembership.builder()
@@ -177,6 +155,8 @@ public class MembershipServiceImpl implements MembershipService {
                 .businessEmail(request.businessEmail().trim())
                 .businessPhone(rawPhone)
                 .bio(request.bio() != null ? request.bio().trim() : null)
+                .username(targetUsername)
+                .openingHoursJson(openingHoursJson)
                 .paymentReference(orderId)
                 .build();
 
@@ -403,8 +383,73 @@ public class MembershipServiceImpl implements MembershipService {
             user.setBio(membership.getBio());
         }
 
+        // Apply new username if provided and still available
+        if (membership.getUsername() != null && !membership.getUsername().isBlank()) {
+            String uname = membership.getUsername().trim().toLowerCase();
+            if (!uname.equals(user.getUsername())) {
+                if (!userRepository.existsByUsernameIgnoreCase(uname)) {
+                    user.setUsername(uname);
+                } else {
+                    log.warn("Requested username {} was taken before membership activation for user {}", uname, user.getId());
+                }
+            }
+        }
+
+        // Apply business phone
+        if (membership.getBusinessPhone() != null && !membership.getBusinessPhone().isBlank()) {
+            updateUserBusinessPhone(user, membership.getBusinessPhone());
+        }
+
+        // Apply opening hours
+        if (membership.getOpeningHoursJson() != null && !membership.getOpeningHoursJson().isBlank()) {
+            try {
+                List<UserOpeningHourRequest> hours = objectMapper.readValue(
+                        membership.getOpeningHoursJson(),
+                        new TypeReference<List<UserOpeningHourRequest>>() {}
+                );
+                applyOpeningHours(user, hours);
+            } catch (Exception e) {
+                log.warn("Failed to deserialize and apply opening hours for membership {}", membership.getId(), e);
+                user.ensureDefaultOpeningHours();
+            }
+        } else {
+            user.ensureDefaultOpeningHours();
+        }
+
         userRepository.save(user);
         sellerMembershipRepository.save(membership);
+    }
+
+    private void updateUserBusinessPhone(User user, String rawPhone) {
+        String cleanPhone = rawPhone.trim();
+        List<UserPhoneNumber> phoneNumbers = user.getPhoneNumbers();
+        if (phoneNumbers == null) {
+            phoneNumbers = new ArrayList<>();
+            user.setPhoneNumbers(phoneNumbers);
+        }
+
+        for (UserPhoneNumber p : phoneNumbers) {
+            p.setIsBusiness(false);
+        }
+
+        Optional<UserPhoneNumber> existingPhoneOpt = phoneNumbers.stream()
+                .filter(p -> p.getPhoneNumber().replaceAll("[^0-9]", "").equals(cleanPhone.replaceAll("[^0-9]", "")))
+                .findFirst();
+
+        if (existingPhoneOpt.isPresent()) {
+            existingPhoneOpt.get().setIsBusiness(true);
+        } else {
+            if (phoneNumbers.size() < 3) {
+                UserPhoneNumber newPhone = UserPhoneNumber.builder()
+                        .user(user)
+                        .phoneNumber(cleanPhone)
+                        .isPrimary(phoneNumbers.isEmpty())
+                        .isWhatsapp(false)
+                        .isBusiness(true)
+                        .build();
+                phoneNumbers.add(newPhone);
+            }
+        }
     }
 
     @Override

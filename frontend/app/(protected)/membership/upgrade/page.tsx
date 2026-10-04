@@ -180,8 +180,12 @@ export default function UpgradeToVerifiedSellerPage() {
 
   // Load plans when category changes
   useEffect(() => {
-    if (!selectedCategory || !accessToken) return;
+    if (!selectedCategory || !accessToken) {
+      setPlans([]);
+      return;
+    }
     setPlansLoading(true);
+    setPlans([]); // Clear immediately to prevent cross-category plan mismatch
     getMembershipPlans(selectedCategory.id, accessToken)
       .then((data) => {
         setPlans(data);
@@ -285,22 +289,17 @@ export default function UpgradeToVerifiedSellerPage() {
       return;
     }
 
-    if (!currentPlan || !selectedCategory || !accessToken) return;
+    if (!currentPlan || !accessToken) return;
 
     setLoading(true);
     try {
-      // Save username first if it changed
-      const currentUsername = user?.username ?? null;
-      if (trimmedUsername !== currentUsername) {
-        await updateMyProfile(accessToken, { username: trimmedUsername });
-      }
-
       const res = await initiateMembership(accessToken, {
-        rootCategoryId: selectedCategory.id,
+        rootCategoryId: selectedCategory?.id || currentPlan.rootCategoryId,
         pricingPlanId: currentPlan.id,
         businessName: businessName.trim(),
         businessEmail: businessEmail.trim(),
         businessPhone: phoneToUse,
+        username: trimmedUsername,
         bio: bio.trim() || undefined,
         openingHours,
       });

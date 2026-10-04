@@ -104,6 +104,12 @@ public class SellerMembership {
     @Column(columnDefinition = "TEXT")
     private String bio;
 
+    @Column(name = "username", length = 30)
+    private String username;
+
+    @Column(name = "opening_hours_json", columnDefinition = "TEXT")
+    private String openingHoursJson;
+
     @Column(name = "payment_reference", length = 100)
     private String paymentReference;
 

@@ -58,11 +58,12 @@ export interface SellerMembership {
 }
 
 export interface InitiateMembershipRequest {
-  rootCategoryId: string;
+  rootCategoryId?: string;
   pricingPlanId: string;
   businessName: string;
   businessEmail: string;
   businessPhone: string;
+  username?: string;
   bio?: string;
   openingHours?: OpeningHour[];
 }
