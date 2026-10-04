@@ -14,6 +14,13 @@ public record BecomeSellerRequest(
 
         Boolean isWhatsapp,
 
-        String preferredContactMethod
+        String preferredContactMethod,
+
+        // Optional: seller can claim or update their public @username
+        @Pattern(
+                regexp = "^(?=.{3,30}$)(?![_\\-])(?!.*[_\\-]{2})[a-z0-9_\\-]+(?<![_\\-])$",
+                message = "Username must be 3-30 characters using only lowercase letters, numbers, hyphens, or underscores."
+        )
+        String username
 ) {
 }

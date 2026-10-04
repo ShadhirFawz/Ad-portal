@@ -863,8 +863,7 @@ export default function ListingCard({
       {/* Ellipsis Menu */}
       <div
         ref={menuRef}
-        className={`absolute top-2 z-35 ${listing.isSpotlight ? "left-2" : "right-2"
-          }`}
+        className="absolute top-2 right-2 z-35"
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();

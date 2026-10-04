@@ -762,6 +762,16 @@ public class UserServiceImpl implements UserService {
             user.setRole(Role.SELLER);
         }
 
+        // Optional: set or update username
+        String rawUsername = request.username();
+        if (rawUsername != null && !rawUsername.isBlank()) {
+            String uname = rawUsername.trim().toLowerCase();
+            if (!uname.equals(user.getUsername()) && userRepository.existsByUsernameIgnoreCase(uname)) {
+                throw new ConflictException("Username @" + uname + " is already taken by another account.");
+            }
+            user.setUsername(uname);
+        }
+
         user.ensureDefaultOpeningHours();
         User saved = userRepository.save(user);
         return userMapper.toResponse(saved);

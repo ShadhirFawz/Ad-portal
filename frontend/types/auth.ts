@@ -51,6 +51,7 @@ export interface BecomeSellerRequest {
   acceptTerms: boolean;
   isWhatsapp?: boolean;
   preferredContactMethod?: "CALL" | "WHATSAPP" | "BOTH";
+  username?: string;
 }
 
 export interface AuthResponse {

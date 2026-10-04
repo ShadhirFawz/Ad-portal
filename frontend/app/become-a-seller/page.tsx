@@ -5,18 +5,19 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
+import { checkUsernameAvailability, type UsernameAvailabilityResult } from "@/lib/api/users";
 import {
   Store,
   Phone,
   ShieldCheck,
   CheckCircle2,
-  Sparkles,
   ArrowRight,
-  MessageSquare,
   BadgeCheck,
   Lock,
   Zap,
   HelpCircle,
+  Loader2,
+  XCircle,
 } from "lucide-react";
 import { FaWhatsapp, FaPhoneAlt } from "react-icons/fa";
 
@@ -24,7 +25,7 @@ function BecomeSellerContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextUrl = searchParams.get("next") || "/profile";
-  const { user, loading: authLoading, becomeSeller, refreshSession } = useAuth();
+  const { user, loading: authLoading, becomeSeller, refreshSession, accessToken } = useAuth();
   const { success, error: toastError } = useToast();
 
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -34,12 +35,62 @@ function BecomeSellerContent() {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  // Pre-fill phone number if the user already has one on file
+  // Username state
+  const [usernameInput, setUsernameInput] = useState("");
+  const [checkingUsername, setCheckingUsername] = useState(false);
+  const [usernameAvailability, setUsernameAvailability] = useState<UsernameAvailabilityResult | null>(null);
+
+  // Pre-fill phone number and username if the user already has one on file
   useEffect(() => {
     if (user?.phoneNumber) {
       setPhoneNumber(user.phoneNumber);
     }
+    if (user?.username) {
+      setUsernameInput(user.username);
+    }
   }, [user]);
+
+  // Real-time username availability check
+  useEffect(() => {
+    const raw = usernameInput.trim();
+    if (!raw) {
+      setUsernameAvailability(null);
+      setCheckingUsername(false);
+      return;
+    }
+    const clean = raw.toLowerCase();
+    if (clean.length < 3) {
+      setUsernameAvailability({ username: clean, available: false, valid: false, message: "Username must be at least 3 characters." });
+      setCheckingUsername(false);
+      return;
+    }
+    if (clean.length > 30) {
+      setUsernameAvailability({ username: clean, available: false, valid: false, message: "Username must not exceed 30 characters." });
+      setCheckingUsername(false);
+      return;
+    }
+    const USERNAME_REGEX = /^(?=.{3,30}$)(?![_-])(?!.*[_-]{2})[a-z0-9_-]+(?<![_-])$/;
+    if (!USERNAME_REGEX.test(clean)) {
+      setUsernameAvailability({ username: clean, available: false, valid: false, message: "Letters, numbers, underscores, and hyphens only (cannot start/end with symbols)." });
+      setCheckingUsername(false);
+      return;
+    }
+    let active = true;
+    setCheckingUsername(true);
+    const timer = setTimeout(async () => {
+      try {
+        const result = await checkUsernameAvailability(clean, accessToken);
+        if (active) setUsernameAvailability(result);
+      } catch {
+        if (active) setUsernameAvailability({ username: clean, available: false, valid: false, message: "Unable to check availability." });
+      } finally {
+        if (active) setCheckingUsername(false);
+      }
+    }, 300);
+    return () => { active = false; clearTimeout(timer); };
+  }, [usernameInput, accessToken]);
+
+  const usernameIsOk = usernameAvailability?.available && usernameAvailability?.valid;
 
   // If user is already a seller or admin, let them jump straight to posting
   const isAlreadySeller = user?.role === "SELLER" || user?.role === "ADMIN";
@@ -59,6 +110,17 @@ function BecomeSellerContent() {
       return;
     }
 
+    // Username is required
+    const trimmedUsername = usernameInput.trim().toLowerCase();
+    if (!trimmedUsername) {
+      setFormError("A unique username is required to identify your seller profile.");
+      return;
+    }
+    if (!usernameIsOk) {
+      setFormError("Please choose a valid, available username before continuing.");
+      return;
+    }
+
     if (!acceptTerms) {
       setFormError("You must agree to the Seller Terms of Service to activate your seller account.");
       return;
@@ -71,6 +133,7 @@ function BecomeSellerContent() {
         acceptTerms: true,
         isWhatsapp,
         preferredContactMethod,
+        username: trimmedUsername,
       });
 
       await refreshSession?.().catch(() => { });
@@ -262,6 +325,75 @@ function BecomeSellerContent() {
                 </p>
               </div>
 
+              {/* Username Field */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  Public Seller Username <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <span
+                    className={`absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold select-none transition-colors pointer-events-none ${
+                      usernameInput.trim() !== "" && usernameIsOk
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : usernameInput.trim() !== "" && usernameAvailability && !usernameIsOk
+                          ? "text-rose-500"
+                          : "text-slate-400 dark:text-slate-500"
+                    }`}
+                  >
+                    @
+                  </span>
+                  <input
+                    type="text"
+                    value={usernameInput}
+                    onChange={(e) => setUsernameInput(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""))}
+                    placeholder="your_seller_handle"
+                    className={`w-full pl-8 pr-10 py-3 bg-slate-50 dark:bg-slate-950 border rounded-xl text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 transition font-medium ${
+                      usernameInput.trim() === ""
+                        ? "border-slate-300 dark:border-slate-700 focus:ring-emerald-500 focus:border-emerald-500"
+                        : checkingUsername
+                          ? "border-amber-400/80 focus:ring-amber-500/40 focus:border-amber-500"
+                          : usernameIsOk
+                            ? "border-emerald-500 focus:ring-emerald-500/40 ring-1 ring-emerald-500/20"
+                            : "border-rose-500 focus:ring-rose-500/40 ring-1 ring-rose-500/20"
+                    }`}
+                  />
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                    {checkingUsername ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
+                    ) : usernameInput.trim() !== "" && usernameIsOk ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    ) : usernameInput.trim() !== "" && usernameAvailability && !usernameIsOk ? (
+                      <XCircle className="w-4 h-4 text-rose-500" />
+                    ) : null}
+                  </div>
+                </div>
+                {/* Real-time live status indicator & feedback */}
+                <div className="min-h-5 flex items-center">
+                  {checkingUsername ? (
+                    <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1.5 animate-pulse">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <span>Checking username availability...</span>
+                    </p>
+                  ) : usernameInput.trim() !== "" && usernameAvailability ? (
+                    usernameIsOk ? (
+                      <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5 animate-in fade-in duration-150">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                        <span>{usernameAvailability.message}</span>
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-1.5 animate-in fade-in duration-150">
+                        <XCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                        <span>{usernameAvailability.message}</span>
+                      </p>
+                    )
+                  ) : (
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Your unique @handle for your public seller profile. 3–30 characters.
+                    </p>
+                  )}
+                </div>
+              </div>
+
               {/* WhatsApp & Preferences */}
               <div className="space-y-4 pt-2">
                 <div className="flex items-center gap-3 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
@@ -348,7 +480,7 @@ function BecomeSellerContent() {
 
                 <button
                   type="submit"
-                  disabled={submitting || !acceptTerms}
+                  disabled={submitting || !acceptTerms || !usernameIsOk || checkingUsername || !usernameInput.trim()}
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 hover:shadow-emerald-600/30 transition text-sm"
                 >
                   {submitting ? (
