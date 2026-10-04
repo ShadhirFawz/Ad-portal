@@ -12,13 +12,16 @@ import com.marketplace.marketplace.membership.dto.InitiateMembershipRequest;
 import com.marketplace.marketplace.membership.dto.InitiateMembershipResponse;
 import com.marketplace.marketplace.membership.dto.MembershipPricingPlanResponse;
 import com.marketplace.marketplace.membership.dto.SellerMembershipResponse;
+import com.marketplace.marketplace.membership.entity.MembershipPayment;
 import com.marketplace.marketplace.membership.entity.MembershipPricingPlan;
 import com.marketplace.marketplace.membership.entity.SellerMembership;
 import com.marketplace.marketplace.membership.enums.MembershipStatus;
+import com.marketplace.marketplace.membership.repository.MembershipPaymentRepository;
 import com.marketplace.marketplace.membership.repository.MembershipPricingPlanRepository;
 import com.marketplace.marketplace.membership.repository.SellerMembershipRepository;
 import com.marketplace.marketplace.membership.service.MembershipService;
 import com.marketplace.marketplace.promotion.config.PayHereProperties;
+import com.marketplace.marketplace.promotion.enums.PaymentStatus;
 import com.marketplace.marketplace.promotion.util.PayHereHashUtil;
 import com.marketplace.marketplace.user.dto.request.UserOpeningHourRequest;
 import com.marketplace.marketplace.user.entity.User;
@@ -42,6 +45,7 @@ public class MembershipServiceImpl implements MembershipService {
 
     private final MembershipPricingPlanRepository pricingPlanRepository;
     private final SellerMembershipRepository sellerMembershipRepository;
+    private final MembershipPaymentRepository membershipPaymentRepository;
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
     private final PayHereProperties payHereProperties;
@@ -68,7 +72,10 @@ public class MembershipServiceImpl implements MembershipService {
     @Transactional(readOnly = true)
     public Optional<SellerMembershipResponse> getMyActiveMembership(UUID userId) {
         return sellerMembershipRepository.findActiveMembershipByUserId(userId)
-                .map(SellerMembershipResponse::fromEntity);
+                .map(m -> {
+                    MembershipPayment payment = membershipPaymentRepository.findBySellerMembershipId(m.getId()).orElse(null);
+                    return SellerMembershipResponse.fromEntity(m, payment);
+                });
     }
 
     @Override
@@ -181,6 +188,16 @@ public class MembershipServiceImpl implements MembershipService {
         String merchantId = payHereProperties.getMerchantId();
         String merchantSecret = payHereProperties.getMerchantSecret();
 
+        // Create initial MembershipPayment record in PENDING state
+        MembershipPayment payment = MembershipPayment.builder()
+                .sellerMembership(membership)
+                .payhereOrderId(orderId)
+                .amount(amount)
+                .currency(currency)
+                .paymentStatus(PaymentStatus.PENDING)
+                .build();
+        membershipPaymentRepository.save(payment);
+
         String hash = PayHereHashUtil.generateCheckoutHash(merchantId, orderId, amount, currency, merchantSecret);
 
         String returnUrl = payHereProperties.getMembershipReturnUrl() + "?order_id=" + orderId;
@@ -232,20 +249,55 @@ public class MembershipServiceImpl implements MembershipService {
         SellerMembership membership = sellerMembershipRepository.findById(membershipId)
                 .orElseThrow(() -> new ResourceNotFoundException("Membership record not found"));
 
+        MembershipPayment payment = membershipPaymentRepository.findBySellerMembershipId(membership.getId())
+                .orElse(null);
+
+        if (payment != null) {
+            payment.setPaymentStatus(PaymentStatus.COMPLETED);
+            payment.setPayherePaymentId(paymentRef);
+            membershipPaymentRepository.save(payment);
+        }
+
         activateMembership(membership, paymentRef);
-        return SellerMembershipResponse.fromEntity(membership);
+        return SellerMembershipResponse.fromEntity(membership, payment);
     }
 
     @Override
     @Transactional
     public SellerMembershipResponse confirmPaymentByOrderId(String orderId, String paymentId) {
         log.info("Explicit payment confirmation requested for membership orderId: {}, paymentId: {}", orderId, paymentId);
-        SellerMembership membership = sellerMembershipRepository.findByPaymentReference(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Membership not found for orderId: " + orderId));
+        MembershipPayment payment = membershipPaymentRepository.findByPayhereOrderId(orderId).orElse(null);
+        SellerMembership membership;
+
+        if (payment != null) {
+            membership = payment.getSellerMembership();
+        } else {
+            membership = sellerMembershipRepository.findByPaymentReference(orderId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Membership not found for orderId: " + orderId));
+        }
 
         UUID currentUserId = SecurityUtils.getCurrentUserId();
         if (!membership.getUser().getId().equals(currentUserId)) {
             throw new ForbiddenException("You do not have permission to confirm this membership payment.");
+        }
+
+        if (payment != null && payment.getPaymentStatus() != PaymentStatus.COMPLETED) {
+            payment.setPaymentStatus(PaymentStatus.COMPLETED);
+            if (paymentId != null && !paymentId.isBlank()) {
+                payment.setPayherePaymentId(paymentId.trim());
+            }
+            if (payment.getPayhereRawResponse() == null) {
+                Map<String, Object> raw = new HashMap<>();
+                raw.put("order_id", orderId);
+                if (paymentId != null && !paymentId.isBlank()) {
+                    raw.put("payment_id", paymentId.trim());
+                }
+                raw.put("status_code", "2");
+                raw.put("status_message", "Successfully verified and confirmed from PayHere checkout return");
+                raw.put("channel", "RETURN_URL_CONFIRMATION");
+                payment.setPayhereRawResponse(raw);
+            }
+            membershipPaymentRepository.save(payment);
         }
 
         if (membership.getStatus() != MembershipStatus.ACTIVE) {
@@ -253,7 +305,7 @@ public class MembershipServiceImpl implements MembershipService {
             log.info("Membership {} confirmed and activated via return URL for user {}", membership.getId(), currentUserId);
         }
 
-        return SellerMembershipResponse.fromEntity(membership);
+        return SellerMembershipResponse.fromEntity(membership, payment);
     }
 
     @Override
@@ -264,14 +316,17 @@ public class MembershipServiceImpl implements MembershipService {
         String md5sig = payload.get("md5sig");
         String payhereAmount = payload.get("payhere_amount");
         String payhereCurrency = payload.get("payhere_currency");
+        String paymentId = payload.get("payment_id");
 
         if (orderId == null) {
             log.warn("PayHere notification received without order_id");
             return;
         }
 
-        SellerMembership membership = sellerMembershipRepository.findByPaymentReference(orderId)
-                .orElse(null);
+        MembershipPayment payment = membershipPaymentRepository.findByPayhereOrderId(orderId).orElse(null);
+        SellerMembership membership = payment != null
+                ? payment.getSellerMembership()
+                : sellerMembershipRepository.findByPaymentReference(orderId).orElse(null);
 
         if (membership == null) {
             log.warn("No membership found with paymentReference: {}", orderId);
@@ -293,11 +348,39 @@ public class MembershipServiceImpl implements MembershipService {
             return;
         }
 
+        Map<String, Object> raw = new HashMap<>(payload);
+        if (payment != null) {
+            payment.setPayhereRawResponse(raw);
+            payment.setPayherePaymentId(paymentId);
+        }
+
         if ("2".equals(statusCode)) { // 2 = SUCCESS
-            activateMembership(membership, orderId);
+            if (payment != null) {
+                payment.setPaymentStatus(PaymentStatus.COMPLETED);
+            }
+            activateMembership(membership, paymentId != null ? paymentId : orderId);
             log.info("Successfully activated verified seller membership {} for user {}", membership.getId(), membership.getUser().getId());
+        } else if ("0".equals(statusCode)) {
+            if (payment != null) {
+                payment.setPaymentStatus(PaymentStatus.PENDING);
+            }
+        } else if ("-1".equals(statusCode)) {
+            if (payment != null) {
+                payment.setPaymentStatus(PaymentStatus.CANCELLED);
+            }
+            membership.setStatus(MembershipStatus.CANCELLED);
+            sellerMembershipRepository.save(membership);
         } else {
+            if (payment != null) {
+                payment.setPaymentStatus(PaymentStatus.FAILED);
+            }
+            membership.setStatus(MembershipStatus.CANCELLED);
+            sellerMembershipRepository.save(membership);
             log.info("PayHere notification status code {} for order {}", statusCode, orderId);
+        }
+
+        if (payment != null) {
+            membershipPaymentRepository.save(payment);
         }
     }
 
