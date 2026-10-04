@@ -46,6 +46,15 @@ export interface SellerMembership {
   businessPhone: string;
   bio: string | null;
   isActive: boolean;
+  paymentId?: string | null;
+  orderId?: string | null;
+  payhereOrderId?: string | null;
+  payherePaymentId?: string | null;
+  amount?: number | null;
+  currency?: string | null;
+  paymentStatus?: string | null;
+  paymentMethod?: string | null;
+  createdAt?: string | null;
 }
 
 export interface InitiateMembershipRequest {

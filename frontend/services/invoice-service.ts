@@ -2,6 +2,7 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { createClient } from "@/lib/supabase/client";
 import type { AdBoost, BoostType } from "@/types/boost";
+import type { SellerMembership } from "@/types/membership";
 import type { UserResponse } from "@/types/auth";
 
 const BUCKET_NAME = "invoices";
@@ -126,10 +127,8 @@ export async function generateInvoicePdf(
   // 1. Logo & Header
   if (logoBase64) {
     try {
-      // Dimensions: width: 38mm, height: ~14mm
       doc.addImage(logoBase64, "PNG", margin, currentY, 38, 38);
     } catch {
-      // Fallback text logo if image fails
       doc.setFont("helvetica", "bold");
       doc.setFontSize(22);
       doc.setTextColor(...primaryBlack);
@@ -232,8 +231,6 @@ export async function generateInvoicePdf(
 
   // 3. Transaction Summary Info Box
   doc.setFillColor(...cardBg);
-  // 3. Transaction Summary Info Box (3 Balanced Columns: Order Ref, Gateway, Transaction ID)
-  doc.setFillColor(...cardBg);
   doc.setDrawColor(...borderSlate);
   doc.setLineWidth(0.3);
   doc.roundedRect(margin, currentY, usableWidth, 16, 2, 2, "FD");
@@ -259,7 +256,8 @@ export async function generateInvoicePdf(
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8.5);
   doc.setTextColor(...primaryBlack);
-  doc.text("PayHere Lanka (Pvt) Ltd", margin + boxColWidth + 6, boxY + 5.5, { maxWidth: boxColWidth - 10 });
+  const boostPaymentGateway = boost.paymentMethod ? `PayHere (${boost.paymentMethod})` : "PayHere Lanka (Pvt) Ltd";
+  doc.text(boostPaymentGateway, margin + boxColWidth + 6, boxY + 5.5, { maxWidth: boxColWidth - 10 });
 
   // Box Item 3: Gateway Payment Ref
   doc.setFont("helvetica", "bold");
@@ -273,8 +271,6 @@ export async function generateInvoicePdf(
   doc.text(displayPaymentId, margin + boxColWidth * 2 + 6, boxY + 5.5, { maxWidth: boxColWidth - 10 });
 
   currentY += 21;
-
-
 
   // 4. Subscription Package Table
   const packageName = getBoostPlanName(boost.boostType);
@@ -358,12 +354,9 @@ export async function generateInvoicePdf(
   doc.text(`${currency} ${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, rightX - 2, currentY + 17, { align: "right" });
 
   currentY += 26;
-
   currentY += 3.5;
 
-  const badgeCardWidth = (usableWidth - 8) / 3;
   const badgeCardHeight = 22;
-
   currentY += badgeCardHeight + 6;
 
   // 7. Legal Notice & Electronic Signature Disclaimer
@@ -402,6 +395,338 @@ export async function generateInvoicePdf(
 }
 
 /**
+ * Generates an official, print-standard PDF invoice for a Verified Seller Membership subscription.
+ */
+export async function generateMembershipInvoicePdf(
+  membership: SellerMembership,
+  user?: UserResponse | null
+): Promise<jsPDF> {
+  const doc = new jsPDF({
+    orientation: "portrait",
+    unit: "mm",
+    format: "a4",
+  });
+
+  const pageWidth = 210;
+  const pageHeight = 297;
+  const margin = 14;
+  const usableWidth = pageWidth - margin * 2;
+
+  // Colors
+  const primaryBlack: [number, number, number] = [15, 23, 42];
+  const secondarySlate: [number, number, number] = [71, 85, 105];
+  const lightSlate: [number, number, number] = [148, 163, 184];
+  const borderSlate: [number, number, number] = [226, 232, 240];
+  const cardBg: [number, number, number] = [248, 250, 252];
+  const themeEmerald: [number, number, number] = [5, 150, 105];
+  const white: [number, number, number] = [255, 255, 255];
+
+  const logoBase64 = await loadLogoBase64();
+
+  // Top header line accent (Emerald theme)
+  doc.setFillColor(...themeEmerald);
+  doc.rect(0, 0, pageWidth, 4, "F");
+
+  let currentY = 14;
+
+  // 1. Logo & Header
+  if (logoBase64) {
+    try {
+      doc.addImage(logoBase64, "PNG", margin, currentY, 38, 38);
+    } catch {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(22);
+      doc.setTextColor(...primaryBlack);
+      doc.text("WUDO", margin, currentY + 9);
+    }
+  } else {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.setTextColor(...primaryBlack);
+    doc.text("WUDO", margin, currentY + 9);
+  }
+
+  // Header Right: Title & Invoice Meta
+  const rightX = pageWidth - margin;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.setTextColor(...primaryBlack);
+  doc.text("OFFICIAL TAX INVOICE", rightX, currentY + 4, { align: "right" });
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(...secondarySlate);
+  const orderRef = membership.orderId || membership.payhereOrderId || membership.id.substring(0, 8).toUpperCase();
+  doc.text(`Invoice No: INV-${orderRef}`, rightX, currentY + 9, { align: "right" });
+  doc.text(
+    `Issued Date: ${formatPdfDateTime(membership.createdAt || membership.startDate || new Date().toISOString())}`,
+    rightX,
+    currentY + 13.5,
+    { align: "right" }
+  );
+
+  // Paid Status Pill (Top Right)
+  const isPaid =
+    membership.status === "ACTIVE" ||
+    membership.paymentStatus === "COMPLETED" ||
+    membership.isActive;
+
+  const statusText = isPaid ? "MEMBERSHIP ACTIVE • PAID" : "PAYMENT PENDING";
+  const statusBg = isPaid ? themeEmerald : secondarySlate;
+
+  doc.setFillColor(...statusBg);
+  doc.roundedRect(rightX - 54, currentY + 16, 54, 6, 1, 1, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.5);
+  doc.setTextColor(...white);
+  doc.text(statusText, rightX - 27, currentY + 20.2, { align: "center" });
+
+  currentY += 46;
+
+  // Divider Line
+  doc.setDrawColor(...borderSlate);
+  doc.setLineWidth(0.3);
+  doc.line(margin, currentY, rightX, currentY);
+
+  currentY += 6;
+
+  // 2. Issuer & Billed-To Grid (2 Columns)
+  const colWidth = usableWidth / 2;
+
+  // Left Column: Issuer Info
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.5);
+  doc.setTextColor(...lightSlate);
+  doc.text("ISSUED BY:", margin, currentY);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9.5);
+  doc.setTextColor(...primaryBlack);
+  doc.text("Wudo Marketplace (Pvt) Ltd", margin, currentY + 4.5);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...secondarySlate);
+  doc.text("Verified Merchant & Seller Division", margin, currentY + 8.5);
+  doc.text("Level 4, Access Towers, Colombo 02, Sri Lanka", margin, currentY + 12.5);
+  doc.text("Reg: PV-00298412 • Email: billing@wudo.lk", margin, currentY + 16.5);
+  doc.text("Official Website: www.wudo.lk", margin, currentY + 20.5);
+
+  // Right Column: Customer Info
+  const rightColX = margin + colWidth + 6;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.5);
+  doc.setTextColor(...lightSlate);
+  doc.text("BILLED TO / SUBSCRIBER:", rightColX, currentY);
+
+  const customerName =
+    membership.businessName ||
+    [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() ||
+    (user?.email ? user.email.split("@")[0] : "Verified Seller");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9.5);
+  doc.setTextColor(...primaryBlack);
+  doc.text(customerName, rightColX, currentY + 4.5);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...secondarySlate);
+  doc.text(`Email: ${membership.businessEmail || user?.email || "Account on file"}`, rightColX, currentY + 8.5);
+  doc.text(`Business Phone: ${membership.businessPhone || user?.phoneNumber || "N/A"}`, rightColX, currentY + 12.5);
+  doc.text(`Category: ${membership.rootCategoryName || "Verified Category"}`, rightColX, currentY + 16.5);
+  doc.text(`Seller Ref: ${membership.userId?.substring(0, 14) || "Seller Account"}...`, rightColX, currentY + 20.5);
+
+  currentY += 26;
+
+  // 3. Transaction Summary Info Box
+  doc.setFillColor(...cardBg);
+  doc.setDrawColor(...borderSlate);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(margin, currentY, usableWidth, 16, 2, 2, "FD");
+
+  const boxColWidth = usableWidth / 3;
+  const boxY = currentY + 4.5;
+
+  // Box Item 1: Order ID
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7);
+  doc.setTextColor(...lightSlate);
+  doc.text("ORDER REFERENCE", margin + 6, boxY);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.setTextColor(...primaryBlack);
+  doc.text(membership.orderId || membership.payhereOrderId || "N/A", margin + 6, boxY + 5.5, {
+    maxWidth: boxColWidth - 10,
+  });
+
+  // Box Item 2: Payment Gateway
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7);
+  doc.setTextColor(...lightSlate);
+  doc.text("PAYMENT GATEWAY", margin + boxColWidth + 6, boxY);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.setTextColor(...primaryBlack);
+  const membershipGateway = membership.paymentMethod ? `PayHere (${membership.paymentMethod})` : "PayHere Lanka (Pvt) Ltd";
+  doc.text(membershipGateway, margin + boxColWidth + 6, boxY + 5.5, { maxWidth: boxColWidth - 10 });
+
+  // Box Item 3: Gateway Payment Ref
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7);
+  doc.setTextColor(...lightSlate);
+  doc.text("GATEWAY TRANSACTION ID", margin + boxColWidth * 2 + 6, boxY);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.setTextColor(...primaryBlack);
+  const displayPaymentId =
+    membership.payherePaymentId ||
+    (membership.paymentId ? `REF-${membership.paymentId.substring(0, 8)}` : "VERIFIED-PAYMENT");
+  doc.text(displayPaymentId, margin + boxColWidth * 2 + 6, boxY + 5.5, { maxWidth: boxColWidth - 10 });
+
+  currentY += 21;
+
+  // 4. Subscription Package Table
+  const packageName = `Verified Seller Plan (${membership.planTier || "PRO"})`;
+  const currency = membership.currency || "LKR";
+  const amount = Number(membership.amount || 0);
+
+  const perks = [
+    `${membership.listingLimit || 25} Category Listings`,
+    membership.spotlightCreditsTotal ? `${membership.spotlightCreditsTotal} Spotlights` : null,
+    membership.pushUpCreditsTotal ? `${membership.pushUpCreditsTotal} Push Ups` : null,
+    membership.urgentCreditsTotal ? `${membership.urgentCreditsTotal} Urgents` : null,
+  ]
+    .filter(Boolean)
+    .join(" • ");
+
+  const tableData = [
+    [
+      {
+        content: `${packageName}\nRoot Category: "${membership.rootCategoryName || "Verified Category"}"\nAllowance & Perks: ${perks}\nStore: "${membership.businessName || "Verified Store"}"`,
+        styles: { fontStyle: "normal" as const },
+      },
+      `${formatPdfDate(membership.startDate)}\nto ${formatPdfDate(membership.endDate)}`,
+      `${membership.billingCycle || "MONTHLY"}`,
+      `${currency} ${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      `${currency} ${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+    ],
+  ];
+
+  autoTable(doc, {
+    startY: currentY,
+    margin: { left: margin, right: margin },
+    head: [["MEMBERSHIP PLAN & PERKS", "COVERAGE PERIOD", "BILLING CYCLE", "UNIT PRICE", "AMOUNT"]],
+    body: tableData,
+    theme: "plain",
+    headStyles: {
+      fillColor: primaryBlack,
+      textColor: white,
+      fontStyle: "bold",
+      fontSize: 8,
+      cellPadding: 3.5,
+    },
+    bodyStyles: {
+      fontSize: 8,
+      textColor: primaryBlack,
+      cellPadding: 4,
+      lineColor: borderSlate,
+      lineWidth: 0.2,
+    },
+    columnStyles: {
+      0: { cellWidth: 70 },
+      1: { cellWidth: 38 },
+      2: { cellWidth: 22, halign: "center" },
+      3: { cellWidth: 25, halign: "right" },
+      4: { cellWidth: 25, halign: "right" },
+    },
+  });
+
+  const finalTableY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4;
+  currentY = finalTableY;
+
+  // 5. Financial Summary Breakdown (Right Aligned)
+  const summaryWidth = 72;
+  const summaryX = pageWidth - margin - summaryWidth;
+
+  // Subtotal row
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...secondarySlate);
+  doc.text("Subtotal Amount:", summaryX, currentY + 4);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...primaryBlack);
+  doc.text(
+    `${currency} ${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+    rightX,
+    currentY + 4,
+    { align: "right" }
+  );
+
+  // Tax / VAT row
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...secondarySlate);
+  doc.text("Taxes & Gateway Fees:", summaryX, currentY + 9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...primaryBlack);
+  doc.text("LKR 0.00 (Inclusive)", rightX, currentY + 9, { align: "right" });
+
+  // Total Paid box
+  doc.setFillColor(...primaryBlack);
+  doc.roundedRect(summaryX - 2, currentY + 12, summaryWidth + 2, 8, 1, 1, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.setTextColor(...white);
+  doc.text("TOTAL PAID:", summaryX + 2, currentY + 17);
+  doc.text(
+    `${currency} ${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+    rightX - 2,
+    currentY + 17,
+    { align: "right" }
+  );
+
+  currentY += 26;
+  currentY += 3.5;
+
+  const badgeCardHeight = 22;
+  currentY += badgeCardHeight + 6;
+
+  // 7. Legal Notice & Electronic Signature Disclaimer
+  doc.setFillColor(...cardBg);
+  doc.setDrawColor(...borderSlate);
+  doc.roundedRect(margin, currentY, usableWidth, 14, 1.5, 1.5, "FD");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(6.8);
+  doc.setTextColor(...secondarySlate);
+  doc.text("ELECTRONIC RECEIPT NOTICE & VERIFIED SELLER POLICY", margin + 3, currentY + 4);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(6.5);
+  doc.setTextColor(...secondarySlate);
+  doc.text(
+    "This document is an electronically generated proof of seller membership payment and does not require a physical signature. Verified seller subscriptions grant listing quota, search boosts, and store customization features subject to Wudo Marketplace Terms of Service. For customer service or billing support, contact billing@wudo.lk.",
+    margin + 3,
+    currentY + 8,
+    { maxWidth: usableWidth - 6 }
+  );
+
+  // 8. Footer (Bottom of Page)
+  const footerY = pageHeight - 12;
+  doc.setDrawColor(...borderSlate);
+  doc.setLineWidth(0.3);
+  doc.line(margin, footerY, rightX, footerY);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.setTextColor(...lightSlate);
+  doc.text("Wudo Marketplace (Pvt) Ltd • www.wudo.lk • Secure Cloud Billing System", margin, footerY + 4.5);
+  doc.text(`Page 1 of 1 • Ref: ${orderRef}`, rightX, footerY + 4.5, { align: "right" });
+
+  return doc;
+}
+
+/**
  * Uploads the generated PDF blob to Supabase Storage for permanent safe keeping.
  */
 export async function uploadInvoiceToSupabase(
@@ -410,11 +735,10 @@ export async function uploadInvoiceToSupabase(
   userId?: string
 ): Promise<{ publicUrl: string; path: string }> {
   const supabase = createClient();
-  const safeOrderId = orderId || `BOOST-${Date.now()}`;
+  const safeOrderId = orderId || `INV-${Date.now()}`;
   const safeUserId = userId || "general";
   const filePath = `invoices/${safeUserId}/${safeOrderId}.pdf`;
 
-  // First try 'invoices' bucket, if not found fallback to listing-images bucket with invoices/ prefix
   let uploadBucket = BUCKET_NAME;
   let { data, error } = await supabase.storage
     .from(uploadBucket)
@@ -453,7 +777,7 @@ export async function uploadInvoiceToSupabase(
 }
 
 /**
- * Downloads the invoice PDF directly to user's device.
+ * Downloads the Boost invoice PDF directly to user's device.
  */
 export async function downloadInvoicePdf(
   boost: AdBoost,
@@ -465,7 +789,19 @@ export async function downloadInvoicePdf(
 }
 
 /**
- * Triggers native browser print dialog for the invoice PDF.
+ * Downloads the Membership invoice PDF directly to user's device.
+ */
+export async function downloadMembershipInvoicePdf(
+  membership: SellerMembership,
+  user?: UserResponse | null
+): Promise<void> {
+  const doc = await generateMembershipInvoicePdf(membership, user);
+  const orderRef = membership.orderId || membership.payhereOrderId || membership.id.substring(0, 8);
+  doc.save(`Wudo-Membership-Invoice-${orderRef}.pdf`);
+}
+
+/**
+ * Triggers native browser print dialog for the Boost invoice PDF.
  */
 export async function printInvoicePdf(
   boost: AdBoost,
@@ -473,8 +809,23 @@ export async function printInvoicePdf(
 ): Promise<void> {
   const doc = await generateInvoicePdf(boost, user);
   const blob = doc.output("blob");
-  const blobUrl = URL.createObjectURL(blob);
+  triggerBlobPrint(blob);
+}
 
+/**
+ * Triggers native browser print dialog for the Membership invoice PDF.
+ */
+export async function printMembershipInvoicePdf(
+  membership: SellerMembership,
+  user?: UserResponse | null
+): Promise<void> {
+  const doc = await generateMembershipInvoicePdf(membership, user);
+  const blob = doc.output("blob");
+  triggerBlobPrint(blob);
+}
+
+function triggerBlobPrint(blob: Blob): void {
+  const blobUrl = URL.createObjectURL(blob);
   const iframe = document.createElement("iframe");
   iframe.style.position = "fixed";
   iframe.style.right = "0";
@@ -502,7 +853,7 @@ export async function printInvoicePdf(
 }
 
 /**
- * Generates invoice, saves it safely to Supabase storage, and returns the PDF blob and public URL.
+ * Generates Boost invoice, saves it safely to Supabase storage, and returns the PDF blob and public URL.
  */
 export async function generateAndSaveInvoice(
   boost: AdBoost,
@@ -521,6 +872,30 @@ export async function generateAndSaveInvoice(
     };
   } catch (err) {
     console.warn("Could not save invoice to Supabase Storage:", err);
+    return { blob };
+  }
+}
+
+/**
+ * Generates Membership invoice, saves it safely to Supabase storage, and returns the PDF blob and public URL.
+ */
+export async function generateAndSaveMembershipInvoice(
+  membership: SellerMembership,
+  user?: UserResponse | null
+): Promise<{ blob: Blob; publicUrl?: string; storagePath?: string }> {
+  const doc = await generateMembershipInvoicePdf(membership, user);
+  const blob = doc.output("blob");
+  const orderRef = membership.orderId || membership.payhereOrderId || membership.id.substring(0, 8);
+
+  try {
+    const storageResult = await uploadInvoiceToSupabase(blob, orderRef, user?.id);
+    return {
+      blob,
+      publicUrl: storageResult.publicUrl,
+      storagePath: storageResult.path,
+    };
+  } catch (err) {
+    console.warn("Could not save membership invoice to Supabase Storage:", err);
     return { blob };
   }
 }

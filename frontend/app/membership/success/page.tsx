@@ -8,25 +8,36 @@ import {
   CheckCircle,
   Loader2,
   Store,
-  Sparkles,
   PlusCircle,
   Home,
   Award,
+  CheckCheck,
+  Download,
+  Printer,
+  FileText,
 } from "lucide-react";
 import { confirmMembershipPayment } from "@/lib/api/membership";
 import type { SellerMembership } from "@/types/membership";
 import { useAuth } from "@/providers/AuthProvider";
 import VerifiedSellerBadge from "@/components/common/VerifiedSellerBadge";
+import {
+  downloadMembershipInvoicePdf,
+  printMembershipInvoicePdf,
+  generateAndSaveMembershipInvoice,
+} from "@/services/invoice-service";
 
 function MembershipSuccessContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("order_id") || "";
   const paymentId = searchParams.get("payment_id") || searchParams.get("payhere_payment_id") || null;
-  const { accessToken, syncProfile } = useAuth();
+  const { user, accessToken, syncProfile } = useAuth();
 
   const [membership, setMembership] = useState<SellerMembership | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [invoiceSaved, setInvoiceSaved] = useState(false);
 
   useEffect(() => {
     async function confirm() {
@@ -37,8 +48,17 @@ function MembershipSuccessContent() {
       try {
         const confirmed = await confirmMembershipPayment(orderId, paymentId, accessToken);
         setMembership(confirmed);
+
         if (syncProfile) {
           await syncProfile().catch(() => {});
+        }
+
+        // Safely generate and archive PDF invoice to Supabase Storage in background
+        try {
+          await generateAndSaveMembershipInvoice(confirmed, user);
+          setInvoiceSaved(true);
+        } catch (storageErr) {
+          console.warn("Membership invoice archive note:", storageErr);
         }
       } catch (err) {
         console.warn("Membership payment confirmation notice:", err);
@@ -50,7 +70,31 @@ function MembershipSuccessContent() {
     }
 
     confirm();
-  }, [orderId, paymentId, accessToken, syncProfile]);
+  }, [orderId, paymentId, accessToken, syncProfile, user]);
+
+  const handleDownloadInvoice = async () => {
+    if (!membership) return;
+    try {
+      setIsGeneratingPdf(true);
+      await downloadMembershipInvoicePdf(membership, user);
+    } catch (err) {
+      console.error("Failed to download PDF invoice:", err);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
+  const handlePrintInvoice = async () => {
+    if (!membership) return;
+    try {
+      setIsPrinting(true);
+      await printMembershipInvoicePdf(membership, user);
+    } catch (err) {
+      console.error("Failed to print invoice:", err);
+    } finally {
+      setIsPrinting(false);
+    }
+  };
 
   return (
     <div className="relative mx-auto max-w-2xl px-4 py-16 text-center sm:px-6 lg:px-8">
@@ -63,15 +107,15 @@ function MembershipSuccessContent() {
       </div>
 
       <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-        <Sparkles className="w-3.5 h-3.5" /> Payment Verified • Upgrade Active
+        <CheckCheck className="w-3.5 h-3.5" /> Payment Verified • Upgrade Active
       </div>
 
       <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
-        Welcome, Verified Seller!
+        You're a Verified Seller!
       </h1>
 
       <p className="mt-3 text-base text-slate-600 dark:text-slate-400 max-w-lg mx-auto">
-        Your payment has been successfully verified via PayHere Sandbox. Your seller membership is now live with full category privileges.
+        Your payment has been successfully verified via PayHere. Your seller membership is now live with full category privileges.
       </p>
 
       {/* Order Badge Box */}
@@ -96,14 +140,14 @@ function MembershipSuccessContent() {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
           <div>
             <span className="text-slate-400 block font-medium">Order Reference</span>
-            <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
-              {orderId || "MEM-PROMO"}
+            <span className="font-mono font-bold text-slate-800 dark:text-slate-200 truncate block">
+              {membership?.orderId || membership?.payhereOrderId || orderId || "MEM-PROMO"}
             </span>
           </div>
 
           <div>
             <span className="text-slate-400 block font-medium">Root Category</span>
-            <span className="font-bold text-slate-800 dark:text-slate-200">
+            <span className="font-bold text-slate-800 dark:text-slate-200 truncate block">
               {membership?.rootCategoryName || "Verified Category"}
             </span>
           </div>
@@ -114,6 +158,28 @@ function MembershipSuccessContent() {
               {membership?.businessName || "Store"}
             </span>
           </div>
+
+          {membership?.amount !== undefined && membership?.amount !== null && (
+            <div>
+              <span className="text-slate-400 block font-medium">Amount Paid</span>
+              <span className="font-bold text-slate-900 dark:text-white">
+                {membership.currency || "LKR"}{" "}
+                {Number(membership.amount).toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </span>
+            </div>
+          )}
+
+          {membership?.payherePaymentId && (
+            <div>
+              <span className="text-slate-400 block font-medium">Gateway Ref</span>
+              <span className="font-mono font-bold text-slate-800 dark:text-slate-200 truncate block">
+                {membership.payherePaymentId}
+              </span>
+            </div>
+          )}
 
           {membership?.listingLimit && (
             <div>
@@ -149,6 +215,59 @@ function MembershipSuccessContent() {
           </div>
         </div>
       </div>
+
+      {/* PDF Invoice Download & Print Section */}
+      {membership && (
+        <div className="mt-6 rounded-2xl border border-slate-200/90 bg-slate-50/80 p-4.5 dark:border-slate-800 dark:bg-slate-900/60 text-left">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white dark:bg-emerald-600">
+                <FileText className="h-5 w-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                  Official Proof of Payment
+                </h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {invoiceSaved
+                    ? "Print-standard PDF invoice archived to Supabase Cloud"
+                    : "Official tax invoice with verified merchant credentials & tier"}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handlePrintInvoice}
+                disabled={isPrinting || isGeneratingPdf}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 disabled:opacity-50"
+              >
+                {isPrinting ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Printer className="h-3.5 w-3.5 text-slate-500" />
+                )}
+                <span>Print</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDownloadInvoice}
+                disabled={isGeneratingPdf}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-50"
+              >
+                {isGeneratingPdf ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Download className="h-3.5 w-3.5" />
+                )}
+                <span>Download PDF</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Unlocked Privileges Overview */}
       <div className="mt-6 rounded-2xl border border-emerald-500/20 bg-emerald-50/50 dark:border-emerald-500/30 dark:bg-emerald-950/20 p-4 text-left">
@@ -198,7 +317,7 @@ function MembershipSuccessContent() {
 
       <div className="mt-8 flex items-center justify-center gap-1.5 text-xs text-slate-400">
         <ShieldCheck className="h-4 w-4 text-emerald-500" />
-        <span>Verified PayHere Sandbox Transaction</span>
+        <span>Verified PayHere Transaction</span>
       </div>
     </div>
   );
