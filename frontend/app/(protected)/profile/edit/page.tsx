@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/providers/AuthProvider";
-import { updateMyProfile, UserPhoneNumberPayload } from "@/lib/api/users";
+import { updateMyProfile, UserPhoneNumberPayload, UpdateProfileRequest } from "@/lib/api/users";
 import { validateEditProfileForm } from "@/lib/validation/profileValidation";
 import {
   defaultOpeningHours,
@@ -21,6 +21,7 @@ import {
   deleteProfileImage,
 } from "@/services/profile-image-service";
 import { ProfileImageUploader } from "@/components/auth/ProfileImageUploader";
+import VerifiedSellerBadge from "@/components/common/VerifiedSellerBadge";
 import {
   UserCog,
   AlertTriangle,
@@ -31,6 +32,11 @@ import {
   Star,
   Clock,
   RotateCcw,
+  Building2,
+  Mail,
+  Store,
+  Award,
+  ArrowRight,
 } from "lucide-react";
 import WhatsAppIcon from "@/components/common/WhatsAppIcon";
 
@@ -40,10 +46,14 @@ function EditProfileContent() {
   const redirectParam = searchParams.get("redirect") || searchParams.get("returnUrl");
   const { user, accessToken, loading, syncProfile } = useAuth();
 
+  const isVerifiedSeller = user?.role === "VERIFIED_SELLER" || user?.role === "ADMIN";
+
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [businessEmail, setBusinessEmail] = useState("");
   const [location, setLocation] = useState("");
   const [publicProfile, setPublicProfile] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState("");
@@ -73,6 +83,8 @@ function EditProfileContent() {
       setLastName(user.lastName ?? "");
       setUsername(user.username ?? "");
       setBio(user.bio ?? "");
+      setBusinessName(user.businessName ?? "");
+      setBusinessEmail(user.businessEmail ?? "");
       setLocation(user.location ?? "");
       setPublicProfile(user.publicProfile);
       setAvatarUrl(user.avatarUrl ?? "");
@@ -85,10 +97,11 @@ function EditProfileContent() {
             phoneNumber: p.phoneNumber,
             isPrimary: p.isPrimary,
             isWhatsapp: Boolean(p.isWhatsapp),
+            isBusiness: Boolean(p.isBusiness),
           }))
         );
       } else if (user.phoneNumber) {
-        setPhoneNumbers([{ phoneNumber: user.phoneNumber, isPrimary: true, isWhatsapp: false }]);
+        setPhoneNumbers([{ phoneNumber: user.phoneNumber, isPrimary: true, isWhatsapp: false, isBusiness: false }]);
       } else {
         setPhoneNumbers([]);
       }
@@ -176,7 +189,7 @@ function EditProfileContent() {
     setFieldErrors((p) => ({ ...p, phoneNumbers: "" }));
     setPhoneNumbers((prev) => [
       ...prev,
-      { phoneNumber: "", isPrimary: isFirst, isWhatsapp: false },
+      { phoneNumber: "", isPrimary: isFirst, isWhatsapp: false, isBusiness: false },
     ]);
   };
 
@@ -210,6 +223,16 @@ function EditProfileContent() {
     );
   };
 
+  const handleToggleBusiness = (index: number) => {
+    setFieldErrors((p) => ({ ...p, phoneNumbers: "" }));
+    setPhoneNumbers((prev) =>
+      prev.map((item, i) => ({
+        ...item,
+        isBusiness: i === index ? !item.isBusiness : false,
+      }))
+    );
+  };
+
   const handlePhoneNumberChange = (index: number, value: string) => {
     setFieldErrors((p) => ({ ...p, phoneNumbers: "" }));
     setPhoneNumbers((prev) =>
@@ -235,9 +258,12 @@ function EditProfileContent() {
       lastName: lastName || undefined,
       username: username || undefined,
       bio: bio || undefined,
+      businessName: isVerifiedSeller ? businessName : undefined,
+      businessEmail: isVerifiedSeller ? businessEmail : undefined,
       location: location || undefined,
       phoneNumbers,
-      openingHours,
+      openingHours: isVerifiedSeller ? openingHours : undefined,
+      isVerifiedSeller,
     });
 
     if (!validation.isValid) {
@@ -248,7 +274,7 @@ function EditProfileContent() {
     }
 
     try {
-      const updated = await updateMyProfile(accessToken, {
+      const payload: UpdateProfileRequest = {
         firstName: firstName.trim(),
         lastName: lastName.trim() || undefined,
         username: username.trim() || undefined,
@@ -256,14 +282,23 @@ function EditProfileContent() {
         location: location.trim() || undefined,
         publicProfile,
         phoneNumbers: validation.cleanedPhoneNumbers,
-        openingHours: toOpeningHoursPayload(openingHours),
-      });
+      };
+
+      if (isVerifiedSeller) {
+        payload.businessName = businessName.trim() || undefined;
+        payload.businessEmail = businessEmail.trim() || undefined;
+        payload.openingHours = toOpeningHoursPayload(openingHours);
+      }
+
+      const updated = await updateMyProfile(accessToken, payload);
 
       if (updated) {
         setFirstName(updated.firstName ?? "");
         setLastName(updated.lastName ?? "");
         setUsername(updated.username ?? "");
         setBio(updated.bio ?? "");
+        setBusinessName(updated.businessName ?? "");
+        setBusinessEmail(updated.businessEmail ?? "");
         setLocation(updated.location ?? "");
         setPublicProfile(updated.publicProfile ?? true);
         if (updated.phoneNumbers) {
@@ -273,10 +308,11 @@ function EditProfileContent() {
               phoneNumber: p.phoneNumber,
               isPrimary: p.isPrimary,
               isWhatsapp: Boolean(p.isWhatsapp),
+              isBusiness: Boolean(p.isBusiness),
             }))
           );
         }
-        if (updated.openingHours) {
+        if (updated.openingHours && isVerifiedSeller) {
           setOpeningHours(normalizeOpeningHours(updated.openingHours));
         }
       }
@@ -311,15 +347,19 @@ function EditProfileContent() {
       </Link>
 
       {/* Profile Header */}
-      <div className="glass-panel p-6 sm:p-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
-          Edit Your Profile
-        </h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
-          Personalize your profile with images, contact info, and personal details
-        </p>
+      <div className="glass-panel p-6 sm:p-8 flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
+              Edit Your Profile
+            </h1>
+            {isVerifiedSeller && <VerifiedSellerBadge size="sm" />}
+          </div>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
+            Personalize your profile with images, contact info, and store details
+          </p>
+        </div>
       </div>
-
 
       {error && (
         <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-sm font-medium flex items-center gap-2.5">
@@ -493,6 +533,89 @@ function EditProfileContent() {
           </div>
         </div>
 
+        {/* Business Information Section (Only for Verified Sellers / Admins) */}
+        {isVerifiedSeller ? (
+          <div className="glass-panel p-6 sm:p-8 space-y-6">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
+                  <Store className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                  <span>Business Information</span>
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Verified merchant credentials shown on your public storefront and ad listings.
+                </p>
+              </div>
+              <VerifiedSellerBadge size="xs" />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Business / Store Name</span>
+                </label>
+                <input
+                  type="text"
+                  value={businessName}
+                  onChange={(e) => {
+                    setBusinessName(e.target.value);
+                    setFieldErrors((p) => ({ ...p, businessName: "" }));
+                  }}
+                  placeholder="e.g. Apex Auto Mart"
+                  maxLength={200}
+                  className={fieldClass("businessName")}
+                />
+                {fieldErrors.businessName && (
+                  <p className="text-xs text-rose-500 mt-1">{fieldErrors.businessName}</p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <Mail className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Business Email</span>
+                </label>
+                <input
+                  type="email"
+                  value={businessEmail}
+                  onChange={(e) => {
+                    setBusinessEmail(e.target.value);
+                    setFieldErrors((p) => ({ ...p, businessEmail: "" }));
+                  }}
+                  placeholder="e.g. contact@apexautomart.lk"
+                  maxLength={255}
+                  className={fieldClass("businessEmail")}
+                />
+                {fieldErrors.businessEmail && (
+                  <p className="text-xs text-rose-500 mt-1">{fieldErrors.businessEmail}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-50/50 dark:border-emerald-500/30 dark:bg-emerald-950/20 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Award className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  Want to add Business Name &amp; Custom Store Hours?
+                </h3>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-300 max-w-xl">
+                Upgrade to a <strong className="text-emerald-600 dark:text-emerald-400">Verified Seller</strong> to unlock dedicated business store branding, custom opening hours, verified trust badges, and free bonus spotlight bundles.
+              </p>
+            </div>
+            <Link
+              href="/membership/upgrade"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs whitespace-nowrap shadow-sm transition"
+            >
+              <span>Upgrade Now</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        )}
+
         {/* Phone Numbers Section */}
         <div className="glass-panel p-6 sm:p-8 space-y-6">
           <div className="flex items-center justify-between flex-wrap gap-2">
@@ -502,7 +625,7 @@ function EditProfileContent() {
                 <span>Phone Numbers</span>
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                Add up to 3 contact numbers. Set one as primary for buyers to reach you.
+                Add up to 3 contact numbers. You can designate primary, WhatsApp, and business numbers.
               </p>
             </div>
             <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
@@ -545,7 +668,7 @@ function EditProfileContent() {
                         <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                           Phone Number {index + 1}
                         </label>
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           {phoneItem.isPrimary && (
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                               <Star className="w-3 h-3 fill-emerald-500 text-emerald-500" />
@@ -556,6 +679,12 @@ function EditProfileContent() {
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                               <WhatsAppIcon size={12} className="text-emerald-500" />
                               WhatsApp
+                            </span>
+                          )}
+                          {phoneItem.isBusiness && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
+                              <Building2 className="w-3 h-3 text-sky-500" />
+                              Business
                             </span>
                           )}
                         </div>
@@ -606,6 +735,23 @@ function EditProfileContent() {
 
                       <button
                         type="button"
+                        onClick={() => handleToggleBusiness(index)}
+                        className={`text-xs font-semibold px-3 py-2 rounded-xl border transition-colors flex items-center gap-1.5 ${
+                          phoneItem.isBusiness
+                            ? "bg-sky-600 text-white border-sky-600 dark:bg-sky-500 dark:border-sky-500"
+                            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-sky-500 hover:text-sky-600 dark:hover:text-sky-400"
+                        }`}
+                      >
+                        <Building2
+                          className={`w-3.5 h-3.5 ${
+                            phoneItem.isBusiness ? "text-white" : "text-sky-500"
+                          }`}
+                        />
+                        <span>{phoneItem.isBusiness ? "Business Set" : "Set Business"}</span>
+                      </button>
+
+                      <button
+                        type="button"
                         onClick={() => handleRemovePhoneNumber(index)}
                         className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 rounded-xl transition-colors"
                         title="Delete phone number"
@@ -635,126 +781,128 @@ function EditProfileContent() {
           </p>
         </div>
 
-        {/* Shop / Business Hours */}
-        <div className="glass-panel p-6 sm:p-8 space-y-6">
-          <div className="flex items-start justify-between flex-wrap gap-3">
-            <div>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
-                <Clock className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                <span>Shop / Business Hours</span>
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                Shown on your public and private profile. Defaults are 9:00 AM – 5:00 PM weekdays, closed on weekends.
-              </p>
+        {/* Shop / Business Hours (Exclusively for Verified Sellers / Admins) */}
+        {isVerifiedSeller && (
+          <div className="glass-panel p-6 sm:p-8 space-y-6">
+            <div className="flex items-start justify-between flex-wrap gap-3">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
+                  <Clock className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                  <span>Shop / Business Hours</span>
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Shown on your public storefront and seller profile. Defaults are 9:00 AM – 5:00 PM weekdays, closed on weekends.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setOpeningHours(defaultOpeningHours());
+                  setFieldErrors((p) => ({ ...p, openingHours: "" }));
+                }}
+                className="text-xs font-semibold px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors flex items-center gap-1.5"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Reset to default</span>
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                setOpeningHours(defaultOpeningHours());
-                setFieldErrors((p) => ({ ...p, openingHours: "" }));
-              }}
-              className="text-xs font-semibold px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors flex items-center gap-1.5"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reset to default</span>
-            </button>
-          </div>
 
-          {fieldErrors.openingHours && (
-            <p className="text-xs text-rose-500">{fieldErrors.openingHours}</p>
-          )}
+            {fieldErrors.openingHours && (
+              <p className="text-xs text-rose-500">{fieldErrors.openingHours}</p>
+            )}
 
-          <div className="space-y-2.5">
-            {openingHours.map((hour, index) => {
-              const day = WEEK_DAYS.find((d) => d.dayOfWeek === hour.dayOfWeek);
-              return (
-                <div
-                  key={hour.dayOfWeek}
-                  className={`p-4 rounded-xl border transition-all ${
-                    hour.isClosed
-                      ? "bg-slate-50/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800"
-                      : "bg-emerald-500/5 border-emerald-500/20 dark:bg-emerald-500/10"
-                  }`}
-                >
-                  <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-                    <div className="flex items-center justify-between gap-3 min-w-40">
-                      <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                        {day?.label ?? `Day ${hour.dayOfWeek}`}
-                      </span>
-                      <label className="inline-flex items-center gap-2 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={!hour.isClosed}
-                          onChange={(e) => {
-                            const open = e.target.checked;
-                            setFieldErrors((p) => ({ ...p, openingHours: "" }));
-                            setOpeningHours((prev) =>
-                              prev.map((item, i) =>
-                                i === index
-                                  ? {
-                                      ...item,
-                                      isClosed: !open,
-                                      openTime: item.openTime || "09:00",
-                                      closeTime: item.closeTime || "17:00",
-                                    }
-                                  : item
-                              )
-                            );
-                          }}
-                          className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300"
-                        />
-                        <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                          {hour.isClosed ? "Closed" : "Open"}
+            <div className="space-y-2.5">
+              {openingHours.map((hour, index) => {
+                const day = WEEK_DAYS.find((d) => d.dayOfWeek === hour.dayOfWeek);
+                return (
+                  <div
+                    key={hour.dayOfWeek}
+                    className={`p-4 rounded-xl border transition-all ${
+                      hour.isClosed
+                        ? "bg-slate-50/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800"
+                        : "bg-emerald-500/5 border-emerald-500/20 dark:bg-emerald-500/10"
+                    }`}
+                  >
+                    <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                      <div className="flex items-center justify-between gap-3 min-w-40">
+                        <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                          {day?.label ?? `Day ${hour.dayOfWeek}`}
                         </span>
-                      </label>
-                    </div>
-
-                    <div className="flex-1 grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                          Opens
+                        <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={!hour.isClosed}
+                            onChange={(e) => {
+                              const open = e.target.checked;
+                              setFieldErrors((p) => ({ ...p, openingHours: "" }));
+                              setOpeningHours((prev) =>
+                                prev.map((item, i) =>
+                                  i === index
+                                    ? {
+                                        ...item,
+                                        isClosed: !open,
+                                        openTime: item.openTime || "09:00",
+                                        closeTime: item.closeTime || "17:00",
+                                      }
+                                    : item
+                                )
+                              );
+                            }}
+                            className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300"
+                          />
+                          <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                            {hour.isClosed ? "Closed" : "Open"}
+                          </span>
                         </label>
-                        <input
-                          type="time"
-                          value={hour.openTime ?? "09:00"}
-                          disabled={hour.isClosed}
-                          onChange={(e) => {
-                            setFieldErrors((p) => ({ ...p, openingHours: "" }));
-                            setOpeningHours((prev) =>
-                              prev.map((item, i) =>
-                                i === index ? { ...item, openTime: e.target.value } : item
-                              )
-                            );
-                          }}
-                          className="input-field text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                        />
                       </div>
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                          Closes
-                        </label>
-                        <input
-                          type="time"
-                          value={hour.closeTime ?? "17:00"}
-                          disabled={hour.isClosed}
-                          onChange={(e) => {
-                            setFieldErrors((p) => ({ ...p, openingHours: "" }));
-                            setOpeningHours((prev) =>
-                              prev.map((item, i) =>
-                                i === index ? { ...item, closeTime: e.target.value } : item
-                              )
-                            );
-                          }}
-                          className="input-field text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                        />
+
+                      <div className="flex-1 grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                            Opens
+                          </label>
+                          <input
+                            type="time"
+                            value={hour.openTime ?? "09:00"}
+                            disabled={hour.isClosed}
+                            onChange={(e) => {
+                              setFieldErrors((p) => ({ ...p, openingHours: "" }));
+                              setOpeningHours((prev) =>
+                                prev.map((item, i) =>
+                                  i === index ? { ...item, openTime: e.target.value } : item
+                                )
+                              );
+                            }}
+                            className="input-field text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                            Closes
+                          </label>
+                          <input
+                            type="time"
+                            value={hour.closeTime ?? "17:00"}
+                            disabled={hour.isClosed}
+                            onChange={(e) => {
+                              setFieldErrors((p) => ({ ...p, openingHours: "" }));
+                              setOpeningHours((prev) =>
+                                prev.map((item, i) =>
+                                  i === index ? { ...item, closeTime: e.target.value } : item
+                                )
+                              );
+                            }}
+                            className="input-field text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Save Bar */}
         <div className="glass-panel p-6 flex items-center justify-between flex-wrap gap-4">

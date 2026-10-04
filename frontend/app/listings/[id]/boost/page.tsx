@@ -32,6 +32,8 @@ import {
   Percent,
   Sparkles,
   Gift,
+  CheckCheck,
+  UserShieldIcon,
 } from "lucide-react";
 
 interface PageProps {
@@ -594,7 +596,7 @@ export default function BoostListingPage({ params }: PageProps) {
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex items-start gap-3.5">
                           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/20">
-                            <Sparkles className="h-5 w-5" />
+                            <UserShieldIcon className="h-5 w-5" />
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
@@ -884,7 +886,7 @@ export default function BoostListingPage({ params }: PageProps) {
                   </>
                 ) : useBonusCredit ? (
                   <>
-                    <Sparkles className="h-5 w-5" />
+                    <CheckCheck className="h-5 w-5" />
                     Activate Free with Bonus Credit
                   </>
                 ) : (

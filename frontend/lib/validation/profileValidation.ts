@@ -9,9 +9,12 @@ export interface EditProfileFormData {
   lastName?: string;
   username?: string;
   bio?: string;
+  businessName?: string;
+  businessEmail?: string;
   location?: string;
   phoneNumbers: UserPhoneNumberPayload[];
   openingHours?: OpeningHour[];
+  isVerifiedSeller?: boolean;
 }
 
 export interface PhoneNumberValidationResult {
@@ -66,6 +69,15 @@ export function validatePhoneNumbers(
     };
   }
 
+  const businessCount = validPhoneNumbers.filter((p) => Boolean(p.isBusiness)).length;
+  if (businessCount > 1) {
+    return {
+      isValid: false,
+      error: "Only one designated business phone number is allowed.",
+      cleanedPhoneNumbers: validPhoneNumbers,
+    };
+  }
+
   if (validPhoneNumbers.length > 0 && !validPhoneNumbers.some((p) => p.isPrimary)) {
     validPhoneNumbers[0].isPrimary = true;
   }
@@ -87,7 +99,7 @@ export function validateEditProfileForm(
   data: EditProfileFormData
 ): ProfileValidationResult {
   const errors: Record<string, string> = {};
-  const { firstName, lastName, username, bio, location, phoneNumbers, openingHours } = data;
+  const { firstName, lastName, username, bio, businessName, businessEmail, location, phoneNumbers, openingHours, isVerifiedSeller } = data;
 
   if (!firstName || !firstName.trim()) {
     errors.firstName = "First name is required.";
@@ -111,6 +123,19 @@ export function validateEditProfileForm(
     errors.bio = "Bio must not exceed 500 characters.";
   }
 
+  if (businessName && businessName.trim().length > 200) {
+    errors.businessName = "Business name must not exceed 200 characters.";
+  }
+
+  if (businessEmail && businessEmail.trim()) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(businessEmail.trim())) {
+      errors.businessEmail = "Please enter a valid business email address.";
+    } else if (businessEmail.trim().length > 255) {
+      errors.businessEmail = "Business email must not exceed 255 characters.";
+    }
+  }
+
   if (location && location.trim().length > 100) {
     errors.location = "Location must not exceed 100 characters.";
   }
@@ -120,7 +145,7 @@ export function validateEditProfileForm(
     errors.phoneNumbers = phoneValidation.error;
   }
 
-  if (openingHours) {
+  if (isVerifiedSeller && openingHours) {
     const hoursError = validateOpeningHours(openingHours);
     if (hoursError) {
       errors.openingHours = hoursError;

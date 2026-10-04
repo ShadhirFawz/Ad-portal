@@ -13,6 +13,7 @@ export interface UserPhoneNumberPayload {
   phoneNumber: string;
   isPrimary: boolean;
   isWhatsapp?: boolean;
+  isBusiness?: boolean;
 }
 
 export interface UpdateProfileRequest {
@@ -20,6 +21,8 @@ export interface UpdateProfileRequest {
   lastName?: string;
   username?: string;
   bio?: string;
+  businessName?: string;
+  businessEmail?: string;
   location?: string;
   publicProfile?: boolean;
   avatarUrl?: string;
