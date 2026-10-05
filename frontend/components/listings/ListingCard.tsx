@@ -915,7 +915,7 @@ export default function ListingCard({
           )}
 
           {/* Image-level meta labels */}
-          <div className="absolute top-2 left-2 flex flex-col gap-1 pointer-events-none z-10 max-w-[80%]">
+          <div className="absolute top-2 left-2 flex flex-col gap-1 pointer-events-none z-10 max-w-[30%]">
             {conditionLabel && (
               <span className="rounded bg-slate-900/85 px-1.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur-md shadow-xs">
                 {conditionLabel}
@@ -925,9 +925,6 @@ export default function ListingCard({
               <span className="rounded bg-emerald-600/90 px-1.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur-md shadow-xs">
                 Negotiable
               </span>
-            )}
-            {listing.sellerRole === "VERIFIED_SELLER" && (
-              <VerifiedSellerBadge size="xs" />
             )}
           </div>
 
@@ -977,6 +974,9 @@ export default function ListingCard({
                 {formatPrice()}
               </span>
               <div className="flex items-center gap-1.5 shrink-0">
+                {listing.sellerRole === "VERIFIED_SELLER" && (
+                  <VerifiedSellerBadge size="xs" showText={false} />
+                )}
                 {listing.status && listing.status !== "ACTIVE" && (
                   <span
                     className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${listing.status === "DRAFT"
