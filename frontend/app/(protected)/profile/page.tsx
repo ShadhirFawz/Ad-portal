@@ -46,6 +46,7 @@ import {
   User2,
   UserStar,
   ShieldCheck,
+  Building2,
 } from "lucide-react";
 import OpeningHoursDisplay from "@/components/profile/OpeningHoursDisplay";
 import WhatsAppIcon from "@/components/common/WhatsAppIcon";
@@ -695,12 +696,8 @@ function ProfileContent() {
                 Admin
               </span>
             ) : user.role === "SELLER" ? (
-              <span className="px-3 py-1 text-xs font-bold rounded-full border bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800">
-                Seller
-              </span>
-            ) : (
               <MemberBadge size="md" />
-            )}
+            ) : null}
           </div>
 
           {/* Name & Handle */}
@@ -714,8 +711,8 @@ function ProfileContent() {
               </p>
             )}
             {user.businessName && (
-              <p className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                🏢 {user.businessName}
+              <p className="flex items-center gap-1 text-xs font-bold text-slate-500 dark:text-slate-400">
+                <Building2 className="w-3.5 h-3.5" /> {user.businessName}
               </p>
             )}
           </div>
