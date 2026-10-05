@@ -81,6 +81,7 @@ export interface Listing {
   city: string | null;
   streetNumber?: string | null;
   postalCode: string | null;
+  location?: string | null;
 
   customAttributes: Record<string, unknown>;
 

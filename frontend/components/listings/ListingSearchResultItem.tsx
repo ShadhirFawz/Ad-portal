@@ -24,7 +24,8 @@ function getPrimaryImageUrl(listing: Listing): string | null {
 }
 
 function getLocationText(listing: Listing): string {
-  return [listing.city, listing.district, listing.province].filter(Boolean).join(", ") || "Location not specified";
+  const parts = [listing.city, listing.district, listing.province].filter(Boolean).join(", ");
+  return parts || listing.location || "Location not specified";
 }
 
 export default function ListingSearchResultItem({
