@@ -1,17 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { getEmbedding } from "@/lib/embeddings";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
 function getSupabaseClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url =
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    process.env.SUPABASE_URL ||
+    process.env.NEXT_PUBLIC_SUPABASE_HOST;
+
+  const key =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    process.env.SUPABASE_ANON_KEY ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_SERVICE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_KEY ||
+    process.env.SUPABASE_KEY;
 
   if (!url || !key) {
-    throw new Error("Missing Supabase environment variables (NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY)");
+    console.error("[semantic-search] Missing Supabase environment variables.");
+    return null;
   }
   return { supabase: createClient(url, key), supabaseUrl: url };
 }
@@ -98,7 +108,8 @@ function formatListings(rawListings: any[], supabaseUrl: string, similarityMap?:
 
 export async function POST(req: NextRequest) {
   try {
-    const { query, limit = 12 } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { query, limit = 12 } = body;
 
     if (!query || typeof query !== "string" || query.trim().length < 2) {
       return NextResponse.json({ results: [] });
@@ -106,13 +117,20 @@ export async function POST(req: NextRequest) {
 
     const trimmedQuery = query.trim();
     const searchTokens = extractSearchTokens(trimmedQuery);
-    const { supabase, supabaseUrl } = getSupabaseClient();
+    const client = getSupabaseClient();
+
+    if (!client) {
+      return NextResponse.json({ results: [] });
+    }
+
+    const { supabase, supabaseUrl } = client;
 
     let matchedListings: any[] = [];
     let similarityMap = new Map<string, number>();
 
+    // 1. Try vector semantic embedding search with dynamic import
     try {
-      // 1. Try vector semantic embedding search
+      const { getEmbedding } = await import("@/lib/embeddings");
       const queryEmbedding = await getEmbedding(trimmedQuery);
 
       const { data: matched, error: rpcError } = await supabase.rpc("match_listings", {
@@ -128,10 +146,10 @@ export async function POST(req: NextRequest) {
         );
       }
     } catch (embErr) {
-      console.warn("[semantic-search] Vector embedding search failed, falling back to keyword search:", embErr);
+      console.warn("[semantic-search] Vector embedding search error (falling back):", embErr);
     }
 
-    // 2. Fetch full listing details
+    // 2. Fetch full listing details for vector matches
     if (matchedListings.length > 0) {
       const listingIds = matchedListings.map((item: any) => item.id);
 
@@ -188,7 +206,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 3. Fallback: Text/ILIKE Search (ensures results are always returned even if vector search is cold/unavailable)
+    // 3. Fallback: Text/ILIKE Search (guarantees results returned smoothly on Vercel without 500s)
     const { data: fallbackListings, error: fallbackError } = await supabase
       .from("listings")
       .select(`

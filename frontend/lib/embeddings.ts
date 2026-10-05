@@ -3,13 +3,18 @@ import { createClient } from '@supabase/supabase-js';
 import path from 'path';
 import os from 'os';
 
-// Configure transformers environment for serverless runtime
+// Configure transformers environment for Vercel Serverless / Node runtime
 if (typeof window === 'undefined') {
     const cacheDir = path.join(os.tmpdir(), 'huggingface_cache');
     env.cacheDir = cacheDir;
     env.allowLocalModels = false;
+    env.allowRemoteModels = true;
     process.env.HF_HOME = cacheDir;
     process.env.TRANSFORMERS_CACHE = cacheDir;
+
+    if (env.backends?.onnx?.wasm) {
+        env.backends.onnx.wasm.proxy = false;
+    }
 }
 
 let extractorPromise: Promise<any> | null = null;
@@ -80,10 +85,18 @@ export function buildListingEmbeddingText(listing: {
  * Generate the text that will be embedded and update the listing
  */
 export async function updateListingEmbedding(listingId: string) {
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+    const supabaseKey =
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+        process.env.SUPABASE_ANON_KEY ||
+        process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+        console.error('Missing Supabase credentials for updating embedding');
+        return;
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
     // 1. Fetch the latest listing data
     const { data: listing, error } = await supabase
