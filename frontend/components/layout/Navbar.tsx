@@ -9,7 +9,7 @@ import ThemeToggle from "@/components/layout/ThemeToggle";
 import AccountSetupProgressWidget from "@/components/layout/AccountSetupProgressWidget";
 import GlobalListingSearch from "@/components/layout/GlobalListingSearch";
 import VerifiedSellerBadge from "@/components/common/VerifiedSellerBadge";
-import { Menu, X, ChevronDown, Award } from "lucide-react";
+import { Menu, X, ChevronDown, Award, Search } from "lucide-react";
 import {
   FaUserAlt,
   FaHeart,
@@ -29,6 +29,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -54,7 +55,7 @@ export default function Navbar() {
 
   // Prevent scroll when mobile menu is open
   useEffect(() => {
-    if (isMenuOpen) {
+    if (isMenuOpen || isMobileSearchOpen) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
@@ -62,7 +63,7 @@ export default function Navbar() {
     return () => {
       document.body.style.overflow = "";
     };
-  }, [isMenuOpen]);
+  }, [isMenuOpen, isMobileSearchOpen]);
 
   const isActive = (path: string) => {
     if (path === "/" && pathname === "/") return true;
@@ -175,6 +176,16 @@ export default function Navbar() {
 
           {/* Right Section */}
           <div className="flex items-center gap-1 sm:gap-2">
+            {/* Mobile Search Button */}
+            <button
+              type="button"
+              onClick={() => setIsMobileSearchOpen(true)}
+              className="lg:hidden p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              aria-label="Open search"
+            >
+              <Search className="w-5 h-5" />
+            </button>
+
             {/* Theme Toggle */}
             <ThemeToggle />
 
@@ -350,13 +361,6 @@ export default function Navbar() {
             <div className="fixed right-3 top-20 bottom-3 w-80 max-w-[85vw] bg-white dark:bg-slate-900 z-50 md:hidden overflow-y-auto rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 animate-in slide-in-from-right duration-200">
               <div className="flex flex-col p-4 space-y-1">
                 {/* Navigation Links */}
-                <div className="pb-3 border-b border-slate-200 dark:border-slate-800 mb-2">
-                  <GlobalListingSearch
-                    compact
-                    onNavigate={() => setIsMenuOpen(false)}
-                  />
-                </div>
-
                 <Link
                   href="/listings"
                   className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors ${isActive("/listings")
@@ -502,6 +506,35 @@ export default function Navbar() {
               </div>
             </div>
           </>,
+          document.body
+        )}
+      {isMobileSearchOpen &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div className="fixed inset-0 z-[100] lg:hidden bg-white dark:bg-slate-950 flex flex-col">
+            {/* Header bar */}
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-200 dark:border-slate-800 shrink-0">
+              <span className="text-sm font-bold text-slate-900 dark:text-white">
+                Search Listings
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsMobileSearchOpen(false)}
+                className="ml-auto p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                aria-label="Close search"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Search body */}
+            <div className="flex-1 overflow-y-auto p-4">
+              <GlobalListingSearch
+                variant="expanded"
+                onNavigate={() => setIsMobileSearchOpen(false)}
+              />
+            </div>
+          </div>,
           document.body
         )}
     </header>

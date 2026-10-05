@@ -6,6 +6,10 @@ const nextConfig: NextConfig = {
     'localhost',
     '127.0.0.1',
   ],
+  serverExternalPackages: [
+    '@huggingface/transformers',
+    'onnxruntime-node',
+  ],
   images: {
     remotePatterns: [
       {

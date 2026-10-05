@@ -2,6 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getEmbedding } from "@/lib/embeddings";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+export const maxDuration = 30;
+
+function getSupabaseClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !key) {
+    throw new Error("Missing Supabase environment variables (NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY)");
+  }
+  return { supabase: createClient(url, key), supabaseUrl: url };
+}
+
 function resolveImageUrl(storagePath?: string | null, supabaseUrl?: string): string | null {
   if (!storagePath) return null;
   if (storagePath.startsWith("http://") || storagePath.startsWith("https://")) {
@@ -12,7 +26,6 @@ function resolveImageUrl(storagePath?: string | null, supabaseUrl?: string): str
   return `${baseUrl}/storage/v1/object/public/listing-images/${storagePath.replace(/^\//, "")}`;
 }
 
-// Stop words that do not indicate specific entity/product intent
 const STOP_WORDS = new Set([
   "a", "an", "the", "in", "on", "at", "to", "for", "of", "with", "by", "from",
   "and", "or", "is", "are", "was", "were", "be", "been", "good", "best",
@@ -41,6 +54,48 @@ function calculateKeywordScore(tokens: string[], item: { title?: string; descrip
   return matches / tokens.length;
 }
 
+function formatListings(rawListings: any[], supabaseUrl: string, similarityMap?: Map<string, number>) {
+  return rawListings.map((item: any) => {
+    const rawImages = (item.listing_images || []).sort(
+      (a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0)
+    );
+
+    const images = rawImages.map((img: any) => ({
+      id: img.id,
+      url: resolveImageUrl(img.storage_path, supabaseUrl),
+      isPrimary: Boolean(img.is_primary),
+      displayOrder: img.display_order ?? 0,
+    }));
+
+    const primaryImage =
+      images.find((img: any) => img.isPrimary) || (images.length > 0 ? images[0] : null);
+
+    const locationParts = [item.city, item.district, item.province].filter(Boolean);
+    const locationText =
+      locationParts.length > 0 ? locationParts.join(", ") : item.location || "";
+
+    return {
+      id: item.id,
+      slug: item.slug || item.id,
+      title: item.title,
+      description: item.description,
+      price: Number(item.price || 0),
+      currency: item.currency || "LKR",
+      condition: item.condition,
+      pricingType: item.pricing_type || "FIXED",
+      city: item.city,
+      district: item.district,
+      province: item.province,
+      location: locationText,
+      status: item.status,
+      primaryImage,
+      images,
+      createdAt: item.created_at,
+      similarity: similarityMap ? similarityMap.get(item.id) ?? 0 : 1,
+    };
+  });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { query, limit = 12 } = await req.json();
@@ -51,37 +106,90 @@ export async function POST(req: NextRequest) {
 
     const trimmedQuery = query.trim();
     const searchTokens = extractSearchTokens(trimmedQuery);
+    const { supabase, supabaseUrl } = getSupabaseClient();
 
-    // 1. Generate embedding for user query
-    const queryEmbedding = await getEmbedding(trimmedQuery);
+    let matchedListings: any[] = [];
+    let similarityMap = new Map<string, number>();
 
-    // 2. Call the match_listings Supabase RPC with an initial threshold
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    try {
+      // 1. Try vector semantic embedding search
+      const queryEmbedding = await getEmbedding(trimmedQuery);
 
-    const { data: matched, error: rpcError } = await supabase.rpc("match_listings", {
-      query_embedding: queryEmbedding,
-      match_threshold: 0.32,
-      match_count: Math.max(limit * 2, 20),
-    });
+      const { data: matched, error: rpcError } = await supabase.rpc("match_listings", {
+        query_embedding: queryEmbedding,
+        match_threshold: 0.32,
+        match_count: Math.max(limit * 2, 20),
+      });
 
-    if (rpcError) {
-      console.error("[semantic-search] Supabase RPC error:", rpcError);
-      return NextResponse.json({ error: rpcError.message }, { status: 500 });
+      if (!rpcError && matched && matched.length > 0) {
+        matchedListings = matched;
+        similarityMap = new Map<string, number>(
+          matched.map((item: any) => [item.id, Number(item.similarity ?? 0)])
+        );
+      }
+    } catch (embErr) {
+      console.warn("[semantic-search] Vector embedding search failed, falling back to keyword search:", embErr);
     }
 
-    if (!matched || matched.length === 0) {
-      return NextResponse.json({ results: [] });
+    // 2. Fetch full listing details
+    if (matchedListings.length > 0) {
+      const listingIds = matchedListings.map((item: any) => item.id);
+
+      const { data: listings, error: fetchError } = await supabase
+        .from("listings")
+        .select(`
+          id,
+          slug,
+          title,
+          description,
+          price,
+          currency,
+          condition,
+          pricing_type,
+          city,
+          district,
+          province,
+          location,
+          status,
+          created_at,
+          listing_images (
+            id,
+            storage_path,
+            is_primary,
+            display_order
+          )
+        `)
+        .in("id", listingIds)
+        .is("deleted_at", null);
+
+      if (!fetchError && listings && listings.length > 0) {
+        // Apply hybrid scoring & dynamic relative threshold
+        const scored = listings.map((item: any) => {
+          const similarity = similarityMap.get(item.id) ?? 0;
+          const kwScore = calculateKeywordScore(searchTokens, item);
+          const hybridScore = searchTokens.length > 0 ? similarity * 0.75 + kwScore * 0.25 : similarity;
+          return { item, similarity, kwScore, hybridScore };
+        });
+
+        const maxSimilarity = Math.max(...scored.map((s) => s.similarity));
+        const relativeCutoff = Math.max(0.36, maxSimilarity - 0.09);
+
+        const filtered = scored.filter((s) => {
+          if (searchTokens.length >= 2 && s.kwScore === 0 && s.similarity < maxSimilarity - 0.04) {
+            return false;
+          }
+          return s.similarity >= relativeCutoff;
+        });
+
+        filtered.sort((a, b) => b.hybridScore - a.hybridScore);
+
+        const formatted = formatListings(filtered.slice(0, limit).map((f) => f.item), supabaseUrl, similarityMap);
+        return NextResponse.json({ results: formatted });
+      }
     }
 
-    const listingIds = matched.map((item: any) => item.id);
-    const similarityMap = new Map<string, number>(
-      matched.map((item: any) => [item.id, Number(item.similarity ?? 0)])
-    );
-
-    // 3. Fetch comprehensive details for matched listings
-    const { data: listings, error: fetchError } = await supabase
+    // 3. Fallback: Text/ILIKE Search (ensures results are always returned even if vector search is cold/unavailable)
+    const { data: fallbackListings, error: fallbackError } = await supabase
       .from("listings")
       .select(`
         id,
@@ -105,98 +213,19 @@ export async function POST(req: NextRequest) {
           display_order
         )
       `)
-      .in("id", listingIds)
-      .is("deleted_at", null);
+      .or(`title.ilike.%${trimmedQuery}%,description.ilike.%${trimmedQuery}%`)
+      .is("deleted_at", null)
+      .limit(limit);
 
-    if (fetchError) {
-      console.error("[semantic-search] Error fetching listing details:", fetchError);
-      return NextResponse.json({ error: fetchError.message }, { status: 500 });
-    }
-
-    const rawListings = listings || [];
-    if (rawListings.length === 0) {
+    if (fallbackError) {
+      console.error("[semantic-search] Fallback query error:", fallbackError);
       return NextResponse.json({ results: [] });
     }
 
-    // 4. Calculate hybrid score & filter noise using dynamic relative threshold
-    const scoredListings = rawListings.map((item: any) => {
-      const similarity = similarityMap.get(item.id) ?? 0;
-      const kwScore = calculateKeywordScore(searchTokens, item);
-
-      // Hybrid score: 75% vector semantic similarity + 25% keyword match
-      const hybridScore = searchTokens.length > 0
-        ? similarity * 0.75 + kwScore * 0.25
-        : similarity;
-
-      return {
-        item,
-        similarity,
-        kwScore,
-        hybridScore,
-      };
-    });
-
-    // Find the highest similarity score
-    const maxSimilarity = Math.max(...scoredListings.map((s) => s.similarity));
-
-    // Dynamic threshold: items must be at least 0.36 AND within 0.09 of the top match
-    const relativeCutoff = Math.max(0.36, maxSimilarity - 0.09);
-
-    const filtered = scoredListings.filter((s) => {
-      // If the query has specific keywords and item has 0 keyword matches and low similarity, drop it
-      if (searchTokens.length >= 2 && s.kwScore === 0 && s.similarity < maxSimilarity - 0.04) {
-        return false;
-      }
-      return s.similarity >= relativeCutoff;
-    });
-
-    // Sort by hybrid score descending
-    filtered.sort((a, b) => b.hybridScore - a.hybridScore);
-
-    // 5. Format the top results
-    const results = filtered.slice(0, limit).map(({ item, similarity }) => {
-      const rawImages = (item.listing_images || []).sort(
-        (a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0)
-      );
-
-      const images = rawImages.map((img: any) => ({
-        id: img.id,
-        url: resolveImageUrl(img.storage_path, supabaseUrl),
-        isPrimary: Boolean(img.is_primary),
-        displayOrder: img.display_order ?? 0,
-      }));
-
-      const primaryImage =
-        images.find((img: any) => img.isPrimary) || (images.length > 0 ? images[0] : null);
-
-      const locationParts = [item.city, item.district, item.province].filter(Boolean);
-      const locationText =
-        locationParts.length > 0 ? locationParts.join(", ") : item.location || "";
-
-      return {
-        id: item.id,
-        slug: item.slug || item.id,
-        title: item.title,
-        description: item.description,
-        price: Number(item.price || 0),
-        currency: item.currency || "LKR",
-        condition: item.condition,
-        pricingType: item.pricing_type || "FIXED",
-        city: item.city,
-        district: item.district,
-        province: item.province,
-        location: locationText,
-        status: item.status,
-        primaryImage,
-        images,
-        createdAt: item.created_at,
-        similarity,
-      };
-    });
-
-    return NextResponse.json({ results });
+    const formattedFallback = formatListings(fallbackListings || [], supabaseUrl);
+    return NextResponse.json({ results: formattedFallback });
   } catch (err: any) {
-    console.error("[semantic-search] Unexpected error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error("[semantic-search] Global handler error:", err);
+    return NextResponse.json({ results: [] });
   }
 }

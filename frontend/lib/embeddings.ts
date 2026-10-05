@@ -1,17 +1,31 @@
-import { pipeline } from '@huggingface/transformers';
+import { pipeline, env } from '@huggingface/transformers';
 import { createClient } from '@supabase/supabase-js';
+import path from 'path';
+import os from 'os';
 
-let extractor: any = null;
+// Configure transformers environment for serverless runtime
+if (typeof window === 'undefined') {
+    const cacheDir = path.join(os.tmpdir(), 'huggingface_cache');
+    env.cacheDir = cacheDir;
+    env.allowLocalModels = false;
+    process.env.HF_HOME = cacheDir;
+    process.env.TRANSFORMERS_CACHE = cacheDir;
+}
+
+let extractorPromise: Promise<any> | null = null;
 
 async function getExtractor() {
-    if (!extractor) {
-        extractor = await pipeline(
+    if (!extractorPromise) {
+        extractorPromise = pipeline(
             'feature-extraction',
             'Xenova/all-MiniLM-L6-v2',
             { dtype: 'q8' }
-        );
+        ).catch((err) => {
+            extractorPromise = null;
+            throw err;
+        });
     }
-    return extractor;
+    return extractorPromise;
 }
 
 export async function getEmbedding(text: string): Promise<number[]> {

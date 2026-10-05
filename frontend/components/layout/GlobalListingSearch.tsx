@@ -12,6 +12,7 @@ import ListingSearchResultItem from "@/components/listings/ListingSearchResultIt
 type GlobalListingSearchProps = {
   className?: string;
   compact?: boolean;
+  variant?: "default" | "expanded" | string;
   onNavigate?: () => void;
 };
 
