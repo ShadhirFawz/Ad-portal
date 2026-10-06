@@ -14,22 +14,22 @@ export default function VerifiedSellerBadge({
   showText = true,
 }: VerifiedSellerBadgeProps) {
   const sizeClasses = {
-    xs: "text-[10px] px-1.5 py-0.5 gap-1",
-    sm: "text-xs px-2.5 py-0.5 gap-1.5",
-    md: "text-sm px-3 py-1 gap-2",
-    lg: "text-base px-4 py-1.5 gap-2.5",
+    xs: "text-[8px] px-1 py-[1px] gap-0.5",
+    sm: "text-[9px] px-1.5 py-[2px] gap-1",
+    md: "text-[10px] px-2 py-0.5 gap-1",
+    lg: "text-xs px-2.5 py-0.5 gap-1.5",
   }[size];
 
   const iconSizes = {
-    xs: "w-3 h-3",
-    sm: "w-4 h-4",
-    md: "w-4.5 h-4.5",
-    lg: "w-5.5 h-5.5",
+    xs: "w-2.5 h-2.5",
+    sm: "w-3 h-3",
+    md: "w-3.5 h-3.5",
+    lg: "w-4 h-4",
   }[size];
 
   return (
     <span
-      className={`inline-flex items-center font-bold rounded-full bg-emerald-500/10 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-500/30 select-none shadow-xs tracking-wider uppercase ${sizeClasses} ${className}`}
+      className={`inline-flex items-center font-bold rounded-full bg-emerald-500/10 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-500/30 select-none shadow-xs tracking-wider uppercase leading-none ${sizeClasses} ${className}`}
       title="Verified Seller - Authenticated Business / Pro Member"
     >
       <svg

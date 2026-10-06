@@ -44,8 +44,10 @@ import {
   ChevronDown,
   ChevronUp,
   TrendingUp,
+  Share2,
 } from "lucide-react";
 import WhatsAppIcon from "@/components/common/WhatsAppIcon";
+import ShareListingModal from "@/components/listings/ShareListingModal";
 
 function DetailRow({
   label,
@@ -112,6 +114,7 @@ export default function ListingDetailsPage() {
   const [markSoldError, setMarkSoldError] = useState<string | null>(null);
   const [showAdditionalInfo, setShowAdditionalInfo] = useState(false);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
 
   useEffect(() => {
     if (!listingId) return;
@@ -425,8 +428,19 @@ export default function ListingDetailsPage() {
           <div className="w-full lg:col-span-7 xl:col-span-5 space-y-4">
             {/* Header */}
             <div className="relative rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 dark:border-slate-800 dark:bg-slate-900/90 shadow-sm space-y-3">
-              {/* Action Buttons - Bookmark & Favorite */}
+              {/* Action Buttons - Share, Favorite & Bookmark */}
               <div className="absolute top-3 right-5 sm:top-3 sm:right-6 flex items-center gap-1 z-10">
+                {/* Share Button */}
+                <button
+                  type="button"
+                  onClick={() => setShareModalOpen(true)}
+                  aria-label="Share listing"
+                  title="Share listing"
+                  className="p-1 text-slate-700 dark:text-slate-200 hover:text-black dark:hover:text-white transition-colors cursor-pointer"
+                >
+                  <Share2 className="w-5.5 h-5.5 text-slate-400 dark:text-slate-500 hover:text-violet-600 dark:hover:text-violet-400 transition-transform duration-200 hover:scale-110" />
+                </button>
+
                 {/* Favorite Button */}
                 <button
                   type="button"
@@ -970,6 +984,13 @@ export default function ListingDetailsPage() {
           </div>
         </div>
       )}
+
+      {/* Share Listing Modal */}
+      <ShareListingModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        listing={listing}
+      />
     </>
   );
 }
