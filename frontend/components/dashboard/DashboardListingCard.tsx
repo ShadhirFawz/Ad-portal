@@ -10,6 +10,7 @@ import {
   Bookmark,
   Star,
   Flame,
+  Crown,
   Loader2,
 } from "lucide-react";
 import { toggleBookmarkListing } from "@/lib/api/listings";
@@ -125,18 +126,22 @@ export default function DashboardListingCard({
           )}
 
           {/* Promotion Badge */}
-          {listing.isSpotlight && (
+          {listing.isSpotlight && listing.isUrgent ? (
+            <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-violet-700 text-white text-[9px] font-extrabold tracking-wide uppercase flex items-center gap-1 shadow-sm border border-violet-400/30">
+              <Crown className="w-2.5 h-2.5 text-amber-300 fill-amber-300" />
+              <span>Power Pack</span>
+            </div>
+          ) : listing.isSpotlight ? (
             <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-amber-500 text-white text-[9px] font-extrabold tracking-wide uppercase flex items-center gap-1 shadow-sm">
               <Star className="w-2.5 h-2.5 fill-white" />
               <span>Spotlight</span>
             </div>
-          )}
-          {!listing.isSpotlight && listing.isUrgent && (
+          ) : listing.isUrgent ? (
             <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-rose-600 text-white text-[9px] font-extrabold tracking-wide uppercase flex items-center gap-1 shadow-sm">
               <Flame className="w-2.5 h-2.5 fill-white" />
               <span>Urgent</span>
             </div>
-          )}
+          ) : null}
 
           {/* Bookmark Button Overlay */}
           <button
@@ -236,18 +241,22 @@ export default function DashboardListingCard({
         )}
 
         {/* Promotion Mini Badge Overlays on Image */}
-        {listing.isSpotlight && (
+        {listing.isSpotlight && listing.isUrgent ? (
+          <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-violet-700 text-white text-[9px] font-extrabold tracking-wide uppercase flex items-center gap-1 shadow-sm border border-violet-400/30">
+            <Crown className="w-2.5 h-2.5 text-amber-300 fill-amber-300" />
+            <span>Power Pack</span>
+          </div>
+        ) : listing.isSpotlight ? (
           <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-amber-500 text-white text-[9px] font-extrabold tracking-wide uppercase flex items-center gap-1 shadow-sm">
             <Star className="w-2.5 h-2.5 fill-white" />
             <span>Spotlight</span>
           </div>
-        )}
-        {!listing.isSpotlight && listing.isUrgent && (
+        ) : listing.isUrgent ? (
           <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-rose-600 text-white text-[9px] font-extrabold tracking-wide uppercase flex items-center gap-1 shadow-sm">
             <Flame className="w-2.5 h-2.5 fill-white" />
             <span>Urgent</span>
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Right: Content Details */}

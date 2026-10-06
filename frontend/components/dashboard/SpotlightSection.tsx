@@ -1,11 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
 import {
   ChevronLeft,
   ChevronRight,
-  ArrowRight,
 } from "lucide-react";
 import { FaStar } from "react-icons/fa";
 import type { Listing } from "@/types/listing";
@@ -76,7 +74,7 @@ export default function SpotlightSection({
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
-                Spotlight Listings
+                Recently Spotlisted
               </h2>
               <span className="px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-[10px] font-extrabold uppercase tracking-wide">
                 Pinned Top
@@ -85,10 +83,10 @@ export default function SpotlightSection({
           </div>
         </div>
 
-        {/* Navigation & Link */}
+        {/* Navigation */}
         <div className="flex items-center gap-2">
           {maxIndex > 0 && (
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+            <div className="hidden sm:flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
               <button
                 type="button"
                 onClick={prevSlide}
@@ -117,21 +115,44 @@ export default function SpotlightSection({
         ))}
       </div>
 
-      {/* Pagination Dots */}
+      {/* Bottom Pagination */}
       {maxIndex > 0 && (
-        <div className="flex items-center justify-center gap-1.5 pt-0.5">
-          {pairs.map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => setIndex(i)}
-              aria-label={`Go to spotlight slide ${i + 1}`}
-              className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${index === i
-                ? "w-6 bg-amber-500"
-                : "w-2 bg-slate-300 dark:bg-slate-700 hover:bg-amber-300"
-                }`}
-            />
-          ))}
+        <div className="flex items-center justify-center gap-3 pt-0.5">
+          {/* Mobile-only: left chevron */}
+          <button
+            type="button"
+            onClick={prevSlide}
+            aria-label="Previous Spotlight pair"
+            className="sm:hidden w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Dots */}
+          <div className="flex items-center gap-1.5">
+            {pairs.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setIndex(i)}
+                aria-label={`Go to spotlight slide ${i + 1}`}
+                className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${index === i
+                  ? "w-6 bg-amber-500"
+                  : "w-2 bg-slate-300 dark:bg-slate-700 hover:bg-amber-300"
+                  }`}
+              />
+            ))}
+          </div>
+
+          {/* Mobile-only: right chevron */}
+          <button
+            type="button"
+            onClick={nextSlide}
+            aria-label="Next Spotlight pair"
+            className="sm:hidden w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+          >
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
     </section>

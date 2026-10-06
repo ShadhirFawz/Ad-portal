@@ -63,7 +63,7 @@ export default function LatestListingsSection({
         </Link>
       </div>
 
-      {/* 3 Columns x 4 Rows Grid (12 Compact Rectangular Cards per Page) */}
+      {/* 3 Columns x 4 Rows Grid */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
           {Array.from({ length: 12 }).map((_, i) => (
@@ -91,10 +91,20 @@ export default function LatestListingsSection({
         </div>
       )}
 
-      {/* Bottom Horizontal Pagination Dots */}
+      {/* Bottom Pagination */}
       {totalPages > 1 && (
-        <div className="relative flex items-center justify-center pt-2 min-h-[36px]">
-          {/* Dots — stay centered */}
+        <div className="flex items-center justify-center gap-3 pt-2">
+          {/* Mobile-only: left chevron */}
+          <button
+            type="button"
+            onClick={prevPage}
+            aria-label="Previous page"
+            className="sm:hidden w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Dots */}
           <div className="flex items-center gap-2">
             {pages.map((_, i) => (
               <button
@@ -110,8 +120,18 @@ export default function LatestListingsSection({
             ))}
           </div>
 
-          {/* Chevron controls — absolute right edge of the section */}
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+          {/* Mobile-only: right chevron */}
+          <button
+            type="button"
+            onClick={nextPage}
+            aria-label="Next page"
+            className="sm:hidden w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+          >
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Desktop/tablet: chevron cluster */}
+          <div className="hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
             <button
               type="button"
               onClick={prevPage}

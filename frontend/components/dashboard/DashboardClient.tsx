@@ -26,22 +26,10 @@ export default function DashboardClient({
   const [allListings] = useState<Listing[]>(initialListings);
   const loading = false;
 
-  // Filter listings for separate dedicated promotion sections
-  const spotlightListings = allListings.filter((l) => l.isSpotlight);
-  const urgentListings = allListings.filter((l) => l.isUrgent);
-  const powerPackListings = allListings.filter(
-    (l) => Boolean(l.isSpotlight && l.isUrgent) || l.isSpotlight || (l.viewCount && l.viewCount > 5)
-  );
-
-  // Fallback active listings when fewer boosts exist
-  const effectiveSpotlight =
-    spotlightListings.length >= 2 ? spotlightListings : allListings.slice(0, 4);
-
-  const effectivePowerPack =
-    powerPackListings.length >= 1 ? powerPackListings : allListings.slice(0, 3);
-
-  const effectiveUrgent =
-    urgentListings.length >= 2 ? urgentListings : allListings.slice(2, 6);
+  // Filter only genuine boosted listings according to their respective boost types
+  const powerPackListings = allListings.filter((l) => Boolean(l.isSpotlight && l.isUrgent));
+  const spotlightListings = allListings.filter((l) => Boolean(l.isSpotlight));
+  const urgentListings = allListings.filter((l) => Boolean(l.isUrgent));
 
   return (
     <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-12 sm:space-y-16">
@@ -57,9 +45,9 @@ export default function DashboardClient({
       {/* 3. Seller Performance Stats & Quick Actions */}
       <SellerStatsSection />
 
-      {/* 4. Spotlight Promoted Listings */}
-      {effectiveSpotlight.length > 0 && (
-        <SpotlightSection listings={effectiveSpotlight} loading={loading} />
+      {/* 4. Power Pack Showcase (Combined Spotlight + Urgent + Push Up) */}
+      {powerPackListings.length > 0 && (
+        <PowerPackSection listings={powerPackListings} loading={loading} />
       )}
 
       {/* 5. Latest Listings Section */}
@@ -68,14 +56,14 @@ export default function DashboardClient({
       {/* 6. Dashboard Platform Navigation & Feature Highlights */}
       <TradingPlaybook />
 
-      {/* 7. Power Pack Showcase */}
-      {effectivePowerPack.length > 0 && (
-        <PowerPackSection listings={effectivePowerPack} loading={loading} />
+      {/* 7. Spotlight Promoted Listings (Pinned Top) */}
+      {spotlightListings.length > 0 && (
+        <SpotlightSection listings={spotlightListings} loading={loading} />
       )}
 
-      {/* 8. Urgent Priority Deals */}
-      {effectiveUrgent.length > 0 && (
-        <UrgentSection listings={effectiveUrgent} loading={loading} />
+      {/* 8. Urgent Priority Deals (Quick Sale) */}
+      {urgentListings.length > 0 && (
+        <UrgentSection listings={urgentListings} loading={loading} />
       )}
     </main>
   );

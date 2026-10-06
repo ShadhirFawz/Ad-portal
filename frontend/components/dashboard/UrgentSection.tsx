@@ -91,7 +91,7 @@ export default function UrgentSection({
         {/* Navigation & Link */}
         <div className="flex items-center gap-2">
           {maxIndex > 0 && (
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+            <div className="hidden sm:flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
               <button
                 type="button"
                 onClick={prevSlide}
@@ -129,19 +129,42 @@ export default function UrgentSection({
 
       {/* Pagination Dots */}
       {maxIndex > 0 && (
-        <div className="flex items-center justify-center gap-1.5 pt-0.5">
-          {pairs.map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => setIndex(i)}
-              aria-label={`Go to urgent slide ${i + 1}`}
-              className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${index === i
-                ? "w-6 bg-rose-600"
-                : "w-2 bg-slate-300 dark:bg-slate-700 hover:bg-rose-300"
-                }`}
-            />
-          ))}
+        <div className="flex items-center justify-center gap-3 pt-0.5">
+          {/* Mobile-only: left chevron */}
+          <button
+            type="button"
+            onClick={prevSlide}
+            aria-label="Previous Urgent pair"
+            className="sm:hidden w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Dots */}
+          <div className="flex items-center gap-1.5">
+            {pairs.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setIndex(i)}
+                aria-label={`Go to urgent slide ${i + 1}`}
+                className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${index === i
+                  ? "w-6 bg-rose-600"
+                  : "w-2 bg-slate-300 dark:bg-slate-700 hover:bg-rose-300"
+                  }`}
+              />
+            ))}
+          </div>
+
+          {/* Mobile-only: right chevron */}
+          <button
+            type="button"
+            onClick={nextSlide}
+            aria-label="Next Urgent pair"
+            className="sm:hidden w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+          >
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
     </section>

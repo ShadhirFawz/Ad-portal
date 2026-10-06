@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { FaWhatsapp, FaPhoneAlt } from "react-icons/fa";
+import { FaWhatsapp, FaPhoneAlt, FaGavel } from "react-icons/fa";
 import type { Listing, ListingCardData } from "@/types/listing";
 import type { ListingImage } from "@/types/listing-image";
 import {
@@ -647,16 +647,6 @@ export default function ListingCard({
         {/* Spotlight corner ribbon */}
         {listing.isSpotlight && <SpotlightBadge />}
 
-        {/* Live Auction Badge */}
-        {listing.hasActiveAuction && (
-          <div className="absolute top-0 right-0 z-20 pointer-events-none">
-            <div className="flex items-center gap-1 rounded-bl-xl bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-1.5 text-[10px] font-bold text-white shadow-lg">
-              <Gavel className="w-3 h-3 shrink-0" />
-              Live Auction
-            </div>
-          </div>
-        )}
-
         {/* Ellipsis Menu */}
         <div
           ref={menuRef}
@@ -727,6 +717,16 @@ export default function ListingCard({
                 </span>
               )}
             </div>
+
+            {/* Live Auction Badge */}
+            {listing.hasActiveAuction && (
+              <div className="absolute top-1.5 right-1.5 z-10 pointer-events-none">
+                <div className="flex items-center gap-1 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 px-2 py-1 text-[9px] font-bold text-white shadow-lg backdrop-blur-sm">
+                  <Gavel className="w-3 h-3 shrink-0" />
+                  <span>Live Auction</span>
+                </div>
+              </div>
+            )}
 
             {/* Spotlight Photo Count Indicator */}
             {isSpotlight && sortedImages.length > 1 && (
@@ -928,11 +928,21 @@ export default function ListingCard({
             )}
           </div>
 
+          {/* URGENT ribbon — pinned to bottom-right of image */}
+          {isUrgent && (
+            <div className="absolute bottom-0 right-0 z-10 pointer-events-none">
+              <UrgentRibbonBadge className="mr-0" />
+            </div>
+          )}
+
           {/* Live Auction Badge */}
           {listing.hasActiveAuction && (
-            <div className="absolute bottom-2 right-2 z-10 pointer-events-none">
+            <div
+              className={`absolute ${isUrgent ? "bottom-6" : "bottom-2"
+                } right-1 z-10 pointer-events-none`}
+            >
               <div className="flex items-center gap-1 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 px-2 py-1 text-[9px] font-bold text-white shadow-lg backdrop-blur-sm">
-                <Gavel className="w-3 h-3 shrink-0" />
+                <FaGavel className="w-3 h-3 shrink-0" />
                 Live Auction
               </div>
             </div>
@@ -963,7 +973,7 @@ export default function ListingCard({
         {/* Card Body */}
         <div className="flex flex-1 flex-col justify-between p-3 space-y-2">
           <div className="space-y-1.5">
-            {/* Price & Urgent Status */}
+            {/* Price & Status */}
             <div className="flex items-center justify-between gap-2">
               <span
                 className={`text-base sm:text-lg font-black truncate ${isUrgent
@@ -989,7 +999,6 @@ export default function ListingCard({
                     {listing.status}
                   </span>
                 )}
-                {isUrgent && <UrgentRibbonBadge />}
               </div>
             </div>
 

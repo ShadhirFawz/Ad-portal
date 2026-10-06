@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
 
       const { data: matched, error: rpcError } = await supabase.rpc("match_listings", {
         query_embedding: queryEmbedding,
-        match_threshold: 0.32,
+        match_threshold: 0.45,
         match_count: Math.max(limit * 2, 20),
       });
 
