@@ -63,7 +63,7 @@ export default function LatestListingsSection({
         </Link>
       </div>
 
-      {/* 3 Columns x 4 Rows Grid */}
+      {/* 3 Columns x 4 Rows Grid (12 Compact Rectangular Cards per Page) */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
           {Array.from({ length: 12 }).map((_, i) => (
@@ -93,7 +93,7 @@ export default function LatestListingsSection({
 
       {/* Bottom Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-3 pt-2">
+        <div className="relative flex items-center justify-center gap-3 pt-2">
           {/* Mobile-only: left chevron */}
           <button
             type="button"
@@ -104,7 +104,7 @@ export default function LatestListingsSection({
             <ChevronLeft className="w-3.5 h-3.5" />
           </button>
 
-          {/* Dots */}
+          {/* Dots — centered on all breakpoints */}
           <div className="flex items-center gap-2">
             {pages.map((_, i) => (
               <button
@@ -130,7 +130,7 @@ export default function LatestListingsSection({
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
 
-          {/* Desktop/tablet: chevron cluster */}
+          {/* Desktop/tablet: chevron cluster with page counter, absolute right */}
           <div className="hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
             <button
               type="button"

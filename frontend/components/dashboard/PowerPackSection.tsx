@@ -125,7 +125,7 @@ export default function PowerPackSection({
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
-                Power Pack
+                Promoted Ads
               </h2>
               <span className="px-2 py-0.5 rounded-full bg-violet-500/15 border border-violet-500/30 text-violet-700 dark:text-violet-300 text-[10px] font-extrabold uppercase tracking-wide">
                 Top ads

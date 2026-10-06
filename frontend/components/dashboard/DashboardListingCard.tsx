@@ -126,22 +126,30 @@ export default function DashboardListingCard({
           )}
 
           {/* Promotion Badge */}
-          {listing.isSpotlight && listing.isUrgent ? (
-            <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-violet-700 text-white text-[9px] font-extrabold tracking-wide uppercase flex items-center gap-1 shadow-sm border border-violet-400/30">
-              <Crown className="w-2.5 h-2.5 text-amber-300 fill-amber-300" />
-              <span>Power Pack</span>
-            </div>
-          ) : listing.isSpotlight ? (
-            <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-amber-500 text-white text-[9px] font-extrabold tracking-wide uppercase flex items-center gap-1 shadow-sm">
-              <Star className="w-2.5 h-2.5 fill-white" />
-              <span>Spotlight</span>
-            </div>
-          ) : listing.isUrgent ? (
-            <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-rose-600 text-white text-[9px] font-extrabold tracking-wide uppercase flex items-center gap-1 shadow-sm">
-              <Flame className="w-2.5 h-2.5 fill-white" />
-              <span>Urgent</span>
-            </div>
-          ) : null}
+          <div className="absolute top-2 left-2 flex flex-col gap-1 z-10 pointer-events-none">
+            {listing.isSpotlight && listing.isUrgent ? (
+              <div className="px-2 py-0.5 rounded-md bg-violet-700 text-white text-[9px] font-extrabold tracking-wide uppercase flex items-center gap-1 shadow-sm border border-violet-400/30">
+                <Crown className="w-2.5 h-2.5 text-amber-300 fill-amber-300" />
+                <span>Power Pack</span>
+              </div>
+            ) : listing.isSpotlight ? (
+              <div className="px-2 py-0.5 rounded-md bg-amber-500 text-white text-[9px] font-extrabold tracking-wide uppercase flex items-center gap-1 shadow-sm">
+                <Star className="w-2.5 h-2.5 fill-white" />
+                <span>Spotlight</span>
+              </div>
+            ) : listing.isUrgent ? (
+              <div className="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[9px] font-extrabold tracking-wide uppercase flex items-center gap-1 shadow-sm">
+                <Flame className="w-2.5 h-2.5 fill-white" />
+                <span>Urgent</span>
+              </div>
+            ) : null}
+
+            {listing.negotiable && listing.pricingType !== "FREE" && (
+              <span className="w-fit rounded bg-emerald-600/90 px-1.5 py-0.5 text-[9px] font-semibold text-white backdrop-blur-md shadow-xs">
+                Negotiable
+              </span>
+            )}
+          </div>
 
           {/* Bookmark Button Overlay */}
           <button
@@ -182,11 +190,6 @@ export default function DashboardListingCard({
               <span className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white truncate">
                 {formatPrice(listing.price, listing.currency)}
               </span>
-              {listing.negotiable && (
-                <span className="text-[9px] font-medium text-slate-400 uppercase">
-                  (Nego)
-                </span>
-              )}
             </div>
 
             {/* Location & Time Footer */}
@@ -241,22 +244,30 @@ export default function DashboardListingCard({
         )}
 
         {/* Promotion Mini Badge Overlays on Image */}
-        {listing.isSpotlight && listing.isUrgent ? (
-          <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-violet-700 text-white text-[9px] font-extrabold tracking-wide uppercase flex items-center gap-1 shadow-sm border border-violet-400/30">
-            <Crown className="w-2.5 h-2.5 text-amber-300 fill-amber-300" />
-            <span>Power Pack</span>
-          </div>
-        ) : listing.isSpotlight ? (
-          <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-amber-500 text-white text-[9px] font-extrabold tracking-wide uppercase flex items-center gap-1 shadow-sm">
-            <Star className="w-2.5 h-2.5 fill-white" />
-            <span>Spotlight</span>
-          </div>
-        ) : listing.isUrgent ? (
-          <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-rose-600 text-white text-[9px] font-extrabold tracking-wide uppercase flex items-center gap-1 shadow-sm">
-            <Flame className="w-2.5 h-2.5 fill-white" />
-            <span>Urgent</span>
-          </div>
-        ) : null}
+        <div className="absolute top-1.5 left-1.5 flex flex-col gap-1 z-10 pointer-events-none">
+          {listing.isSpotlight && listing.isUrgent ? (
+            <div className="px-1.5 py-0.5 rounded-md bg-violet-700 text-white text-[9px] font-extrabold tracking-wide uppercase flex items-center gap-1 shadow-sm border border-violet-400/30">
+              <Crown className="w-2.5 h-2.5 text-amber-300 fill-amber-300" />
+              <span>Power Pack</span>
+            </div>
+          ) : listing.isSpotlight ? (
+            <div className="px-1.5 py-0.5 rounded-md bg-amber-500 text-white text-[9px] font-extrabold tracking-wide uppercase flex items-center gap-1 shadow-sm">
+              <Star className="w-2.5 h-2.5 fill-white" />
+              <span>Spotlight</span>
+            </div>
+          ) : listing.isUrgent ? (
+            <div className="px-1.5 py-0.5 rounded-md bg-rose-600 text-white text-[9px] font-extrabold tracking-wide uppercase flex items-center gap-1 shadow-sm">
+              <Flame className="w-2.5 h-2.5 fill-white" />
+              <span>Urgent</span>
+            </div>
+          ) : null}
+
+          {listing.negotiable && listing.pricingType !== "FREE" && (
+            <span className="w-fit rounded bg-emerald-600/90 px-1.5 py-0.5 text-[9px] font-semibold text-white backdrop-blur-md shadow-xs">
+              Negotiable
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Right: Content Details */}
@@ -297,11 +308,6 @@ export default function DashboardListingCard({
           <span className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
             {formatPrice(listing.price, listing.currency)}
           </span>
-          {listing.negotiable && (
-            <span className="text-[9px] font-medium text-slate-400 uppercase">
-              (Nego)
-            </span>
-          )}
         </div>
 
         {/* Bottom: Location & Time */}
