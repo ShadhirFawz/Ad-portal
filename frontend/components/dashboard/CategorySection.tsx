@@ -52,19 +52,36 @@ function getCategoryIcon(slug: string, name: string): IconType {
   return FaBox;
 }
 
-export default function CategorySection() {
+interface CategorySectionProps {
+  initialCategories?: Category[];
+  initialCategoryListings?: Listing[];
+}
+
+export default function CategorySection({
+  initialCategories,
+  initialCategoryListings,
+}: CategorySectionProps = {}) {
   const router = useRouter();
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [activeCategoryId, setActiveCategoryId] = useState<string>("");
-  const [listings, setListings] = useState<Listing[]>([]);
-  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [categories, setCategories] = useState<Category[]>(initialCategories ?? []);
+  const [activeCategoryId, setActiveCategoryId] = useState<string>(
+    initialCategories?.[0]?.id ?? ""
+  );
+  const [listings, setListings] = useState<Listing[]>(initialCategoryListings ?? []);
+  const [categoriesLoading, setCategoriesLoading] = useState(!initialCategories || initialCategories.length === 0);
   const [listingsLoading, setListingsLoading] = useState(false);
 
   const scrollerRef = useRef<HTMLDivElement>(null);
   const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const initialCategoryLoadedRef = useRef<boolean>(Boolean(initialCategoryListings && initialCategoryListings.length > 0));
 
   // 1. Fetch Categories
   useEffect(() => {
+    if (initialCategories && initialCategories.length > 0) {
+      setCategories(initialCategories);
+      if (!activeCategoryId) setActiveCategoryId(initialCategories[0].id);
+      setCategoriesLoading(false);
+      return;
+    }
     let isMounted = true;
     getRootCategories()
       .then((data) => {
@@ -85,7 +102,7 @@ export default function CategorySection() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [initialCategories, activeCategoryId]);
 
   const activeIndex = useMemo(() => {
     const idx = categories.findIndex((c) => c.id === activeCategoryId);
@@ -99,6 +116,11 @@ export default function CategorySection() {
   // 2. Fetch Listings when active category changes
   useEffect(() => {
     if (!activeCat) return;
+
+    if (initialCategoryLoadedRef.current && activeCat.id === initialCategories?.[0]?.id) {
+      initialCategoryLoadedRef.current = false;
+      return;
+    }
 
     let isMounted = true;
     setListingsLoading(true);

@@ -19,16 +19,24 @@ const POPULAR_TERMS = [
 
 const ROTATING_WORDS = ["phones", "vehicles", "property", "gadgets", "services"];
 
-export default function DashboardHero() {
+interface DashboardHeroProps {
+  categories?: Category[];
+}
+
+export default function DashboardHero({ categories: propCategories }: DashboardHeroProps = {}) {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<Category[]>(propCategories ?? []);
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [wordIndex, setWordIndex] = useState(0);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (propCategories && propCategories.length > 0) {
+      setCategories(propCategories);
+      return;
+    }
     let mounted = true;
     getRootCategories()
       .then((data) => {
@@ -38,7 +46,7 @@ export default function DashboardHero() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [propCategories]);
 
   useEffect(() => {
     const timer = setInterval(() => {
