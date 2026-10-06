@@ -20,10 +20,12 @@ import {
   Flame,
   Check,
   ArrowUpCircle,
+  Share2,
 } from "lucide-react";
 import { toggleBookmarkListing } from "@/lib/api/listings";
 import { useAuth } from "@/providers/AuthProvider";
 import { useToast } from "@/hooks/useToast";
+import ShareListingModal from "@/components/listings/ShareListingModal";
 import {
   SpotlightBadge,
   UrgentBadge,
@@ -187,6 +189,7 @@ export default function ListingCard({
   const { success: toastSuccess, error: toastError } = useToast();
   const [menuOpen, setMenuOpen] = useState(false);
   const [bookmarking, setBookmarking] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(
     "isBookmarked" in listing ? Boolean(listing.isBookmarked) : false
   );
@@ -310,11 +313,25 @@ export default function ListingCard({
   /** Shared dropdown content */
   const MenuDropdown = () => (
     <div className="absolute right-0 top-8 min-w-[140px] rounded-xl border border-slate-200 bg-white py-1 shadow-xl dark:border-slate-700 dark:bg-slate-800 z-50">
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setMenuOpen(false);
+          setShareModalOpen(true);
+        }}
+        className="flex w-full items-center gap-2.5 px-3.5 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-700/60 cursor-pointer"
+      >
+        <Share2 className="w-4 h-4 shrink-0 text-slate-500 dark:text-slate-400" />
+        <span>Share</span>
+      </button>
+
       {accessToken ? (
         <button
           type="button"
           onClick={handleBookmark}
-          className="flex w-full items-center gap-2.5 px-3.5 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-700/60"
+          className="flex w-full items-center gap-2.5 px-3.5 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-700/60 cursor-pointer"
         >
           <Bookmark
             className={`w-4 h-4 shrink-0 ${isBookmarked
@@ -344,119 +361,170 @@ export default function ListingCard({
     const remainingCount = sortedImages.length > 3 ? sortedImages.length - 3 : 0;
 
     return (
-      <article
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        className={`group relative flex flex-col overflow-hidden rounded-2xl border transition-all duration-300 w-full col-span-2 sm:col-span-2 md:col-span-2 xl:col-span-2 border-violet-400/90 dark:border-violet-500/80 bg-white dark:bg-slate-900 shadow-xl shadow-violet-500/10 hover:shadow-violet-500/25 hover:border-violet-500 ring-1 ring-violet-400/30 ${className}`}
-      >
-        {/* Top Power Pack Banner */}
-        <PowerPackBadge />
-
-        {/* Ellipsis Menu */}
-        <div
-          ref={menuRef}
-          className="absolute top-10 right-2 z-35"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
+      <>
+        <article
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          className={`group relative flex flex-col overflow-hidden rounded-2xl border transition-all duration-300 w-full ${layout === "grid"
+            ? "col-span-2 sm:col-span-2 md:col-span-3 xl:col-span-3"
+            : "col-span-2 sm:col-span-2 md:col-span-2 xl:col-span-2"
+            } border-violet-400/90 dark:border-violet-500/80 bg-white dark:bg-slate-900 shadow-xl shadow-violet-500/10 hover:shadow-violet-500/25 hover:border-violet-500 ring-1 ring-violet-400/30 ${className}`}
         >
-          <button
-            type="button"
-            aria-label="More options"
-            onClick={handleMenuToggle}
-            className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-900/60 text-white backdrop-blur-md shadow-sm transition-all hover:bg-slate-900 hover:scale-105"
-          >
-            {bookmarking ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <MoreVertical className="w-3.5 h-3.5" />
-            )}
-          </button>
-          {menuOpen && <MenuDropdown />}
-        </div>
+          {/* Top Power Pack Banner */}
+          <PowerPackBadge />
 
-        {/* Card Body with Multi-Photo Collage */}
-        <div className="flex flex-col lg:flex-row flex-1">
-          {/* Multi-Photo Collage Section */}
-          <Link
-            href={targetHref}
-            className="relative lg:w-[54%] shrink-0 flex flex-col bg-slate-100 dark:bg-slate-950 overflow-hidden"
+          {/* Ellipsis Menu */}
+          <div
+            ref={menuRef}
+            className="absolute top-10 right-2 z-35"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
           >
-            {sortedImages.length >= 3 ? (
-              // 3-Image Mosaic Collage
-              <div className="grid grid-cols-3 gap-1 h-56 sm:h-64 lg:h-full min-h-[220px] p-1 bg-slate-900/10 dark:bg-slate-950">
-                {/* Main Hero Photo (2/3 width) */}
-                <div className="relative col-span-2 h-full rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-800">
-                  {mainPhoto && (
-                    <Image
-                      src={mainPhoto}
-                      alt={listing.title}
-                      fill
-                      sizes="(max-width: 1024px) 70vw, 35vw"
-                      className="object-cover transition-transform duration-500 group-hover:scale-102"
-                      priority
-                    />
-                  )}
-                  {/* Meta Label on Hero */}
-                  <div className="absolute top-2 left-2 flex flex-col gap-1 z-10 pointer-events-none">
-                    {conditionLabel && (
-                      <span className="rounded-md bg-slate-900/85 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-md shadow-sm">
-                        {conditionLabel}
-                      </span>
+            <button
+              type="button"
+              aria-label="More options"
+              onClick={handleMenuToggle}
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-900/60 text-white backdrop-blur-md shadow-sm transition-all hover:bg-slate-900 hover:scale-105"
+            >
+              {bookmarking ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <MoreVertical className="w-3.5 h-3.5" />
+              )}
+            </button>
+            {menuOpen && <MenuDropdown />}
+          </div>
+
+          {/* Card Body with Multi-Photo Collage */}
+          <div className="flex flex-col lg:flex-row flex-1">
+            {/* Multi-Photo Collage Section */}
+            <Link
+              href={targetHref}
+              className="relative lg:w-[54%] shrink-0 flex flex-col bg-slate-100 dark:bg-slate-950 overflow-hidden"
+            >
+              {sortedImages.length >= 3 ? (
+                // 3-Image Mosaic Collage
+                <div className="grid grid-cols-3 gap-1 h-56 sm:h-64 lg:h-full min-h-[220px] p-1 bg-slate-900/10 dark:bg-slate-950">
+                  {/* Main Hero Photo (2/3 width) */}
+                  <div className="relative col-span-2 h-full rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-800">
+                    {mainPhoto && (
+                      <Image
+                        src={mainPhoto}
+                        alt={listing.title}
+                        fill
+                        sizes="(max-width: 1024px) 70vw, 35vw"
+                        className="object-cover transition-transform duration-500 group-hover:scale-102"
+                        priority
+                      />
                     )}
-                    {listing.negotiable && listing.pricingType !== "FREE" && (
-                      <span className="rounded-md bg-emerald-600/95 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-md shadow-sm">
-                        Negotiable
-                      </span>
-                    )}
+                    {/* Meta Label on Hero */}
+                    <div className="absolute top-2 left-2 flex flex-col gap-1 z-10 pointer-events-none">
+                      {conditionLabel && (
+                        <span className="rounded-md bg-slate-900/85 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-md shadow-sm">
+                          {conditionLabel}
+                        </span>
+                      )}
+                      {listing.negotiable && listing.pricingType !== "FREE" && (
+                        <span className="rounded-md bg-emerald-600/95 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-md shadow-sm">
+                          Negotiable
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right Stacked 2 Photos */}
+                  <div className="flex flex-col gap-1 h-full">
+                    <div className="relative flex-1 rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-800">
+                      {secondPhoto && (
+                        <Image
+                          src={secondPhoto}
+                          alt=""
+                          fill
+                          sizes="(max-width: 1024px) 30vw, 15vw"
+                          className="object-cover"
+                        />
+                      )}
+                    </div>
+                    <div className="relative flex-1 rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-800">
+                      {thirdPhoto && (
+                        <Image
+                          src={thirdPhoto}
+                          alt=""
+                          fill
+                          sizes="(max-width: 1024px) 30vw, 15vw"
+                          className="object-cover"
+                        />
+                      )}
+                      {remainingCount > 0 && (
+                        <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-[2px] flex items-center justify-center text-white font-bold text-xs sm:text-sm">
+                          +{remainingCount} more
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-
-                {/* Right Stacked 2 Photos */}
-                <div className="flex flex-col gap-1 h-full">
-                  <div className="relative flex-1 rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-800">
+              ) : sortedImages.length === 2 ? (
+                // 2-Image Split Collage
+                <div className="grid grid-cols-2 gap-1 h-56 sm:h-64 lg:h-full min-h-[220px] p-1 bg-slate-900/10 dark:bg-slate-950">
+                  <div className="relative h-full rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-800">
+                    {mainPhoto && (
+                      <Image
+                        src={mainPhoto}
+                        alt={listing.title}
+                        fill
+                        sizes="(max-width: 1024px) 50vw, 25vw"
+                        className="object-cover transition-transform duration-500 group-hover:scale-102"
+                        priority
+                      />
+                    )}
+                    {conditionLabel && (
+                      <div className="absolute top-2 left-2 z-10 pointer-events-none">
+                        <span className="rounded-md bg-slate-900/85 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-md shadow-sm">
+                          {conditionLabel}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="relative h-full rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-800">
                     {secondPhoto && (
                       <Image
                         src={secondPhoto}
                         alt=""
                         fill
-                        sizes="(max-width: 1024px) 30vw, 15vw"
+                        sizes="(max-width: 1024px) 50vw, 25vw"
                         className="object-cover"
                       />
-                    )}
-                  </div>
-                  <div className="relative flex-1 rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-800">
-                    {thirdPhoto && (
-                      <Image
-                        src={thirdPhoto}
-                        alt=""
-                        fill
-                        sizes="(max-width: 1024px) 30vw, 15vw"
-                        className="object-cover"
-                      />
-                    )}
-                    {remainingCount > 0 && (
-                      <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-[2px] flex items-center justify-center text-white font-bold text-xs sm:text-sm">
-                        +{remainingCount} more
-                      </div>
                     )}
                   </div>
                 </div>
-              </div>
-            ) : sortedImages.length === 2 ? (
-              // 2-Image Split Collage
-              <div className="grid grid-cols-2 gap-1 h-56 sm:h-64 lg:h-full min-h-[220px] p-1 bg-slate-900/10 dark:bg-slate-950">
-                <div className="relative h-full rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-800">
-                  {mainPhoto && (
+              ) : (
+                // Single Hero Photo
+                <div className="relative h-56 sm:h-64 lg:h-full min-h-[220px] overflow-hidden bg-slate-200 dark:bg-slate-800">
+                  {mainPhoto ? (
                     <Image
                       src={mainPhoto}
                       alt={listing.title}
                       fill
-                      sizes="(max-width: 1024px) 50vw, 25vw"
+                      sizes="(max-width: 1024px) 100vw, 50vw"
                       className="object-cover transition-transform duration-500 group-hover:scale-102"
                       priority
                     />
+                  ) : (
+                    <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 p-3 text-center">
+                      <Image
+                        src="/Wudo_watermark.png"
+                        alt="Wudo"
+                        width={160}
+                        height={40}
+                        priority
+                        className="h-12 w-auto object-contain mx-auto opacity-50"
+                      />
+                      <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">
+                        No image
+                      </span>
+                    </div>
                   )}
                   {conditionLabel && (
                     <div className="absolute top-2 left-2 z-10 pointer-events-none">
@@ -466,165 +534,124 @@ export default function ListingCard({
                     </div>
                   )}
                 </div>
-                <div className="relative h-full rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-800">
-                  {secondPhoto && (
-                    <Image
-                      src={secondPhoto}
-                      alt=""
-                      fill
-                      sizes="(max-width: 1024px) 50vw, 25vw"
-                      className="object-cover"
-                    />
-                  )}
-                </div>
-              </div>
-            ) : (
-              // Single Hero Photo
-              <div className="relative h-56 sm:h-64 lg:h-full min-h-[220px] overflow-hidden bg-slate-200 dark:bg-slate-800">
-                {mainPhoto ? (
-                  <Image
-                    src={mainPhoto}
-                    alt={listing.title}
-                    fill
-                    sizes="(max-width: 1024px) 100vw, 50vw"
-                    className="object-cover transition-transform duration-500 group-hover:scale-102"
-                    priority
-                  />
-                ) : (
-                  <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 p-3 text-center">
-                    <Image
-                      src="/Wudo_watermark.png"
-                      alt="Wudo"
-                      width={160}
-                      height={40}
-                      priority
-                      className="h-12 w-auto object-contain mx-auto opacity-50"
-                    />
-                    <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">
-                      No image
-                    </span>
-                  </div>
-                )}
-                {conditionLabel && (
-                  <div className="absolute top-2 left-2 z-10 pointer-events-none">
-                    <span className="rounded-md bg-slate-900/85 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-md shadow-sm">
-                      {conditionLabel}
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
-          </Link>
-
-          {/* Details & In-Feed Action Controls */}
-          <div className="lg:w-[46%] p-4 sm:p-5 flex flex-col justify-between space-y-3">
-            <div className="space-y-2">
-              {/* Category Tag & Live Auction */}
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                {listing.categoryName && (
-                  <span className="inline-flex items-center gap-1 rounded-md bg-violet-50 dark:bg-violet-950/50 border border-violet-200 dark:border-violet-800/60 px-2 py-0.5 text-[10px] sm:text-[11px] font-bold text-violet-700 dark:text-violet-300">
-                    <Tag className="w-3 h-3 text-violet-500 shrink-0" />
-                    <span className="truncate max-w-[160px]">{listing.categoryName}</span>
-                  </span>
-                )}
-                {listing.hasActiveAuction && (
-                  <span className="inline-flex items-center gap-1 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
-                    <Gavel className="w-3 h-3 shrink-0" />
-                    Live Auction
-                  </span>
-                )}
-              </div>
-
-              {/* Title */}
-              <Link href={targetHref} className="block group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
-                <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-snug break-words line-clamp-2">
-                  {listing.title}
-                </h3>
-              </Link>
-
-              {/* Spec Pill Tags */}
-              {specPills.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 pt-0.5">
-                  {specPills.map((pill, idx) => (
-                    <span
-                      key={idx}
-                      className="inline-flex items-center gap-1 rounded-md bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/60 px-2 py-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-200"
-                    >
-                      <Check className="w-2.5 h-2.5 text-emerald-500 shrink-0" />
-                      <span>{pill}</span>
-                    </span>
-                  ))}
-                </div>
               )}
+            </Link>
 
-              {/* Description Snippet */}
-              {"description" in listing && listing.description && (
-                <p className="line-clamp-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed pt-0.5">
-                  {listing.description}
-                </p>
-              )}
-            </div>
-
-            {/* Price & In-Feed Action Buttons */}
-            <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="text-lg sm:text-xl font-black text-emerald-600 dark:text-emerald-400">
-                  {formatPrice()}
-                </span>
-                <div className="flex items-center gap-2 text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-500">
-                  {locationText && (
-                    <span className="flex items-center gap-0.5 truncate max-w-[120px]">
-                      <MapPin className="w-3 h-3 shrink-0" />
-                      <span className="truncate">{locationText}</span>
+            {/* Details & In-Feed Action Controls */}
+            <div className="lg:w-[46%] p-4 sm:p-5 flex flex-col justify-between space-y-3">
+              <div className="space-y-2">
+                {/* Category Tag & Live Auction */}
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  {listing.categoryName && (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-violet-50 dark:bg-violet-950/50 border border-violet-200 dark:border-violet-800/60 px-2 py-0.5 text-[10px] sm:text-[11px] font-bold text-violet-700 dark:text-violet-300">
+                      <Tag className="w-3 h-3 text-violet-500 shrink-0" />
+                      <span className="truncate max-w-[160px]">{listing.categoryName}</span>
                     </span>
                   )}
-                  {timeAgoStr && (
-                    <span className="flex items-center gap-0.5 shrink-0">
-                      <Clock className="w-3 h-3 shrink-0" />
-                      <span>{timeAgoStr}</span>
+                  {listing.hasActiveAuction && (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
+                      <Gavel className="w-3 h-3 shrink-0" />
+                      Live Auction
                     </span>
                   )}
                 </div>
-              </div>
 
-              {/* In-Feed Direct Actions: Call, WhatsApp, View */}
-              <div className="flex items-center gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
-                {listing.sellerPhoneNumber && (
-                  <a
-                    href={`tel:${listing.sellerPhoneNumber}`}
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 transition shadow-xs"
-                    title="Call Seller directly"
-                  >
-                    <FaPhoneAlt className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                    <span>Call</span>
-                  </a>
-                )}
-
-                {listing.sellerWhatsappNumber && (
-                  <a
-                    href={`https://wa.me/${listing.sellerWhatsappNumber.replace(/[^0-9]/g, "")}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-2 text-xs font-bold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition shadow-xs"
-                    title="Chat on WhatsApp"
-                  >
-                    <FaWhatsapp className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                    <span>WhatsApp</span>
-                  </a>
-                )}
-
-                <Link
-                  href={targetHref}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-violet-600 hover:bg-violet-700 px-4 py-2 text-xs font-bold text-white transition shadow-md shadow-violet-500/20"
-                >
-                  <span>View</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                {/* Title */}
+                <Link href={targetHref} className="block group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-snug break-words line-clamp-2">
+                    {listing.title}
+                  </h3>
                 </Link>
+
+                {/* Spec Pill Tags */}
+                {specPills.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-0.5">
+                    {specPills.map((pill, idx) => (
+                      <span
+                        key={idx}
+                        className="inline-flex items-center gap-1 rounded-md bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/60 px-2 py-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-200"
+                      >
+                        <Check className="w-2.5 h-2.5 text-emerald-500 shrink-0" />
+                        <span>{pill}</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Description Snippet */}
+                {"description" in listing && listing.description && (
+                  <p className="line-clamp-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed pt-0.5">
+                    {listing.description}
+                  </p>
+                )}
+              </div>
+
+              {/* Price & In-Feed Action Buttons */}
+              <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-lg sm:text-xl font-black text-emerald-600 dark:text-emerald-400">
+                    {formatPrice()}
+                  </span>
+                  <div className="flex items-center gap-2 text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-500">
+                    {locationText && (
+                      <span className="flex items-center gap-0.5 truncate max-w-[120px]">
+                        <MapPin className="w-3 h-3 shrink-0" />
+                        <span className="truncate">{locationText}</span>
+                      </span>
+                    )}
+                    {timeAgoStr && (
+                      <span className="flex items-center gap-0.5 shrink-0">
+                        <Clock className="w-3 h-3 shrink-0" />
+                        <span>{timeAgoStr}</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* In-Feed Direct Actions: Call, WhatsApp, View */}
+                <div className="flex items-center gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
+                  {listing.sellerPhoneNumber && (
+                    <a
+                      href={`tel:${listing.sellerPhoneNumber}`}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 transition shadow-xs"
+                      title="Call Seller directly"
+                    >
+                      <FaPhoneAlt className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                      <span>Call</span>
+                    </a>
+                  )}
+
+                  {listing.sellerWhatsappNumber && (
+                    <a
+                      href={`https://wa.me/${listing.sellerWhatsappNumber.replace(/[^0-9]/g, "")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-2 text-xs font-bold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition shadow-xs"
+                      title="Chat on WhatsApp"
+                    >
+                      <FaWhatsapp className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <span>WhatsApp</span>
+                    </a>
+                  )}
+
+                  <Link
+                    href={targetHref}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-violet-600 hover:bg-violet-700 px-4 py-2 text-xs font-bold text-white transition shadow-md shadow-violet-500/20"
+                  >
+                    <span>View</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </article>
+        </article>
+        <ShareListingModal
+          isOpen={shareModalOpen}
+          onClose={() => setShareModalOpen(false)}
+          listing={listing}
+        />
+      </>
     );
   }
 
@@ -639,19 +666,239 @@ export default function ListingCard({
           : "border-slate-200/80 bg-white hover:border-emerald-500/40 hover:shadow-md dark:border-slate-800 dark:bg-slate-900/90 dark:hover:border-emerald-500/30";
 
     return (
+      <>
+        <article
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          className={`group relative flex flex-col overflow-hidden rounded-xl sm:rounded-2xl border transition-all duration-300 w-full ${rowCardTheme} ${className}`}
+        >
+          {/* Spotlight corner ribbon */}
+          {listing.isSpotlight && <SpotlightBadge />}
+
+          {/* Ellipsis Menu */}
+          <div
+            ref={menuRef}
+            className={`absolute z-30 ${listing.hasActiveAuction ? "top-9 right-2" : "top-2 right-2"
+              }`}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
+            <button
+              type="button"
+              aria-label="More options"
+              onClick={handleMenuToggle}
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-white/80 text-slate-600 backdrop-blur-sm shadow-sm transition-all duration-150 hover:bg-white hover:text-slate-900 dark:bg-slate-800/80 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
+            >
+              {bookmarking ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <MoreVertical className="w-3.5 h-3.5" />
+              )}
+            </button>
+            {menuOpen && <MenuDropdown />}
+          </div>
+
+          <Link href={targetHref} className="flex w-full flex-1 min-h-0">
+            {/* Thumbnail Container */}
+            <div className="relative shrink-0 w-32 sm:w-44 md:w-48 self-stretch overflow-hidden bg-slate-100 dark:bg-slate-800">
+              {activeSpotlightPhoto ? (
+                <Image
+                  src={activeSpotlightPhoto}
+                  alt={listing.title}
+                  fill
+                  sizes="(max-width: 640px) 128px, 192px"
+                  className="object-cover transition-all duration-500 group-hover:scale-105"
+                />
+              ) : (
+                <div className="flex h-full w-full flex-col items-center justify-center gap-1 p-2 text-center">
+                  <Image
+                    src="/Wudo_watermark.png"
+                    alt="Wudo"
+                    width={160}
+                    height={40}
+                    priority
+                    className="h-12 w-auto object-contain mx-auto opacity-50"
+                  />
+                  <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">
+                    No image
+                  </span>
+                </div>
+              )}
+
+              {/* Image-level meta labels */}
+              <div className="absolute top-1.5 left-1.5 flex flex-col gap-1 z-10 pointer-events-none">
+                {conditionLabel && (
+                  <span className="rounded bg-slate-900/85 px-1.5 py-0.5 text-[9px] font-semibold text-white backdrop-blur-md shadow-xs">
+                    {conditionLabel}
+                  </span>
+                )}
+                {listing.pricingType === "FREE" && (
+                  <span className="rounded bg-emerald-600/90 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-md shadow-xs">
+                    Free
+                  </span>
+                )}
+                {listing.negotiable && listing.pricingType !== "FREE" && (
+                  <span className="rounded bg-emerald-600/90 px-1.5 py-0.5 text-[9px] font-semibold text-white backdrop-blur-md shadow-xs">
+                    Negotiable
+                  </span>
+                )}
+              </div>
+
+              {/* Live Auction Badge */}
+              {listing.hasActiveAuction && (
+                <div className="absolute top-1.5 right-1.5 z-10 pointer-events-none">
+                  <div className="flex items-center gap-1 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 px-2 py-1 text-[9px] font-bold text-white shadow-lg backdrop-blur-sm">
+                    <Gavel className="w-3 h-3 shrink-0" />
+                    <span>Live Auction</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Spotlight Photo Count Indicator */}
+              {isSpotlight && sortedImages.length > 1 && (
+                <div className="absolute bottom-1.5 right-1.5 z-10 pointer-events-none">
+                  <span className="rounded bg-slate-950/75 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-md">
+                    {sortedImages.length} Photos
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Content Area Column */}
+            <div className="flex flex-col flex-1 min-w-0">
+              {/* URGENT divider */}
+              {listing.isUrgent && <UrgentBadge />}
+
+              <div className="flex flex-1 flex-col justify-between p-3 gap-1.5 min-w-0">
+                <div className="space-y-1 min-w-0">
+                  {/* Category and Badges */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {listing.categoryName && (
+                      <span className="inline-flex items-center gap-1 rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-400 max-w-[140px] truncate">
+                        <Tag className="w-2.5 h-2.5 shrink-0" />
+                        <span className="truncate">{listing.categoryName}</span>
+                      </span>
+                    )}
+                    {listing.sellerRole === "VERIFIED_SELLER" && (
+                      <VerifiedSellerBadge size="sm" />
+                    )}
+                    {listing.status && listing.status !== "ACTIVE" && (
+                      <span
+                        className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${listing.status === "DRAFT"
+                          ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
+                          : listing.status === "SOLD"
+                            ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
+                            : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                          }`}
+                      >
+                        {listing.status}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Title */}
+                  <h3 className="line-clamp-1 sm:line-clamp-2 text-xs sm:text-sm font-semibold tracking-tight text-slate-800 transition-colors group-hover:text-emerald-600 dark:text-slate-100 dark:group-hover:text-emerald-400 leading-snug break-words">
+                    {listing.title}
+                  </h3>
+
+                  {/* Spec Pills for Spotlight */}
+                  {isSpotlight && specPills.length > 0 ? (
+                    <div className="flex flex-wrap gap-1 pt-0.5">
+                      {specPills.map((pill, i) => (
+                        <span
+                          key={i}
+                          className="rounded-md bg-slate-100 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/60 px-1.5 py-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-300"
+                        >
+                          {pill}
+                        </span>
+                      ))}
+                    </div>
+                  ) : specsSummary ? (
+                    <p className="line-clamp-1 sm:line-clamp-2 text-[11px] sm:text-xs font-medium text-slate-600 dark:text-slate-300 leading-snug break-words">
+                      {specsSummary}
+                    </p>
+                  ) : "description" in listing && listing.description ? (
+                    <p className="line-clamp-1 sm:line-clamp-2 text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 leading-snug break-words hidden xs:block">
+                      {listing.description}
+                    </p>
+                  ) : null}
+                </div>
+
+                {/* Bottom Row: Price & Metadata */}
+                <div className="flex flex-col gap-0.5 pt-1.5 border-t border-slate-100 dark:border-slate-800/80">
+                  <div className="flex items-center justify-between gap-2">
+                    <span
+                      className={`text-sm sm:text-base font-black ${isUrgent
+                        ? "text-rose-600 dark:text-rose-400"
+                        : "text-emerald-600 dark:text-emerald-400"
+                        }`}
+                    >
+                      {formatPrice()}
+                    </span>
+                    {isUrgent && <UrgentRibbonBadge />}
+                  </div>
+
+                  <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-500">
+                    {locationText ? (
+                      <span className="flex items-center gap-0.5 truncate max-w-[160px] sm:max-w-[200px]">
+                        <MapPin className="w-3 h-3 shrink-0" />
+                        <span className="truncate">{locationText}</span>
+                      </span>
+                    ) : (
+                      <span className="text-slate-400">Nationwide</span>
+                    )}
+
+                    {/* Freshness Beacon for PushUp */}
+                    {isPushedUp ? (
+                      <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
+                        <ArrowUpCircle className="w-4" />
+                      </span>
+                    ) : timeAgoStr ? (
+                      <span className="flex items-center gap-0.5 shrink-0">
+                        <Clock className="w-3 h-3 shrink-0" />
+                        <span>{timeAgoStr}</span>
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
+              {/* Push-up bottom bar */}
+              {listing.isPushedUp && !listing.isSpotlight && <PushUpBadge />}
+            </div>
+          </Link>
+        </article>
+        <ShareListingModal
+          isOpen={shareModalOpen}
+          onClose={() => setShareModalOpen(false)}
+          listing={listing}
+        />
+      </>
+    );
+  }
+
+  // Grid Layout
+  const gridCardTheme = isSpotlight
+    ? "border-amber-400/90 dark:border-amber-500/80 bg-amber-50 dark:bg-slate-900/90 shadow-md shadow-amber-500/10 hover:border-amber-500 hover:shadow-amber-500/20 ring-1 ring-amber-400/40"
+    : isUrgent
+      ? "border-rose-400/90 dark:border-rose-500/80 bg-rose-50 dark:bg-slate-900/90 shadow-md shadow-rose-500/10 hover:border-rose-500 hover:shadow-rose-500/20 ring-1 ring-rose-400/40"
+      : isPushedUp
+        ? "border-emerald-400/90 dark:border-emerald-500/80 bg-emerald-50 dark:bg-slate-900/90 shadow-md shadow-emerald-500/10 hover:border-emerald-500 hover:shadow-emerald-500/20 ring-1 ring-emerald-400/40"
+        : "border-slate-200/80 bg-white hover:border-emerald-500/40 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900/90 dark:hover:border-emerald-500/30";
+
+  return (
+    <>
       <article
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className={`group relative flex flex-col overflow-hidden rounded-xl sm:rounded-2xl border transition-all duration-300 w-full ${rowCardTheme} ${className}`}
+        className={`group relative flex flex-col overflow-hidden rounded-xl sm:rounded-2xl border transition-all duration-300 hover:-translate-y-0.5 h-full w-full ${gridCardTheme} ${className}`}
       >
-        {/* Spotlight corner ribbon */}
-        {listing.isSpotlight && <SpotlightBadge />}
-
         {/* Ellipsis Menu */}
         <div
           ref={menuRef}
-          className={`absolute z-30 ${listing.hasActiveAuction ? "top-9 right-2" : "top-2 right-2"
-            }`}
+          className="absolute top-2 right-2 z-35"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -672,65 +919,82 @@ export default function ListingCard({
           {menuOpen && <MenuDropdown />}
         </div>
 
-        <Link href={targetHref} className="flex w-full flex-1 min-h-0">
-          {/* Thumbnail Container */}
-          <div className="relative shrink-0 w-32 sm:w-44 md:w-48 self-stretch overflow-hidden bg-slate-100 dark:bg-slate-800">
+        {/* SPOTLIGHT corner ribbon */}
+        {listing.isSpotlight && <SpotlightBadge />}
+
+        <Link href={targetHref} className="flex flex-col h-full">
+          {/* Media Thumbnail */}
+          <div className="relative aspect-4/3 w-full shrink-0 overflow-hidden bg-slate-100 dark:bg-slate-800">
             {activeSpotlightPhoto ? (
               <Image
                 src={activeSpotlightPhoto}
                 alt={listing.title}
                 fill
-                sizes="(max-width: 640px) 128px, 192px"
-                className="object-cover transition-all duration-500 group-hover:scale-105"
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
               />
             ) : (
-              <div className="flex h-full w-full flex-col items-center justify-center gap-1 p-2 text-center">
+              <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 p-3 text-center">
                 <Image
                   src="/Wudo_watermark.png"
                   alt="Wudo"
                   width={160}
                   height={40}
                   priority
-                  className="h-12 w-auto object-contain mx-auto opacity-50"
+                  className="h-12 w-auto object-contain mx-auto opacity-70"
                 />
-                <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">
+                <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">
                   No image
                 </span>
               </div>
             )}
 
             {/* Image-level meta labels */}
-            <div className="absolute top-1.5 left-1.5 flex flex-col gap-1 z-10 pointer-events-none">
+            <div className="absolute top-2 left-2 flex flex-col gap-1 pointer-events-none z-10 max-w-[30%]">
               {conditionLabel && (
-                <span className="rounded bg-slate-900/85 px-1.5 py-0.5 text-[9px] font-semibold text-white backdrop-blur-md shadow-xs">
+                <span className="rounded bg-slate-900/85 px-1.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur-md shadow-xs">
                   {conditionLabel}
                 </span>
               )}
-              {listing.pricingType === "FREE" && (
-                <span className="rounded bg-emerald-600/90 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-md shadow-xs">
-                  Free
-                </span>
-              )}
               {listing.negotiable && listing.pricingType !== "FREE" && (
-                <span className="rounded bg-emerald-600/90 px-1.5 py-0.5 text-[9px] font-semibold text-white backdrop-blur-md shadow-xs">
+                <span className="rounded bg-emerald-600/90 px-1.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur-md shadow-xs">
                   Negotiable
                 </span>
               )}
             </div>
 
+            {/* URGENT ribbon — pinned to bottom-right of image */}
+            {isUrgent && (
+              <div className="absolute bottom-0 right-0 z-10 pointer-events-none">
+                <UrgentRibbonBadge className="mr-0" />
+              </div>
+            )}
+
             {/* Live Auction Badge */}
             {listing.hasActiveAuction && (
-              <div className="absolute top-1.5 right-1.5 z-10 pointer-events-none">
+              <div
+                className={`absolute ${isUrgent ? "bottom-6" : "bottom-2"
+                  } right-1 z-10 pointer-events-none`}
+              >
                 <div className="flex items-center gap-1 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 px-2 py-1 text-[9px] font-bold text-white shadow-lg backdrop-blur-sm">
-                  <Gavel className="w-3 h-3 shrink-0" />
-                  <span>Live Auction</span>
+                  <FaGavel className="w-3 h-3 shrink-0" />
+                  Live Auction
                 </div>
+              </div>
+            )}
+
+            {/* Category Tag */}
+            {listing.categoryName && (
+              <div className="absolute bottom-2 left-2 pointer-events-none z-10 max-w-[85%]">
+                <span className="block truncate rounded bg-white/90 px-1.5 py-0.5 text-[10px] font-medium text-slate-700 backdrop-blur-md shadow-xs dark:bg-slate-950/85 dark:text-slate-300">
+                  {listing.categoryName}
+                </span>
               </div>
             )}
 
             {/* Spotlight Photo Count Indicator */}
             {isSpotlight && sortedImages.length > 1 && (
-              <div className="absolute bottom-1.5 right-1.5 z-10 pointer-events-none">
+              <div className="absolute bottom-2 right-2 z-10 pointer-events-none">
                 <span className="rounded bg-slate-950/75 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-md">
                   {sortedImages.length} Photos
                 </span>
@@ -738,27 +1002,29 @@ export default function ListingCard({
             )}
           </div>
 
-          {/* Content Area Column */}
-          <div className="flex flex-col flex-1 min-w-0">
-            {/* URGENT divider */}
-            {listing.isUrgent && <UrgentBadge />}
+          {/* URGENT divider bar */}
+          {listing.isUrgent && <UrgentBadge />}
 
-            <div className="flex flex-1 flex-col justify-between p-3 gap-1.5 min-w-0">
-              <div className="space-y-1 min-w-0">
-                {/* Category and Badges */}
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {listing.categoryName && (
-                    <span className="inline-flex items-center gap-1 rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-400 max-w-[140px] truncate">
-                      <Tag className="w-2.5 h-2.5 shrink-0" />
-                      <span className="truncate">{listing.categoryName}</span>
-                    </span>
-                  )}
+          {/* Card Body */}
+          <div className="flex flex-1 flex-col justify-between p-3 space-y-2">
+            <div className="space-y-1.5">
+              {/* Price & Status */}
+              <div className="flex items-center justify-between gap-2">
+                <span
+                  className={`text-base sm:text-lg font-black truncate ${isUrgent
+                    ? "text-rose-600 dark:text-rose-400"
+                    : "text-emerald-600 dark:text-emerald-400"
+                    }`}
+                >
+                  {formatPrice()}
+                </span>
+                <div className="flex items-center gap-1.5 shrink-0">
                   {listing.sellerRole === "VERIFIED_SELLER" && (
-                    <VerifiedSellerBadge size="xs" />
+                    <VerifiedSellerBadge size="md" showText={false} />
                   )}
                   {listing.status && listing.status !== "ACTIVE" && (
                     <span
-                      className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${listing.status === "DRAFT"
+                      className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${listing.status === "DRAFT"
                         ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
                         : listing.status === "SOLD"
                           ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
@@ -769,295 +1035,70 @@ export default function ListingCard({
                     </span>
                   )}
                 </div>
-
-                {/* Title */}
-                <h3 className="line-clamp-1 sm:line-clamp-2 text-xs sm:text-sm font-semibold tracking-tight text-slate-800 transition-colors group-hover:text-emerald-600 dark:text-slate-100 dark:group-hover:text-emerald-400 leading-snug break-words">
-                  {listing.title}
-                </h3>
-
-                {/* Spec Pills for Spotlight */}
-                {isSpotlight && specPills.length > 0 ? (
-                  <div className="flex flex-wrap gap-1 pt-0.5">
-                    {specPills.map((pill, i) => (
-                      <span
-                        key={i}
-                        className="rounded-md bg-slate-100 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/60 px-1.5 py-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-300"
-                      >
-                        {pill}
-                      </span>
-                    ))}
-                  </div>
-                ) : specsSummary ? (
-                  <p className="line-clamp-1 sm:line-clamp-2 text-[11px] sm:text-xs font-medium text-slate-600 dark:text-slate-300 leading-snug break-words">
-                    {specsSummary}
-                  </p>
-                ) : "description" in listing && listing.description ? (
-                  <p className="line-clamp-1 sm:line-clamp-2 text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 leading-snug break-words hidden xs:block">
-                    {listing.description}
-                  </p>
-                ) : null}
               </div>
 
-              {/* Bottom Row: Price & Metadata */}
-              <div className="flex flex-col gap-0.5 pt-1.5 border-t border-slate-100 dark:border-slate-800/80">
-                <div className="flex items-center justify-between gap-2">
-                  <span
-                    className={`text-sm sm:text-base font-black ${isUrgent
-                      ? "text-rose-600 dark:text-rose-400"
-                      : "text-emerald-600 dark:text-emerald-400"
-                      }`}
-                  >
-                    {formatPrice()}
-                  </span>
-                  {isUrgent && <UrgentRibbonBadge />}
-                </div>
+              {/* Title */}
+              <h3 className="line-clamp-2 min-h-[2.5rem] text-xs sm:text-sm font-semibold text-slate-800 transition-colors group-hover:text-emerald-600 dark:text-slate-100 dark:group-hover:text-emerald-400 break-words leading-snug">
+                {listing.title}
+              </h3>
 
-                <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-500">
-                  {locationText ? (
-                    <span className="flex items-center gap-0.5 truncate max-w-[160px] sm:max-w-[200px]">
-                      <MapPin className="w-3 h-3 shrink-0" />
-                      <span className="truncate">{locationText}</span>
+              {/* Spec Pills for Spotlight */}
+              {isSpotlight && specPills.length > 0 ? (
+                <div className="flex flex-wrap gap-1 min-h-[1.5rem] items-center">
+                  {specPills.map((pill, i) => (
+                    <span
+                      key={i}
+                      className="rounded bg-slate-100 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/60 px-1.5 py-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-300"
+                    >
+                      {pill}
                     </span>
-                  ) : (
-                    <span className="text-slate-400">Nationwide</span>
-                  )}
-
-                  {/* Freshness Beacon for PushUp */}
-                  {isPushedUp ? (
-                    <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
-                      <ArrowUpCircle className="w-4" />
-                    </span>
-                  ) : timeAgoStr ? (
-                    <span className="flex items-center gap-0.5 shrink-0">
-                      <Clock className="w-3 h-3 shrink-0" />
-                      <span>{timeAgoStr}</span>
-                    </span>
-                  ) : null}
+                  ))}
                 </div>
-              </div>
+              ) : specsSummary ? (
+                <p className="line-clamp-2 min-h-[2.5rem] text-[11px] font-medium text-slate-600 dark:text-slate-300 leading-normal break-words">
+                  {specsSummary}
+                </p>
+              ) : "description" in listing && listing.description ? (
+                <p className="line-clamp-2 min-h-[2.5rem] text-[11px] text-slate-500 dark:text-slate-400 leading-normal break-words">
+                  {listing.description}
+                </p>
+              ) : null}
             </div>
 
-            {/* Push-up bottom bar */}
-            {listing.isPushedUp && !listing.isSpotlight && <PushUpBadge />}
+            {/* Footer Metadata */}
+            <div className="flex items-center justify-between border-t border-slate-100 pt-2 text-[11px] text-slate-500 dark:border-slate-800/80 dark:text-slate-400 mt-auto">
+              {locationText ? (
+                <span className="flex items-center gap-1 truncate max-w-[130px]">
+                  <MapPin className="h-3 w-3 shrink-0 text-slate-400" />
+                  <span className="truncate">{locationText}</span>
+                </span>
+              ) : (
+                <span className="text-slate-400">Nationwide</span>
+              )}
+
+              {/* Freshness Beacon for Push Up */}
+              {isPushedUp ? (
+                <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
+                  <ArrowUpCircle className="w-4" />
+                </span>
+              ) : timeAgoStr ? (
+                <span className="flex items-center gap-0.5 shrink-0">
+                  <Clock className="h-3 w-3 shrink-0 text-slate-400" />
+                  <span>{timeAgoStr}</span>
+                </span>
+              ) : null}
+            </div>
           </div>
+
+          {/* Push-up bottom bar */}
+          {listing.isPushedUp && !listing.isSpotlight && <PushUpBadge />}
         </Link>
       </article>
-    );
-  }
-
-  // Grid Layout
-  const gridCardTheme = isSpotlight
-    ? "border-amber-400/90 dark:border-amber-500/80 bg-amber-50 dark:bg-slate-900/90 shadow-md shadow-amber-500/10 hover:border-amber-500 hover:shadow-amber-500/20 ring-1 ring-amber-400/40"
-    : isUrgent
-      ? "border-rose-400/90 dark:border-rose-500/80 bg-rose-50 dark:bg-slate-900/90 shadow-md shadow-rose-500/10 hover:border-rose-500 hover:shadow-rose-500/20 ring-1 ring-rose-400/40"
-      : isPushedUp
-        ? "border-emerald-400/90 dark:border-emerald-500/80 bg-emerald-50 dark:bg-slate-900/90 shadow-md shadow-emerald-500/10 hover:border-emerald-500 hover:shadow-emerald-500/20 ring-1 ring-emerald-400/40"
-        : "border-slate-200/80 bg-white hover:border-emerald-500/40 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900/90 dark:hover:border-emerald-500/30";
-
-  return (
-    <article
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className={`group relative flex flex-col overflow-hidden rounded-xl sm:rounded-2xl border transition-all duration-300 hover:-translate-y-0.5 h-full w-full ${gridCardTheme} ${className}`}
-    >
-      {/* Ellipsis Menu */}
-      <div
-        ref={menuRef}
-        className="absolute top-2 right-2 z-35"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
-      >
-        <button
-          type="button"
-          aria-label="More options"
-          onClick={handleMenuToggle}
-          className="flex h-7 w-7 items-center justify-center rounded-full bg-white/80 text-slate-600 backdrop-blur-sm shadow-sm transition-all duration-150 hover:bg-white hover:text-slate-900 dark:bg-slate-800/80 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
-        >
-          {bookmarking ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <MoreVertical className="w-3.5 h-3.5" />
-          )}
-        </button>
-        {menuOpen && <MenuDropdown />}
-      </div>
-
-      {/* SPOTLIGHT corner ribbon */}
-      {listing.isSpotlight && <SpotlightBadge />}
-
-      <Link href={targetHref} className="flex flex-col h-full">
-        {/* Media Thumbnail */}
-        <div className="relative aspect-4/3 w-full shrink-0 overflow-hidden bg-slate-100 dark:bg-slate-800">
-          {activeSpotlightPhoto ? (
-            <Image
-              src={activeSpotlightPhoto}
-              alt={listing.title}
-              fill
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
-            />
-          ) : (
-            <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 p-3 text-center">
-              <Image
-                src="/Wudo_watermark.png"
-                alt="Wudo"
-                width={160}
-                height={40}
-                priority
-                className="h-12 w-auto object-contain mx-auto opacity-70"
-              />
-              <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">
-                No image
-              </span>
-            </div>
-          )}
-
-          {/* Image-level meta labels */}
-          <div className="absolute top-2 left-2 flex flex-col gap-1 pointer-events-none z-10 max-w-[30%]">
-            {conditionLabel && (
-              <span className="rounded bg-slate-900/85 px-1.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur-md shadow-xs">
-                {conditionLabel}
-              </span>
-            )}
-            {listing.negotiable && listing.pricingType !== "FREE" && (
-              <span className="rounded bg-emerald-600/90 px-1.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur-md shadow-xs">
-                Negotiable
-              </span>
-            )}
-          </div>
-
-          {/* URGENT ribbon — pinned to bottom-right of image */}
-          {isUrgent && (
-            <div className="absolute bottom-0 right-0 z-10 pointer-events-none">
-              <UrgentRibbonBadge className="mr-0" />
-            </div>
-          )}
-
-          {/* Live Auction Badge */}
-          {listing.hasActiveAuction && (
-            <div
-              className={`absolute ${isUrgent ? "bottom-6" : "bottom-2"
-                } right-1 z-10 pointer-events-none`}
-            >
-              <div className="flex items-center gap-1 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 px-2 py-1 text-[9px] font-bold text-white shadow-lg backdrop-blur-sm">
-                <FaGavel className="w-3 h-3 shrink-0" />
-                Live Auction
-              </div>
-            </div>
-          )}
-
-          {/* Category Tag */}
-          {listing.categoryName && (
-            <div className="absolute bottom-2 left-2 pointer-events-none z-10 max-w-[85%]">
-              <span className="block truncate rounded bg-white/90 px-1.5 py-0.5 text-[10px] font-medium text-slate-700 backdrop-blur-md shadow-xs dark:bg-slate-950/85 dark:text-slate-300">
-                {listing.categoryName}
-              </span>
-            </div>
-          )}
-
-          {/* Spotlight Photo Count Indicator */}
-          {isSpotlight && sortedImages.length > 1 && (
-            <div className="absolute bottom-2 right-2 z-10 pointer-events-none">
-              <span className="rounded bg-slate-950/75 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-md">
-                {sortedImages.length} Photos
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* URGENT divider bar */}
-        {listing.isUrgent && <UrgentBadge />}
-
-        {/* Card Body */}
-        <div className="flex flex-1 flex-col justify-between p-3 space-y-2">
-          <div className="space-y-1.5">
-            {/* Price & Status */}
-            <div className="flex items-center justify-between gap-2">
-              <span
-                className={`text-base sm:text-lg font-black truncate ${isUrgent
-                  ? "text-rose-600 dark:text-rose-400"
-                  : "text-emerald-600 dark:text-emerald-400"
-                  }`}
-              >
-                {formatPrice()}
-              </span>
-              <div className="flex items-center gap-1.5 shrink-0">
-                {listing.sellerRole === "VERIFIED_SELLER" && (
-                  <VerifiedSellerBadge size="xs" showText={false} />
-                )}
-                {listing.status && listing.status !== "ACTIVE" && (
-                  <span
-                    className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${listing.status === "DRAFT"
-                      ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
-                      : listing.status === "SOLD"
-                        ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
-                        : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                      }`}
-                  >
-                    {listing.status}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Title */}
-            <h3 className="line-clamp-2 min-h-[2.5rem] text-xs sm:text-sm font-semibold text-slate-800 transition-colors group-hover:text-emerald-600 dark:text-slate-100 dark:group-hover:text-emerald-400 break-words leading-snug">
-              {listing.title}
-            </h3>
-
-            {/* Spec Pills for Spotlight */}
-            {isSpotlight && specPills.length > 0 ? (
-              <div className="flex flex-wrap gap-1 min-h-[1.5rem] items-center">
-                {specPills.map((pill, i) => (
-                  <span
-                    key={i}
-                    className="rounded bg-slate-100 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/60 px-1.5 py-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-300"
-                  >
-                    {pill}
-                  </span>
-                ))}
-              </div>
-            ) : specsSummary ? (
-              <p className="line-clamp-2 min-h-[2.5rem] text-[11px] font-medium text-slate-600 dark:text-slate-300 leading-normal break-words">
-                {specsSummary}
-              </p>
-            ) : "description" in listing && listing.description ? (
-              <p className="line-clamp-2 min-h-[2.5rem] text-[11px] text-slate-500 dark:text-slate-400 leading-normal break-words">
-                {listing.description}
-              </p>
-            ) : null}
-          </div>
-
-          {/* Footer Metadata */}
-          <div className="flex items-center justify-between border-t border-slate-100 pt-2 text-[11px] text-slate-500 dark:border-slate-800/80 dark:text-slate-400 mt-auto">
-            {locationText ? (
-              <span className="flex items-center gap-1 truncate max-w-[130px]">
-                <MapPin className="h-3 w-3 shrink-0 text-slate-400" />
-                <span className="truncate">{locationText}</span>
-              </span>
-            ) : (
-              <span className="text-slate-400">Nationwide</span>
-            )}
-
-            {/* Freshness Beacon for Push Up */}
-            {isPushedUp ? (
-              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
-                <ArrowUpCircle className="w-4" />
-              </span>
-            ) : timeAgoStr ? (
-              <span className="flex items-center gap-0.5 shrink-0">
-                <Clock className="h-3 w-3 shrink-0 text-slate-400" />
-                <span>{timeAgoStr}</span>
-              </span>
-            ) : null}
-          </div>
-        </div>
-
-        {/* Push-up bottom bar */}
-        {listing.isPushedUp && !listing.isSpotlight && <PushUpBadge />}
-      </Link>
-    </article>
+      <ShareListingModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        listing={listing}
+      />
+    </>
   );
 }
