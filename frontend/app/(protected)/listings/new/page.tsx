@@ -7,7 +7,6 @@ import Link from "next/link";
 import { useAuth } from "@/providers/AuthProvider";
 import { getCategories } from "@/lib/api/categories";
 import { createListing, publishListing, updateListing } from "@/lib/api/listings";
-import { updateListingEmbedding } from "@/lib/embeddings";
 import { getMyActiveMembership } from "@/lib/api/membership";
 import type { SellerMembership } from "@/types/membership";
 import { useToast } from "@/hooks/useToast";
@@ -417,13 +416,9 @@ export default function NewListingPage() {
       if (createdListing) {
         const updated = await updateListing(accessToken, createdListing.id, payload as UpdateListingRequest);
         setCreatedListing(updated);
-        // Regenerate embedding in the background
-        updateListingEmbedding(updated.id);
       } else {
         const created = await createListing(accessToken, payload);
         setCreatedListing(created);
-        // Generate embedding in the background
-        updateListingEmbedding(created.id);
       }
       setStep(2);
       window.scrollTo({ top: 0, behavior: "smooth" });

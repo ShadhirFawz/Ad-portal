@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ArrowRight,
 } from "lucide-react";
 import {
@@ -57,6 +59,10 @@ interface CategorySectionProps {
   initialCategoryListings?: Listing[];
 }
 
+const MOBILE_BREAKPOINT = 768;
+const DESKTOP_CARDS_PER_PAGE = 8;
+const MOBILE_CARDS_PER_PAGE = 4;
+
 export default function CategorySection({
   initialCategories,
   initialCategoryListings,
@@ -69,10 +75,25 @@ export default function CategorySection({
   const [listings, setListings] = useState<Listing[]>(initialCategoryListings ?? []);
   const [categoriesLoading, setCategoriesLoading] = useState(!initialCategories || initialCategories.length === 0);
   const [listingsLoading, setListingsLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [cardsPerPage, setCardsPerPage] = useState(DESKTOP_CARDS_PER_PAGE);
 
   const scrollerRef = useRef<HTMLDivElement>(null);
   const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const initialCategoryLoadedRef = useRef<boolean>(Boolean(initialCategoryListings && initialCategoryListings.length > 0));
+
+  useEffect(() => {
+    function update() {
+      setCardsPerPage(
+        window.innerWidth < MOBILE_BREAKPOINT
+          ? MOBILE_CARDS_PER_PAGE
+          : DESKTOP_CARDS_PER_PAGE
+      );
+    }
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
 
   // 1. Fetch Categories
   useEffect(() => {
@@ -128,7 +149,7 @@ export default function CategorySection({
     getListings({
       category: activeCat.slug,
       page: 0,
-      size: 8,
+      size: 16,
       status: "ACTIVE",
       sortBy: "createdAt,desc",
     })
@@ -150,6 +171,35 @@ export default function CategorySection({
       isMounted = false;
     };
   }, [activeCat]);
+
+  const pages = useMemo(() => {
+    const result: Listing[][] = [];
+    for (let i = 0; i < listings.length; i += cardsPerPage) {
+      result.push(listings.slice(i, i + cardsPerPage));
+    }
+    return result;
+  }, [listings, cardsPerPage]);
+
+  const totalPages = Math.max(1, pages.length);
+  const currentListings = pages[currentPage] || [];
+
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [activeCat?.id, cardsPerPage]);
+
+  useEffect(() => {
+    if (currentPage >= totalPages && totalPages > 0) {
+      setCurrentPage(0);
+    }
+  }, [currentPage, totalPages]);
+
+  const goToNextPage = useCallback(() => {
+    setCurrentPage((p) => (p + 1 >= totalPages ? 0 : p + 1));
+  }, [totalPages]);
+
+  const goToPrevPage = useCallback(() => {
+    setCurrentPage((p) => (p <= 0 ? totalPages - 1 : p - 1));
+  }, [totalPages]);
 
   // 3. Two-Way Circular Scroller Ordering
   const orderedCategories = useMemo(() => {
@@ -227,7 +277,7 @@ export default function CategorySection({
         </div>
         <div className="h-16 rounded-full bg-slate-100 dark:bg-slate-800/60 animate-pulse max-w-4xl mx-auto" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
+          {Array.from({ length: 8 }).map((_, i) => (
             <div
               key={i}
               className="h-64 rounded-2xl bg-slate-100 dark:bg-slate-800/50 animate-pulse"
@@ -315,26 +365,66 @@ export default function CategorySection({
         </div>
       )}
 
-      {/* Listings Grid (2x2 on mobile, 4 columns on large screens) */}
+      {/* Listings Grid with Pagination */}
       {listingsLoading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          {Array.from({ length: cardsPerPage }).map((_, i) => (
             <div
               key={i}
               className="h-72 rounded-2xl bg-slate-100 dark:bg-slate-800/50 animate-pulse border border-slate-200/50 dark:border-slate-800/50"
             />
           ))}
         </div>
-      ) : listings.length > 0 ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-          {listings.slice(0, 4).map((listing) => (
-            <DashboardListingCard
-              key={listing.id}
-              listing={listing}
-              layout="grid"
-            />
-          ))}
-        </div>
+      ) : currentListings.length > 0 ? (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 transition-all duration-300">
+            {currentListings.map((listing) => (
+              <DashboardListingCard
+                key={listing.id}
+                listing={listing}
+                layout="grid"
+              />
+            ))}
+          </div>
+
+          {/* Pagination Dots with Chevrons */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-3 pt-1">
+              <button
+                type="button"
+                onClick={goToPrevPage}
+                aria-label="Previous page"
+                className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+
+              <div className="flex items-center gap-1.5">
+                {pages.map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setCurrentPage(i)}
+                    aria-label={`Go to category listings page ${i + 1}`}
+                    className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${currentPage === i
+                      ? "w-6 bg-emerald-500"
+                      : "w-2 bg-slate-300 dark:bg-slate-700 hover:bg-emerald-300"
+                      }`}
+                  />
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={goToNextPage}
+                aria-label="Next page"
+                className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+        </>
       ) : (
         <div className="p-10 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/40 text-center space-y-3">
           <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -354,7 +444,7 @@ export default function CategorySection({
       )}
 
       {/* Center "View more" Button */}
-      {activeCat && listings.length > 0 && (
+      {activeCat && currentListings.length > 0 && (
         <div className="pt-2 flex justify-center">
           <button
             type="button"

@@ -208,7 +208,7 @@ export default function Navbar() {
                       {user.firstName || user.email?.split("@")[0] || "Account"}
                     </span>
                     {isVerifiedSeller && (
-                      <VerifiedSellerBadge size="xs" showText={false} />
+                      <VerifiedSellerBadge size="sm" showText={false} />
                     )}
                     <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isProfileDropdownOpen ? "rotate-180" : ""}`} />
                     {!user.emailVerified && (
