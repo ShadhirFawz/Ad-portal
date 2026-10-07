@@ -70,6 +70,11 @@ public interface ListingService {
                         ListingFilterParams params,
                         Pageable pageable);
 
+        Page<ListingResponse> getActiveListings(
+                        ListingFilterParams params,
+                        String categoryIdOrSlug,
+                        Pageable pageable);
+
         Page<ListingResponse> getListingsByUsername(
                         String username,
                         Pageable pageable);

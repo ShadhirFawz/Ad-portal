@@ -56,7 +56,8 @@ public class ListingController {
                 pricingType,
                 listingType,
                 minPrice,
-                maxPrice);
+                maxPrice,
+                null);
 
         return ApiResponse.success(
                 "Listings retrieved successfully.",
@@ -79,7 +80,8 @@ public class ListingController {
                 pricingType,
                 listingType,
                 minPrice,
-                maxPrice);
+                maxPrice,
+                null);
 
         return ApiResponse.success(
                 "Favorite listings retrieved successfully.",
@@ -108,6 +110,7 @@ public class ListingController {
     @GetMapping
     public ApiResponse<Page<ListingResponse>> getActiveListings(
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) String categoryId,
             @RequestParam(required = false) ListingCondition condition,
             @RequestParam(required = false) PricingType pricingType,
             @RequestParam(required = false) ListingType listingType,
@@ -121,11 +124,12 @@ public class ListingController {
                 pricingType,
                 listingType,
                 minPrice,
-                maxPrice);
+                maxPrice,
+                null);
 
         return ApiResponse.success(
                 "Listings retrieved successfully.",
-                listingService.getActiveListings(params, pageable));
+                listingService.getActiveListings(params, categoryId, pageable));
     }
 
     @GetMapping("/category/{categoryIdOrSlug}")

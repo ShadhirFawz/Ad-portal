@@ -30,9 +30,7 @@ public final class ListingSpecification {
         if (params.search() != null && !params.search().isBlank()) {
             String pattern = "%" + params.search().trim().toLowerCase() + "%";
             Predicate titleMatch = criteriaBuilder.like(criteriaBuilder.lower(root.get("title")), pattern);
-            Predicate descriptionMatch = criteriaBuilder.like(criteriaBuilder.lower(root.get("description")), pattern);
-            Predicate cityMatch = criteriaBuilder.like(criteriaBuilder.lower(root.get("city")), pattern);
-            predicates.add(criteriaBuilder.or(titleMatch, descriptionMatch, cityMatch));
+            predicates.add(titleMatch);
         }
 
         if (params.condition() != null) {
@@ -53,6 +51,10 @@ public final class ListingSpecification {
 
         if (params.maxPrice() != null) {
             predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("price"), params.maxPrice()));
+        }
+
+        if (params.categoryIds() != null && !params.categoryIds().isEmpty()) {
+            predicates.add(root.get("category").get("id").in(params.categoryIds()));
         }
     }
 

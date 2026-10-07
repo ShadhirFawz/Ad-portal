@@ -12,6 +12,7 @@ public record ListingFilterParams(
         PricingType pricingType,
         ListingType listingType,
         BigDecimal minPrice,
-        BigDecimal maxPrice
+        BigDecimal maxPrice,
+        java.util.List<java.util.UUID> categoryIds
 ) {
 }

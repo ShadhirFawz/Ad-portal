@@ -597,6 +597,30 @@ public class ListingServiceImpl implements ListingService {
 
         @Override
         @Transactional(readOnly = true)
+        public Page<ListingResponse> getActiveListings(
+                        ListingFilterParams params,
+                        String categoryIdOrSlug,
+                        Pageable pageable) {
+
+                if (categoryIdOrSlug != null && !categoryIdOrSlug.isBlank()) {
+                        UUID categoryId = categoryService.resolveCategoryId(categoryIdOrSlug);
+                        java.util.List<UUID> categoryIds = categoryService.getSelfAndDescendantCategoryIds(categoryId);
+                        params = new ListingFilterParams(
+                                        params != null ? params.search() : null,
+                                        params != null ? params.condition() : null,
+                                        params != null ? params.pricingType() : null,
+                                        params != null ? params.listingType() : null,
+                                        params != null ? params.minPrice() : null,
+                                        params != null ? params.maxPrice() : null,
+                                        categoryIds);
+                }
+
+                Page<Listing> page = listingRepository.findAll(ListingSpecification.buildSpec(params), pageable);
+                return mapToResponsePage(page);
+        }
+
+        @Override
+        @Transactional(readOnly = true)
         public Page<ListingResponse> getListingsByUsername(
                         String username,
                         Pageable pageable) {
