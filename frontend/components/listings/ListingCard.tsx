@@ -367,7 +367,7 @@ export default function ListingCard({
           onMouseLeave={() => setIsHovered(false)}
           className={`group relative flex flex-col overflow-hidden rounded-2xl border transition-all duration-300 w-full ${layout === "grid"
             ? "col-span-2 sm:col-span-2 md:col-span-3 xl:col-span-3"
-            : "col-span-2 sm:col-span-2 md:col-span-2 xl:col-span-2"
+            : "col-span-1"
             } border-violet-400/90 dark:border-violet-500/80 bg-white dark:bg-slate-900 shadow-xl shadow-violet-500/10 hover:shadow-violet-500/25 hover:border-violet-500 ring-1 ring-violet-400/30 ${className}`}
         >
           {/* Top Power Pack Banner */}

@@ -534,7 +534,7 @@ function ListingsContent() {
           ) : listings.length > 0 ? (
             <>
               {viewLayout === "row" ? (
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-3.5">
+                <div className="grid grid-cols-1 gap-3.5">
                   {listings.map((listing) => (
                     <ListingCard key={listing.id} listing={listing} layout="row" />
                   ))}
