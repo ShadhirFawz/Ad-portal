@@ -32,6 +32,8 @@ import com.marketplace.marketplace.listing.repository.ListingRepository;
 import com.marketplace.marketplace.listing.repository.ListingSpecification;
 import com.marketplace.marketplace.listing.repository.ListingStatsRepository;
 import com.marketplace.marketplace.listing.service.ListingService;
+import com.marketplace.marketplace.common.storage.SupabaseStorageService;
+import com.marketplace.marketplace.user.config.ProfileImageProperties;
 import com.marketplace.marketplace.auction.repository.AuctionRepository;
 import com.marketplace.marketplace.user.entity.User;
 import com.marketplace.marketplace.user.repository.UserRepository;
@@ -69,6 +71,8 @@ public class ListingServiceImpl implements ListingService {
         private final AuctionRepository auctionRepository;
         private final com.marketplace.marketplace.membership.service.MembershipService membershipService;
         private final com.marketplace.marketplace.membership.repository.SellerMembershipRepository sellerMembershipRepository;
+        private final com.marketplace.marketplace.common.storage.SupabaseStorageService storageService;
+        private final com.marketplace.marketplace.user.config.ProfileImageProperties profileImageProperties;
 
         @Override
         @Transactional
@@ -80,11 +84,13 @@ public class ListingServiceImpl implements ListingService {
                 if (seller.getStatus() == com.marketplace.marketplace.common.enums.UserStatus.SUSPENDED
                                 || seller.getStatus() == com.marketplace.marketplace.common.enums.UserStatus.BANNED
                                 || seller.getStatus() == com.marketplace.marketplace.common.enums.UserStatus.DELETED) {
-                        throw new BadRequestException("Your account is " + seller.getStatus().name().toLowerCase() + ". You cannot post listings.");
+                        throw new BadRequestException("Your account is " + seller.getStatus().name().toLowerCase()
+                                        + ". You cannot post listings.");
                 }
 
                 if (seller.getRole() == com.marketplace.marketplace.common.enums.Role.MEMBER) {
-                        throw new BadRequestException("You must complete the seller registration before posting listings. Please visit /become-a-seller.");
+                        throw new BadRequestException(
+                                        "You must complete the seller registration before posting listings. Please visit /become-a-seller.");
                 }
 
                 Category category = getCategoryForListing(request.categoryId());
@@ -92,7 +98,8 @@ public class ListingServiceImpl implements ListingService {
                 com.marketplace.marketplace.membership.entity.SellerMembership activeMembership = null;
                 if (seller.getRole() == com.marketplace.marketplace.common.enums.Role.VERIFIED_SELLER) {
                         activeMembership = membershipService.getActiveMembershipEntity(seller.getId())
-                                        .orElseThrow(() -> new com.marketplace.marketplace.common.exception.ForbiddenException("No active verified seller membership found. Please renew your membership."));
+                                        .orElseThrow(() -> new com.marketplace.marketplace.common.exception.ForbiddenException(
+                                                        "No active verified seller membership found. Please renew your membership."));
 
                         Category currentCat = category;
                         while (currentCat.getParent() != null) {
@@ -101,13 +108,15 @@ public class ListingServiceImpl implements ListingService {
                         Category listingRootCategory = currentCat;
 
                         if (!listingRootCategory.getId().equals(activeMembership.getRootCategory().getId())) {
-                                throw new com.marketplace.marketplace.common.exception.ForbiddenException("As a Verified Seller, you are restricted to posting listings exclusively within your subscribed root category: "
-                                                + activeMembership.getRootCategory().getName());
+                                throw new com.marketplace.marketplace.common.exception.ForbiddenException(
+                                                "As a Verified Seller, you are restricted to posting listings exclusively within your subscribed root category: "
+                                                                + activeMembership.getRootCategory().getName());
                         }
 
                         if (activeMembership.getListingsUsed() >= activeMembership.getListingLimit()) {
                                 throw new BadRequestException("You have reached your membership listing quota of "
-                                                + activeMembership.getListingLimit() + " listings for this period. Please renew or upgrade your plan.");
+                                                + activeMembership.getListingLimit()
+                                                + " listings for this period. Please renew or upgrade your plan.");
                         }
                 }
 
@@ -197,7 +206,9 @@ public class ListingServiceImpl implements ListingService {
                 listingStatsRepository.save(new ListingStats(saved.getId(), 0L));
 
                 if (activeMembership != null) {
-                        activeMembership.setListingsUsed((activeMembership.getListingsUsed() != null ? activeMembership.getListingsUsed() : 0) + 1);
+                        activeMembership.setListingsUsed(
+                                        (activeMembership.getListingsUsed() != null ? activeMembership.getListingsUsed()
+                                                        : 0) + 1);
                         sellerMembershipRepository.save(activeMembership);
                 }
 
@@ -513,9 +524,12 @@ public class ListingServiceImpl implements ListingService {
                 listing.setAvailableQuantity(0);
 
                 // Close active auction if present
-                auctionRepository.findByListingIdAndStatus(listing.getId(), com.marketplace.marketplace.auction.enums.AuctionStatus.ACTIVE)
+                auctionRepository
+                                .findByListingIdAndStatus(listing.getId(),
+                                                com.marketplace.marketplace.auction.enums.AuctionStatus.ACTIVE)
                                 .ifPresent(auction -> {
-                                        auction.setStatus(com.marketplace.marketplace.auction.enums.AuctionStatus.CLOSED);
+                                        auction.setStatus(
+                                                        com.marketplace.marketplace.auction.enums.AuctionStatus.CLOSED);
                                         auctionRepository.save(auction);
                                 });
 
@@ -951,6 +965,31 @@ public class ListingServiceImpl implements ListingService {
                 return map;
         }
 
+        /**
+         * Converts a stored profile-image path into a fully-qualified public URL.
+         * Returns null when the seller has no avatar. Falls back to the raw value
+         * only if it is already an absolute URL (external providers, data URLs).
+         */
+        private String resolveSellerAvatarUrl(User seller) {
+                if (seller == null) {
+                        return null;
+                }
+                String raw = seller.getAvatarUrl();
+                if (raw == null || raw.isBlank()) {
+                        return null;
+                }
+                if (raw.startsWith("http://") || raw.startsWith("https://") || raw.startsWith("data:")) {
+                        return raw;
+                }
+                try {
+                        return storageService.getPublicUrl(
+                                        profileImageProperties.getBucket(),
+                                        raw);
+                } catch (Exception ex) {
+                        return null;
+                }
+        }
+
         private Map<UUID, Long> getFavoriteCountsMap(Collection<UUID> listingIds) {
                 if (listingIds == null || listingIds.isEmpty()) {
                         return Collections.emptyMap();
@@ -967,7 +1006,8 @@ public class ListingServiceImpl implements ListingService {
 
         private boolean isListingFavoritedByCurrentUser(UUID listingId) {
                 return SecurityUtils.getCurrentUserOptional()
-                                .map(auth -> listingFavoriteRepository.existsByUserIdAndListingId(SecurityUtils.getCurrentUserId(), listingId))
+                                .map(auth -> listingFavoriteRepository.existsByUserIdAndListingId(
+                                                SecurityUtils.getCurrentUserId(), listingId))
                                 .orElse(false);
         }
 
@@ -976,13 +1016,15 @@ public class ListingServiceImpl implements ListingService {
                         return Collections.emptySet();
                 }
                 return SecurityUtils.getCurrentUserOptional()
-                                .map(auth -> listingFavoriteRepository.findFavoritedListingIds(SecurityUtils.getCurrentUserId(), listingIds))
+                                .map(auth -> listingFavoriteRepository
+                                                .findFavoritedListingIds(SecurityUtils.getCurrentUserId(), listingIds))
                                 .orElse(Collections.emptySet());
         }
 
         private boolean isListingBookmarkedByCurrentUser(UUID listingId) {
                 return SecurityUtils.getCurrentUserOptional()
-                                .map(auth -> listingBookmarkRepository.existsByUserIdAndListingId(SecurityUtils.getCurrentUserId(), listingId))
+                                .map(auth -> listingBookmarkRepository.existsByUserIdAndListingId(
+                                                SecurityUtils.getCurrentUserId(), listingId))
                                 .orElse(false);
         }
 
@@ -991,7 +1033,8 @@ public class ListingServiceImpl implements ListingService {
                         return Collections.emptySet();
                 }
                 return SecurityUtils.getCurrentUserOptional()
-                                .map(auth -> listingBookmarkRepository.findBookmarkedListingIds(SecurityUtils.getCurrentUserId(), listingIds))
+                                .map(auth -> listingBookmarkRepository
+                                                .findBookmarkedListingIds(SecurityUtils.getCurrentUserId(), listingIds))
                                 .orElse(Collections.emptySet());
         }
 
@@ -1047,7 +1090,8 @@ public class ListingServiceImpl implements ListingService {
                                                 com.marketplace.marketplace.auction.enums.AuctionStatus.ACTIVE)
                                 .map(a -> a.getEndsAt().isAfter(java.time.OffsetDateTime.now()))
                                 .orElse(false);
-                return toResponse(listing, includeSellerContact, isFavorited, isBookmarked, viewCount, favoriteCount, hasActiveAuction);
+                return toResponse(listing, includeSellerContact, isFavorited, isBookmarked, viewCount, favoriteCount,
+                                hasActiveAuction);
         }
 
         private ListingResponse toResponse(
@@ -1073,9 +1117,11 @@ public class ListingServiceImpl implements ListingService {
                                 : null;
 
                 String sellerWhatsappNumber = null;
-                if (includeSellerContact && listing.getSeller() != null && listing.getSeller().getPhoneNumbers() != null) {
+                if (includeSellerContact && listing.getSeller() != null
+                                && listing.getSeller().getPhoneNumbers() != null) {
                         sellerWhatsappNumber = listing.getSeller().getPhoneNumbers().stream()
-                                        .filter(pn -> Boolean.TRUE.equals(pn.getIsWhatsapp()) && pn.getDeletedAt() == null)
+                                        .filter(pn -> Boolean.TRUE.equals(pn.getIsWhatsapp())
+                                                        && pn.getDeletedAt() == null)
                                         .map(com.marketplace.marketplace.user.entity.UserPhoneNumber::getPhoneNumber)
                                         .findFirst()
                                         .orElse(null);
@@ -1130,7 +1176,10 @@ public class ListingServiceImpl implements ListingService {
                                 listing.isPushedUp(),
                                 listing.getSeller() != null && listing.getSeller().getRole() != null
                                                 ? listing.getSeller().getRole().name()
-                                                : null);
+                                                : null,
+                                resolveSellerAvatarUrl(listing.getSeller()),
+                                listing.getSeller() != null ? listing.getSeller().getBusinessName() : null,
+                                listing.getSeller() != null ? listing.getSeller().getCreatedAt() : null);
         }
 
         private String generateUniqueSlug(String title, UUID listingId) {

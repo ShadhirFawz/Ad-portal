@@ -100,7 +100,13 @@ public record ListingResponse(
 
         boolean isPushedUp,
 
-        String sellerRole
+        String sellerRole,
+
+        String sellerAvatarUrl,
+
+        String sellerBusinessName,
+
+        java.time.OffsetDateTime sellerMemberSince
 
 ) {
 }

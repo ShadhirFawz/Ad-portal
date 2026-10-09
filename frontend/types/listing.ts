@@ -49,6 +49,9 @@ export interface Listing {
   sellerId: string;
   sellerUsername: string;
   sellerRole?: string | null;
+  sellerAvatarUrl?: string | null;
+  sellerBusinessName?: string | null;
+  sellerMemberSince?: string | null;
   sellerPhoneNumber?: string | null;
   sellerWhatsappNumber?: string | null;
 

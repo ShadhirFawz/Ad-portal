@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/providers/AuthProvider";
@@ -115,6 +116,7 @@ export default function ListingDetailsPage() {
   const [showAdditionalInfo, setShowAdditionalInfo] = useState(false);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
 
   useEffect(() => {
     if (!listingId) return;
@@ -126,6 +128,7 @@ export default function ListingDetailsPage() {
       try {
         setLoading(true);
         setError(null);
+        setAvatarError(false);
         const data = await getListing(listingId, accessToken);
         if (isMounted) {
           setListing(data);
@@ -363,6 +366,8 @@ export default function ListingDetailsPage() {
   const updatedAgo = formatTimeAgo(listing.updatedAt);
   const publishedAgo = formatTimeAgo(listing.publishedAt);
 
+  let sellerAvatarAbsoluteUrl = listing.sellerAvatarUrl || null;
+
   const descriptionText = listing.description ?? "";
   const isDescriptionLong = descriptionText.length > 220;
 
@@ -387,7 +392,7 @@ export default function ListingDetailsPage() {
                     setMarkSoldError(null);
                     setMarkSoldModalOpen(true);
                   }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-500/40 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/60 font-semibold text-xs transition shadow-xs cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-500/40 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/60 dark:hover:border-rose-500/60 dark:hover:bg-rose-950/50 dark:hover:text-rose-200 font-semibold text-xs transition shadow-xs cursor-pointer"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
                   Mark as Sold
@@ -408,7 +413,7 @@ export default function ListingDetailsPage() {
               </Link>
               <Link
                 href={`/listings/${listing.id}/edit`}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 font-semibold text-xs transition"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:border-emerald-600 dark:hover:bg-emerald-950/50 dark:hover:text-emerald-200 font-semibold text-xs transition"
               >
                 <Pencil className="w-3.5 h-3.5" />
                 Manage Photos &amp; Edit
@@ -569,47 +574,84 @@ export default function ListingDetailsPage() {
             <div className="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 dark:border-slate-800 dark:bg-slate-900/90 shadow-sm space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3.5">
+                  {/* Avatar with image or letter fallback */}
                   {listing.sellerUsername ? (
                     <Link
                       href={`/profile/${listing.sellerUsername}`}
-                      className="w-12 h-12 rounded-2xl bg-linear-to-tr from-emerald-500 to-teal-400 text-white font-bold text-lg flex items-center justify-center shadow-md shadow-emerald-500/20 shrink-0 hover:opacity-90 hover:scale-105 transition-all"
-                      title={`View @${listing.sellerUsername}'s profile`}
+                      className="w-13 h-13 rounded-2xl shrink-0 hover:opacity-90 hover:scale-105 transition-all overflow-hidden shadow-md shadow-emerald-500/20"
+                      title={`View ${listing.sellerRole === "VERIFIED_SELLER" && listing.sellerBusinessName ? listing.sellerBusinessName : `@${listing.sellerUsername}`}'s profile`}
                     >
-                      {listing.sellerUsername.charAt(0).toUpperCase()}
+                      {sellerAvatarAbsoluteUrl && !avatarError ? (
+                        <Image
+                          src={sellerAvatarAbsoluteUrl}
+                          alt={listing.sellerUsername ?? "Seller"}
+                          width={52}
+                          height={52}
+                          unoptimized
+                          className="w-full h-full object-cover"
+                          onError={() => setAvatarError(true)}
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-linear-to-tr from-emerald-500 to-teal-400 text-white font-bold text-lg flex items-center justify-center">
+                          {(listing.sellerRole === "VERIFIED_SELLER" && listing.sellerBusinessName
+                            ? listing.sellerBusinessName
+                            : listing.sellerUsername ?? "U"
+                          ).charAt(0).toUpperCase()}
+                        </div>
+                      )}
                     </Link>
                   ) : (
-                    <div className="w-12 h-12 rounded-2xl bg-linear-to-tr from-emerald-500 to-teal-400 text-white font-bold text-lg flex items-center justify-center shadow-md shadow-emerald-500/20 shrink-0">
+                    <div className="w-13 h-13 rounded-2xl bg-linear-to-tr from-emerald-500 to-teal-400 text-white font-bold text-lg flex items-center justify-center shadow-md shadow-emerald-500/20 shrink-0">
                       U
                     </div>
                   )}
+
                   <div className="min-w-0">
-                    <p className="text-xs text-slate-400 uppercase font-semibold tracking-wider flex items-center gap-1">
+                    <p className="text-xs text-slate-400 uppercase font-semibold tracking-wider flex items-center gap-1 mb-1">
                       <User className="w-3 h-3" />
                       {isOwner ? "Your Listing" : "Listed By"}
                     </p>
+
                     {listing.sellerUsername ? (
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Link
-                          href={`/profile/${listing.sellerUsername}`}
-                          className="font-bold text-slate-900 dark:text-white hover:text-emerald-600 dark:hover:text-emerald-400 hover:underline transition-colors truncate block"
-                          title={`View @${listing.sellerUsername}'s profile`}
-                        >
-                          @{listing.sellerUsername}
-                        </Link>
-                        {listing.sellerRole === "VERIFIED_SELLER" ? (
-                          <VerifiedSellerBadge size="xs" />
-                        ) : listing.sellerRole === "SELLER" ? (
-                          <span className="badge-emerald px-1.5 py-0.5 text-[10px] uppercase font-bold">
-                            SELLER
-                          </span>
-                        ) : (
-                          <MemberBadge size="xs" />
+                      <>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {listing.sellerRole === "VERIFIED_SELLER" ? (
+                            <Link
+                              href={`/profile/${listing.sellerUsername}`}
+                              className="font-bold text-slate-900 dark:text-white hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors truncate"
+                              title={listing.sellerBusinessName ?? listing.sellerUsername}
+                            >
+                              {listing.sellerBusinessName ?? listing.sellerUsername}
+                            </Link>
+                          ) : (
+                            <Link
+                              href={`/profile/${listing.sellerUsername}`}
+                              className="font-bold text-slate-900 dark:text-white hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors truncate"
+                              title={listing.sellerUsername}
+                            >
+                              {listing.sellerUsername}
+                            </Link>
+                          )}
+                          {listing.sellerRole === "VERIFIED_SELLER" ? (
+                            <VerifiedSellerBadge size="xs" />
+                          ) : listing.sellerRole === "SELLER" ? (
+                            <MemberBadge size="xs" />
+                          ) : (
+                            <MemberBadge size="xs" />
+                          )}
+                        </div>
+                        {listing.sellerMemberSince && (
+                          <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                            Member since{" "}
+                            {new Date(listing.sellerMemberSince).toLocaleDateString("en-US", {
+                              month: "long",
+                              year: "numeric",
+                            })}
+                          </p>
                         )}
-                      </div>
+                      </>
                     ) : (
-                      <p className="font-bold text-slate-900 dark:text-white truncate">
-                        @Seller
-                      </p>
+                      <p className="font-bold text-slate-900 dark:text-white truncate">Seller</p>
                     )}
                   </div>
                 </div>
