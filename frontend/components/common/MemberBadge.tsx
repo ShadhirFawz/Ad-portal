@@ -14,17 +14,17 @@ export default function MemberBadge({
   showText = true,
 }: MemberBadgeProps) {
   const sizeClasses = {
-    xs: "text-[10px] px-1.5 py-0.5 gap-1",
-    sm: "text-xs px-2 py-0.5 gap-1.5",
-    md: "text-sm px-2.5 py-1 gap-2",
-    lg: "text-base px-3.5 py-1.5 gap-2.5",
+    xs: "text-[8px] px-1 py-[1px] gap-0.5",
+    sm: "text-[9px] px-1.5 py-[2px] gap-1",
+    md: "text-[10px] px-2 py-0.5 gap-1",
+    lg: "text-xs px-2.5 py-0.5 gap-1.5",
   }[size];
 
   const iconSizes = {
     xs: "w-2.5 h-2.5",
-    sm: "w-3.5 h-3.5",
-    md: "w-4 h-4",
-    lg: "w-5 h-5",
+    sm: "w-3 h-3",
+    md: "w-3.5 h-3.5",
+    lg: "w-4 h-4",
   }[size];
 
   return (

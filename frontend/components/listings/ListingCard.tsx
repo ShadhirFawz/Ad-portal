@@ -286,7 +286,11 @@ export default function ListingCard({
     }
   };
 
-  const locationText = [listing.district, listing.province]
+  const locationText = [listing.district]
+    .filter(Boolean)
+    .join(", ");
+
+  const locationTextWithCity = [listing.city, listing.district]
     .filter(Boolean)
     .join(", ");
 
@@ -844,10 +848,10 @@ export default function ListingCard({
                     {locationText ? (
                       <span className="flex items-center gap-0.5 truncate max-w-[160px] sm:max-w-[200px]">
                         <MapPin className="w-3 h-3 shrink-0" />
-                        <span className="truncate">{locationText}</span>
+                        <span className="truncate">{locationTextWithCity}</span>
                       </span>
                     ) : (
-                      <span className="text-slate-400">Nationwide</span>
+                      <span className="text-slate-400"></span>
                     )}
 
                     {/* Freshness Beacon for PushUp */}
@@ -1073,7 +1077,7 @@ export default function ListingCard({
                   <span className="truncate">{locationText}</span>
                 </span>
               ) : (
-                <span className="text-slate-400">Nationwide</span>
+                <span className="text-slate-400"></span>
               )}
 
               {/* Freshness Beacon for Push Up */}

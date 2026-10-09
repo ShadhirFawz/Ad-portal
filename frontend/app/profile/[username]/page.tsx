@@ -122,10 +122,10 @@ export default async function PublicProfilePage({ params }: PageProps) {
                 {isVerifiedSeller && (
                   <>
                     <VerifiedSellerBadge size="md" />
-                    <MemberBadge size="sm" />
+                    <MemberBadge size="md" />
                   </>
                 )}
-                {isSeller && <MemberBadge size="sm" />}
+                {isSeller && <MemberBadge size="md" />}
               </div>
 
               {/* Name & Handle */}
