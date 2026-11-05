@@ -155,6 +155,17 @@ export default function Navbar() {
               Explore
             </Link>
 
+            <Link
+              href="/ai"
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive("/ai")
+                ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40"
+                : "text-slate-600 hover:text-emerald-600 dark:text-slate-300 dark:hover:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                }`}
+              style={{ fontFamily: "'PT Sans', 'Tahoma', sans-serif" }}
+            >
+              AI Assistant
+            </Link>
+
             {user && isSellerOrAbove && (
               <Link
                 href="/my-listings"
@@ -372,6 +383,17 @@ export default function Navbar() {
                   Explore Listings
                 </Link>
 
+                <Link
+                  href="/ai"
+                  className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors ${isActive("/ai")
+                    ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40"
+                    : "text-slate-600 hover:text-emerald-600 dark:text-slate-300 dark:hover:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                    }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  AI Assistant
+                </Link>
+
                 {user ? (
                   <>
                     {/* User Profile Section with Account Setup Progress */}
@@ -511,7 +533,7 @@ export default function Navbar() {
       {isMobileSearchOpen &&
         typeof document !== "undefined" &&
         createPortal(
-          <div className="fixed inset-0 z-[100] lg:hidden bg-white dark:bg-slate-950 flex flex-col">
+          <div className="fixed inset-0 z-100 lg:hidden bg-white dark:bg-slate-950 flex flex-col">
             {/* Header bar */}
             <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-200 dark:border-slate-800 shrink-0">
               <span className="text-sm font-bold text-slate-900 dark:text-white">
