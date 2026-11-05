@@ -135,6 +135,13 @@ public class SecurityConfig {
                                                                 "/api/v1/listings/**")
                                                 .permitAll()
 
+                                                // ── AI Chat — public ─────────────────────────────
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/chat/health")
+                                                .permitAll()
+
+                                                .requestMatchers(HttpMethod.POST, "/api/v1/chat/ask")
+                                                .permitAll()
+
                                                 // ── Boosts & Promotions ────────────────────────
                                                 .requestMatchers(HttpMethod.POST, "/api/v1/boosts/notify")
                                                 .permitAll()
