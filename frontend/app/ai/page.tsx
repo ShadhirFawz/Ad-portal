@@ -56,17 +56,20 @@ export default function AiChatPage() {
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
-    } catch (caughtError) {
+    } catch (caughtError: unknown) {
       console.error("AI chat request failed:", caughtError);
+      const detail = caughtError instanceof Error ? caughtError.message : String(caughtError);
       setError(
-        "The AI backend is not reachable right now. Please verify the backend URL and AI environment values."
+        detail.includes("failed") || detail.includes("network") || detail.includes("fetch")
+          ? "The AI backend is not reachable right now. Please verify the backend is running at http://localhost:8080."
+          : detail
       );
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
           content:
-            "I could not reach the marketplace AI backend. Please confirm the deployment configuration and try again in a moment.",
+            "I could not reach the marketplace AI backend. Please verify the backend is running locally at http://localhost:8080 (or your configured NEXT_PUBLIC_API_URL).",
         },
       ]);
     } finally {

@@ -4,6 +4,8 @@ spring:
 
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
+    include:
+      - ai
 
 server:
   port: ${PORT:8080}

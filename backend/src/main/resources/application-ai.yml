@@ -1,15 +1,15 @@
 app:
   ai:
     rag:
-      enabled: ${APP_AI_RAG_ENABLED:false}
+      enabled: ${APP_AI_RAG_ENABLED:true}
       top-k: ${APP_AI_RAG_TOP_K:6}
       collection: ${APP_AI_RAG_COLLECTION:marketplace_rag_documents}
-    model: ${APP_AI_MODEL:gemini-2.5-flash}
+    model: ${APP_AI_MODEL:gemini-1.5-flash}
     provider: ${APP_AI_PROVIDER:gemini}
     llm:
       gemini:
         api-key: ${GEMINI_API_KEY:}
-        model: ${GEMINI_MODEL:gemini-2.5-flash}
+        model: ${GEMINI_MODEL:gemini-1.5-flash}
         base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com}
       openrouter:
         api-key: ${OPENROUTER_API_KEY:}
@@ -21,3 +21,4 @@ app:
 supabase:
   url: ${SUPABASE_URL:https://qliaulbxnqlvnkmiqjsw.supabase.co}
   secret-key: ${SUPABASE_SECRET_KEY:}
+

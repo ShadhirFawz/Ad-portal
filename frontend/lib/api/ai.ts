@@ -1,4 +1,5 @@
-import api from "@/lib/api";
+import { publicRequest } from "@/lib/api/client";
+import type { ApiResponse } from "@/types/auth";
 
 export type AiSource = {
   id?: string;
@@ -19,12 +20,14 @@ export type AiChatResponse = {
 };
 
 export async function askMarketplaceAi(question: string): Promise<AiChatResponse> {
-  const response = await api.post("/api/v1/chat/ask", {
-    question,
-    limit: 6,
-    minScore: 0.02,
+  const response = await publicRequest<ApiResponse<AiChatResponse>>("/chat/ask", {
+    method: "POST",
+    body: JSON.stringify({
+      question,
+      limit: 6,
+      minScore: 0.02,
+    }),
   });
 
-  const payload = response?.data;
-  return payload?.data ?? payload;
+  return response.data;
 }
